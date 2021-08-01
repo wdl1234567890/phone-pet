@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#E69595"
+    android:orientation="vertical"
+    android:padding="20dp"
+    tools:context=".MainActivity">
+
+    <Switch
+        android:id="@+id/switch1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:checked="false"
+        android:scaleX="1"
+        android:showText="false"
+        android:textColor="#390202"
+        android:textColorHighlight="#EC92B0"
+        android:textColorHint="#73B7ED"
+        android:textColorLink="#FFFFFF"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:thumbTint="#FFFFFF" />
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="20dp"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/sizeTipText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="宠物大小"
+            android:textSize="16dp" />
+
+        <SeekBar
+            android:id="@+id/selectSize"
+            style="@style/Widget.AppCompat.SeekBar"
+            android:layout_width="230dp"
+            android:layout_height="wrap_content"
+            android:enabled="false"
+            android:max="50"
+            android:progress="20"
+            android:progressTint="#EC98B5" />
+
+        <TextView
+            android:id="@+id/sizeShow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignLeft="@id/selectSize"
+            android:textSize="16dp"
+            tools:text="20" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/vTipText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="速度大小"
+            android:textSize="16dp" />
+
+        <SeekBar
+            android:id="@+id/selectV"
+            style="@style/Widget.AppCompat.SeekBar"
+            android:layout_width="230dp"
+            android:layout_height="wrap_content"
+            android:enabled="false"
+            android:max="20"
+            android:progress="5"
+            android:progressTint="#EC98B5" />
+
+        <TextView
+            android:id="@+id/vShow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignLeft="@id/selectSize"
+            android:textSize="16dp"
+            tools:text="5" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="28dp"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/reduce_lw"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:backgroundTint="#FFFFFF"
+            android:clickable="true"
+            app:backgroundTint="#FFFFFF"
+            app:rippleColor="#E91E63"
+            app:srcCompat="@android:drawable/dialog_holo_light_frame"
+            android:layout_marginRight="25dp"
+            android:tag="reduce_lw"/>
+
+        <ImageView
+            android:id="@+id/lw_image"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            tools:srcCompat="@tools:sample/avatars" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/add_lw"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:clickable="true"
+            app:backgroundTint="#B8DDED"
+            app:srcCompat="@android:drawable/ic_input_add"
+            android:layout_marginLeft="25dp"
+            android:tag="add_lw"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="20dp"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/reduce_ax"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:backgroundTint="#FFFFFF"
+            android:clickable="true"
+            app:backgroundTint="#FFFFFF"
+            app:rippleColor="#E91E63"
+            app:srcCompat="@android:drawable/dialog_holo_light_frame"
+            android:layout_marginRight="25dp"
+            android:tag="reduce_ax"/>
+
+        <ImageView
+            android:id="@+id/ax_image"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            tools:srcCompat="@tools:sample/avatars" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/add_ax"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:clickable="true"
+            app:backgroundTint="#B8DDED"
+            app:srcCompat="@android:drawable/ic_input_add"
+            android:layout_marginLeft="25dp"
+            android:tag="add_ax"/>
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="20dp"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/reduce_wz"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:backgroundTint="#FFFFFF"
+            android:clickable="true"
+            app:backgroundTint="#FFFFFF"
+            app:rippleColor="#E91E63"
+            app:srcCompat="@android:drawable/dialog_holo_light_frame"
+            android:layout_marginRight="25dp"
+            android:tag="reduce_wz"/>
+
+        <ImageView
+            android:id="@+id/wz_image"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            tools:srcCompat="@tools:sample/avatars" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/add_wz"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:clickable="true"
+            app:backgroundTint="#B8DDED"
+            app:srcCompat="@android:drawable/ic_input_add"
+            android:layout_marginLeft="25dp"
+            android:tag="add_wz"/>
+    </LinearLayout>
+</LinearLayout>
