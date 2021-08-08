@@ -1,5 +1,9 @@
 package com.fl.phone_pet.pojo;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
@@ -11,113 +15,67 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 
 import androidx.annotation.NonNull;
 
 import com.fl.phone_pet.R;
 
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 
 import pl.droidsonroids.gif.GifDrawable;
 
-public class PropMsg extends Handler {
-    public static final int FLY = 30001;
-    public static final int DISAPPEAR = 30002;
-    public static final int SHOW = 30003;
+public class PropMsg{
 
-    WindowManager wm;
-    WindowManager.LayoutParams propParams;
+    RelativeLayout.LayoutParams propParams;
     Point size;
     View propView;
     ImageView propImg;
     Integer propContent;
     Context ctx;
-    float g = 9.8f;
-    int v0 = 0;
-    int count;
+    CountDownLatch cdl;
 
-    public PropMsg(Context ctx, WindowManager wm, Point size, Integer propContent){
+    public PropMsg(Context ctx, Point size, Integer propContent, CountDownLatch cdl){
         this.ctx = ctx;
-        this.wm = wm;
         this.size = size;
         this.propContent = propContent;
-        this.propParams = new WindowManager.LayoutParams();
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){//6.0
-            propParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
-        }else {
-            propParams.type =  WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
-        }
-
-        propParams.format = PixelFormat.RGBA_8888; // 设置图片
-
-        // 格式，效果为背景透明
-        propParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-                | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
-
+        this.cdl = cdl;
 
         this.propView = LayoutInflater.from(ctx).inflate(R.layout.prop_msg, null);
         this.propImg = propView.findViewById(R.id.prop_img);
         propImg.setImageResource(propContent);
         initParams();
-        wm.addView(this.propView, this.propParams);
     }
 
     private void initParams(){
         int randomSize = new Random().nextInt(100) + 100;
+        this.propParams = new RelativeLayout.LayoutParams(randomSize, randomSize);
         int randomRotation = (int) (Math.random() * 110 - 90);
         propView.setRotation(randomRotation);
-        //callParams.rotationAnimation = randomRotation;
-        propParams.width = randomSize;
-        propParams.height = randomSize;
-        int randomX = (int) (Math.random() * this.size.x - this.size.x/2);
-        int randomY = (int) (Math.random() * 70 - this.size.y/2);
-        propParams.x = randomX;
-        propParams.y = randomY;
+        int randomX = (int) (Math.random() * this.size.x);
+        int randomY = (int) (Math.random() * 70);
+        propView.setX(randomX);
+        propView.setY(randomY);
         propView.setAlpha(1);
-        propView.setVisibility(View.GONE);
+        float downY = -randomY + this.size.y - propParams.height/2;
+        ObjectAnimator downAnimator = ObjectAnimator.ofFloat(this.propView, "translationY", 0, downY);
+        ObjectAnimator hideAnimator = ObjectAnimator.ofFloat(this.propView, "alpha", 1, 0);
+        downAnimator.setDuration(3000);
+        hideAnimator.setDuration(1300);
+        AnimatorSet animatorSet = new AnimatorSet();
+        animatorSet.play(hideAnimator).after(downAnimator);
+        animatorSet.setStartDelay(new Random().nextInt(500) * 2);
+        animatorSet.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                cdl.countDown();
+            }
+        });
+
+        animatorSet.start();
+
     }
 
-    @Override
-    public void handleMessage(@NonNull Message msg) {
-        switch (msg.what){
-            case SHOW:
-                propView.setVisibility(View.VISIBLE);
-                break;
-            case FLY:
-                removeMessages(FLY);
-                propParams.y = (int) (propParams.y + v0 + 1/2 * g);
-                v0 = (int) (v0 + g);
-                wm.updateViewLayout(propView, propParams);
-                if(propView.getVisibility() != View.VISIBLE && count == 0)sendEmptyMessageDelayed(SHOW, 500);
-                else if(propView.getVisibility() != View.VISIBLE && count != 0)sendEmptyMessage(SHOW);
-                if(propParams.y + propParams.height/2 >= size.y/2){
-                    sendEmptyMessage(DISAPPEAR);
-                }else {
-                    sendEmptyMessageDelayed(FLY, 50);
-                }
-                break;
-            case DISAPPEAR:
-                removeMessages(DISAPPEAR);
-                propView.setAlpha((float) (propView.getAlpha() - 0.2));
-                if(propView.getAlpha() <= 0){
-                    if(count > 2)wm.removeView(propView);
-                    else {
-                        propView.setVisibility(View.GONE);
-                        initParams();
-                        wm.updateViewLayout(propView, propParams);
-                        sendEmptyMessage(FLY);
-                        count++;
-                    }
-                }else {
-                    sendEmptyMessageDelayed(DISAPPEAR, 50);
-                }
-                break;
-        }
-    }
-
-    public void run(){
-        int randomDelayed = new Random().nextInt(500) * 2;
-        sendEmptyMessageDelayed(FLY, randomDelayed);
-    }
 }

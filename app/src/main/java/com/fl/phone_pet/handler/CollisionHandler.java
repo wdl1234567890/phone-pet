@@ -77,12 +77,15 @@ public class CollisionHandler extends Handler {
                 if(this.pets == null || this.pets.isEmpty())return;
                 int topY, bottomY, leftX, rightX, tempPngDeviation = 0;
                 for (Pet pet : pets){
-                    if(pet.CURRENT_ACTION == Pet.COLLISION || pet.CURRENT_ACTION == Pet.FLY || pet.CURRENT_ACTION == Pet.MOVE || pet.name.equals(MyService.WZ))continue;
+                    if(pet.CURRENT_ACTION == Pet.COLLISION || pet.CURRENT_ACTION == Pet.FLY
+                            || pet.CURRENT_ACTION == Pet.MOVE || pet.name.equals(MyService.WZ)
+                            || pet.CURRENT_ACTION == Pet.SPEECH_START)continue;
                     for (Pet pet1 : pets){
                         if(pet == pet1 || pet1.name.equals(MyService.WZ)
                                 || pet.name.equals(pet1.name)
                                 || pet1.CURRENT_ACTION == Pet.COLLISION || pet.BEFORE_MODE != pet1.BEFORE_MODE
-                                || pet1.CURRENT_ACTION == Pet.FLY ||pet1.CURRENT_ACTION == Pet.MOVE)continue;
+                                || pet1.CURRENT_ACTION == Pet.FLY ||pet1.CURRENT_ACTION == Pet.MOVE
+                                || pet1.CURRENT_ACTION == Pet.SPEECH_START)continue;
                         topY = pet.params.y - pet.params.height/2 - pet1.params.height/2;
                         bottomY = pet.params.y + pet.params.height/2 + pet1.params.height/2;
                         leftX = pet.params.x - pet.params.width/2 - pet1.params.width/2;
@@ -191,6 +194,7 @@ public class CollisionHandler extends Handler {
             wm.addView(hugView, hugParam);
             Message msg = new Message();
             msg.obj = hugView;
+            msg.what = END_HUG;
             sendMessageDelayed(msg, 3800);
         }catch (Exception e){
             e.printStackTrace();

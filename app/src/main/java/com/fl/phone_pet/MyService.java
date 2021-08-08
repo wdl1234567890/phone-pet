@@ -31,12 +31,16 @@ import com.iflytek.cloud.SpeechUtility;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import pl.droidsonroids.gif.GifDrawable;
 
@@ -58,12 +62,13 @@ public class MyService extends Service {
     WindowManager.LayoutParams mscParams;
     private final int oldDeviation = 62;
     public static int deviation = 62;
-        //new String[]{"ax_func_panel_layout", "lw_func_panel_layout", "wz_func_panel_layout"};
+
 
     public static int currentSize = 20;
     public static int speed = 1;
 
-    public RelativeLayout downContainerView;
+    public volatile RelativeLayout downContainerView;
+    private volatile CopyOnWriteArrayList<CountDownLatch> downList = new CopyOnWriteArrayList<>();
 
 
     private class ActivityMsgHandler extends Handler{
@@ -116,10 +121,13 @@ public class MyService extends Service {
                     if(this.mp != null && this.mp.get(1) != null)this.mp.get(1).release();
                     wm.removeView(pet.elfView);
                     wm.removeView(pet.speechView);
-                    if(pet.functionPanelView != null)wm.removeView(pet.functionPanelView);
+                    if(pet.functionPanelView != null)pet.hideFuncPanel();
                 }
             }
-            if(downContainerView != null)wm.removeView(downContainerView);
+            if(downContainerView != null && downContainerView.getVisibility() == View.VISIBLE){
+                for (CountDownLatch cdl : this.downList)cdl.notifyAll();
+                wm.removeView(downContainerView);
+            }
 
             if(collisionHandler.hugViews != null && collisionHandler.hugViews.size() > 0){
                 collisionHandler.removeMessages(CollisionHandler.END_HUG);
@@ -178,10 +186,20 @@ public class MyService extends Service {
                 for (Pet pet : entry.getValue()){
                     pet.elfView.setVisibility(View.GONE);
                     pet.speechView.setVisibility(View.GONE);
+                    if(pet.functionPanelView != null)pet.hideFuncPanel();
                     pet.params.x = 0;
                     pet.params.y = -size.y/2 + pet.params.height/2 + 5;
                     wm.updateViewLayout(pet.elfView, pet.params);
                 }
+            }
+            if(downContainerView != null && downContainerView.getVisibility() == View.VISIBLE){
+                for (CountDownLatch cdl : this.downList)cdl.notifyAll();
+            }
+            if(collisionHandler.hugViews != null && collisionHandler.hugViews.size() > 0){
+                collisionHandler.removeMessages(CollisionHandler.END_HUG);
+                int hugViewsCount = collisionHandler.hugViews.size();
+                for(int f = 0; f < hugViewsCount; f++)wm.removeView(collisionHandler.hugViews.get(f));
+                collisionHandler.hugViews.clear();
             }
             goPets();
 
@@ -201,7 +219,9 @@ public class MyService extends Service {
         downContainerParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
                 | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
         downContainerParams.width = this.size.x;
-        downContainerParams.width = this.size.y;
+        downContainerParams.height = this.size.y;
+        downContainerParams.x = 0;
+        downContainerParams.y = 0;
         downContainerView.setVisibility(View.GONE);
         wm.addView(downContainerView, downContainerParams);
     }
@@ -247,19 +267,19 @@ public class MyService extends Service {
     private void initPets(){
         if(groupPets == null)groupPets = new HashMap<>();
 
-        Pet axPet = new Pet(this, AX, wm, currentSize, speed, size, mp, mscView, this.downContainerView, this.deviation);
+        Pet axPet = new Pet(this, AX, wm, currentSize, speed, size, mp, mscView, this.downContainerView, this.downList);
         groupPets.put(AX, new LinkedList<>(Arrays.asList(axPet)));
 
-        Pet lwPet = new Pet(this, LW, wm, currentSize, speed, size, mp, mscView, this.downContainerView, this.deviation);
+        Pet lwPet = new Pet(this, LW, wm, currentSize, speed, size, mp, mscView, this.downContainerView, this.downList);
         groupPets.put(LW, new LinkedList<>(Arrays.asList(lwPet)));
 
-        Pet wzPet = new Pet(this, WZ, wm, currentSize, speed, size, mp, mscView, this.downContainerView, this.deviation);
+        Pet wzPet = new Pet(this, WZ, wm, currentSize, speed, size, mp, mscView, this.downContainerView, this.downList);
         groupPets.put(WZ, new LinkedList<>(Arrays.asList(wzPet)));
 
     }
 
     private void addPetOneCount(String name){
-        Pet pet = new Pet(this, name, wm, currentSize, speed, size, mp, mscView, this.downContainerView, this.deviation);
+        Pet pet = new Pet(this, name, wm, currentSize, speed, size, mp, mscView, this.downContainerView, this.downList);
         List<Pet> pets = groupPets.get(name);
         if(pets == null){
             pets = new LinkedList<>();
@@ -325,12 +345,17 @@ public class MyService extends Service {
             for (int k = 0; k < hugViewsCount; k++)wm.removeView(collisionHandler.hugViews.get(k));
             collisionHandler.hugViews.clear();
         }
+
+        if(downContainerView != null && downContainerView.getVisibility() == View.VISIBLE){
+            for (CountDownLatch cdl : this.downList)cdl.notifyAll();
+        }
+
         while (it.hasNext()){
             Map.Entry<String, List<Pet>> entry = it.next();
             for (Pet pet : entry.getValue()){
                 pet.elfView.setVisibility(View.GONE);
                 pet.speechView.setVisibility(View.GONE);
-                if(pet.functionPanelView != null)pet.functionPanelView.setVisibility(View.GONE);
+                if(pet.functionPanelView != null)pet.hideFuncPanel();
                 pet.params.width =  pet.whRate != 0 && pet.whRate != 1 ? (int)(petW * pet.whRate) : petW;
                 pet.params.height = petW;
                 pet.whDif = pet.params.width - pet.params.height;

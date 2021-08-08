@@ -118,8 +118,8 @@
 
         <ImageView
             android:id="@+id/lw_image"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
             android:src="@drawable/lw" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -157,8 +157,8 @@
 
         <ImageView
             android:id="@+id/ax_image"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
             android:src="@drawable/ax" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -196,8 +196,8 @@
 
         <ImageView
             android:id="@+id/wz_image"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
             android:src="@drawable/wz" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton

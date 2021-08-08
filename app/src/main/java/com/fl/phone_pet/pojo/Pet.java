@@ -28,6 +28,7 @@ import android.widget.TextView;
 
 import androidx.annotation.InspectableProperty;
 
+import com.fl.phone_pet.MyService;
 import com.fl.phone_pet.R;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.iflytek.cloud.ErrorCode;
@@ -55,9 +56,11 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import pl.droidsonroids.gif.GifDrawable;
 
@@ -183,7 +186,7 @@ public class Pet extends Handler {
     Point size;
     public int speed;
     List<String> callTexts;
-    int deviation;
+//    int deviation;
     public int pngDeviation = -1;
     public double whRate;
     public int whDif;
@@ -195,9 +198,10 @@ public class Pet extends Handler {
     private final float v0 = 1.2f;
     private Context ctx;
     private Queue speechStore = new LinkedBlockingQueue(10);
+    private CopyOnWriteArrayList<CountDownLatch> downList;
 
 
-    public Pet(Context ctx, String name, WindowManager wm, int currentSize, int normalMoveSpeed, Point size, Map<Integer, MediaPlayer> mp, View mscView, RelativeLayout downContainerView, int deviation) {
+    public Pet(Context ctx, String name, WindowManager wm, int currentSize, int normalMoveSpeed, Point size, Map<Integer, MediaPlayer> mp, View mscView, RelativeLayout downContainerView, CopyOnWriteArrayList downList) {
         super();
         this.name = name;
         this.currentSize = currentSize;
@@ -222,7 +226,8 @@ public class Pet extends Handler {
 //        this.functionPanelMscButton = functionPanelView.findViewById(R.id.msc);
 //        this.closeFuncPanelButton = functionPanelView.findViewById(R.id.close_func_panel);
         this.size = size;
-        this.deviation = deviation;
+//        this.deviation = deviation;
+        this.downList = downList;
         initGifDrawables();
         initPropList();
         initVoiceList();
@@ -638,7 +643,7 @@ public class Pet extends Handler {
                 removeMessages(CLIMB_DOWN);
                 params.y = params.y + speed;
                 wm.updateViewLayout(elfView, params);
-                if (params.y + params.height / 2 + deviation > size.y / 2) {
+                if (params.y + params.height / 2 + MyService.deviation > size.y / 2) {
                     if (BEFORE_MODE == TIMER_LEFT_START) {
                         removeAllMessages();
                         if (BEFORE_MODE != TIMER_START) BEFORE_MODE = TIMER_START;
@@ -767,9 +772,9 @@ public class Pet extends Handler {
                 vX0 = vX0 + fs;
                 vY0 = vY0 + g;
                 int flag = -1;
-                if (params.y + params.height / 2 + deviation > size.y / 2) {
-                    params.y = size.y / 2 - params.height / 2 - deviation;
-                    Log.i("*********************", String.valueOf(deviation));
+                if (params.y + params.height / 2 + MyService.deviation > size.y / 2) {
+                    params.y = size.y / 2 - params.height / 2 - MyService.deviation;
+                    Log.i("*********************", String.valueOf(MyService.deviation));
                     flag = 0;
 //                    sendEmptyMessage(FALL_TO_THE_GROUND);
 //                    wm.updateViewLayout(elfView, params);
@@ -811,8 +816,10 @@ public class Pet extends Handler {
                 break;
             case HIDDEN_CONTAINER:
                 removeMessages(HIDDEN_CONTAINER);
-                if(downContainerView.getVisibility() == VISIBLE)downContainerView.setVisibility(View.GONE);
-//                this.downContainerView.removeAllViews();
+                if(downContainerView.getVisibility() == VISIBLE){
+                    downContainerView.setVisibility(View.GONE);
+                    this.downContainerView.removeAllViews();
+                }
                 break;
         }
     }
@@ -916,16 +923,18 @@ public class Pet extends Handler {
         sendMessage(msg);
     }
 
-    public void callFunction() {
+    synchronized public void callFunction() {
+
         if(this.downContainerView.getVisibility() != VISIBLE)this.downContainerView.setVisibility(VISIBLE);
 //        this.downContainerView.removeAllViews();
         int randomCount = new Random().nextInt(15) + 30;
         int randomIndex;
         int i = 0;
         CountDownLatch cdl = new CountDownLatch(randomCount);
+        this.downList.add(cdl);
         while (i < randomCount) {
             randomIndex = new Random().nextInt(this.callTexts.size());
-            CallMsg cm = new CallMsg(ctx, wm, size, this.callTexts.get(randomIndex), cdl);
+            CallMsg cm = new CallMsg(ctx, size, this.callTexts.get(randomIndex), cdl);
             this.downContainerView.addView(cm.callView, cm.callParams);
             i++;
         }
@@ -934,7 +943,8 @@ public class Pet extends Handler {
             public void run() {
                 try {
                     cdl.await(10, TimeUnit.SECONDS);
-                    sendEmptyMessage(HIDDEN_CONTAINER);
+                    downList.remove(cdl);
+                    if(downList.size() <= 0)sendEmptyMessage(HIDDEN_CONTAINER);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -943,14 +953,32 @@ public class Pet extends Handler {
     }
 
     public void propFunction() {
-        int randomCount = new Random().nextInt(5) + 10;
+
+        if(this.downContainerView.getVisibility() != VISIBLE)this.downContainerView.setVisibility(VISIBLE);
+        int randomCount = new Random().nextInt(15) + 30;
         int randomIndex;
         int i = 0;
+        CountDownLatch cdl = new CountDownLatch(randomCount);
+        this.downList.add(cdl);
         while (i < randomCount) {
             randomIndex = new Random().nextInt(this.propList.size());
-            new PropMsg(ctx, wm, size, this.propList.get(randomIndex)).run();
+            PropMsg pm = new PropMsg(ctx, size, this.propList.get(randomIndex), cdl);
+            this.downContainerView.addView(pm.propView, pm.propParams);
             i++;
         }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    cdl.await(10, TimeUnit.SECONDS);
+                    downList.remove(cdl);
+                    if(downList.size() <= 0)sendEmptyMessage(HIDDEN_CONTAINER);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
     }
 
     public void voiceFunction() {
@@ -1272,7 +1300,7 @@ public class Pet extends Handler {
 //
 //    }
 
-    private void hideFuncPanel(){
+    public void hideFuncPanel(){
         if(this.functionPanelView != null){
             wm.removeView(this.functionPanelView);
             this.functionPanelView = null;

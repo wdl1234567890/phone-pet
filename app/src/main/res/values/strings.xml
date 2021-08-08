@@ -141,6 +141,9 @@
         <item>lw_liulijiaguajian</item>
         <item>lw_shanzi</item>
         <item>lw_shanzi2</item>
+        <item>lw_shanzi3</item>
+        <item>lw_shanzi4</item>
+        <item>lw_shanzi5</item>
         <item>lw_xiao</item>
     </string-array>
     <string-array name="wz_props">

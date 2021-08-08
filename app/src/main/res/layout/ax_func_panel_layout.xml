@@ -8,7 +8,7 @@
     <pl.droidsonroids.gif.GifImageView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/ax_bg"
+        android:background="@drawable/ax_bg2"
         tools:ignore="ImageContrastCheck"></pl.droidsonroids.gif.GifImageView>
 
     <LinearLayout
@@ -18,49 +18,48 @@
         android:layoutAnimation="@anim/ax_func_panel_layout_anim"
         android:layout_centerInParent="true"
         android:orientation="horizontal"
-        >
+        ><!--android:layoutAnimation="@anim/ax_func_panel_layout_anim"-->
 
         <ImageView
             android:id="@+id/call"
-            android:layout_width="70dp"
-            android:layout_height="200dp"
+            android:layout_width="25dp"
+            android:layout_height="69dp"
             android:scaleType="centerCrop"
-            android:translationX="50dp"
-            android:translationY="450dp"
             android:src="@drawable/ax_junzhiming"
+            android:translationX="70dp"
+            android:translationY="95dp"
             tools:ignore="SpeakableTextPresentCheck" />
 
         <ImageView
             android:id="@+id/prop"
-            android:layout_width="70dp"
-            android:layout_height="200dp"
+            android:layout_width="12dp"
+            android:layout_height="50dp"
             android:scaleType="centerCrop"
-            android:translationX="100dp"
-            android:translationY="450dp"
             android:src="@drawable/ax_wuzhiwu"
+            android:translationX="65dp"
+            android:translationY="20dp"
             tools:ignore="SpeakableTextPresentCheck" />
 
         <ImageView
             android:id="@+id/voice"
-            android:layout_width="70dp"
-            android:layout_height="200dp"
+            android:layout_width="30dp"
+            android:layout_height="72dp"
             android:scaleType="centerCrop"
-            android:translationX="150dp"
-            android:translationY="450dp"
             android:src="@drawable/ax_tingwuyan"
+            android:translationX="80dp"
+            android:translationY="93dp"
             tools:ignore="SpeakableTextPresentCheck" />
 
+        <ImageView
+            android:id="@+id/close_func_panel"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ax_gaoci"
+            android:translationX="20dp"
+            android:translationY="70dp"
+            tools:ignore="SpeakableTextPresentCheck" />
 
     </LinearLayout>
-
-    <ImageView
-        android:id="@+id/close_func_panel"
-        android:layout_width="120dp"
-        android:layout_height="90dp"
-        android:scaleType="centerCrop"
-        android:translationX="100dp"
-        android:translationY="300dp"
-        android:src="@drawable/ax_gaoci"
-        tools:ignore="SpeakableTextPresentCheck" />
 
 </RelativeLayout>
