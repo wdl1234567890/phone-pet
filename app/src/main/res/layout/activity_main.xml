@@ -120,7 +120,7 @@
             android:id="@+id/lw_image"
             android:layout_width="100dp"
             android:layout_height="100dp"
-            tools:srcCompat="@tools:sample/avatars" />
+            android:src="@drawable/lw" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/add_lw"
@@ -151,7 +151,7 @@
             android:clickable="true"
             app:backgroundTint="#FFFFFF"
             app:rippleColor="#E91E63"
-            app:srcCompat="@android:drawable/dialog_holo_light_frame"
+            android:src="@android:drawable/dialog_holo_light_frame"
             android:layout_marginRight="25dp"
             android:tag="reduce_ax"/>
 
@@ -159,7 +159,7 @@
             android:id="@+id/ax_image"
             android:layout_width="100dp"
             android:layout_height="100dp"
-            tools:srcCompat="@tools:sample/avatars" />
+            android:src="@drawable/ax" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/add_ax"
@@ -168,7 +168,7 @@
             android:layout_weight="1"
             android:clickable="true"
             app:backgroundTint="#B8DDED"
-            app:srcCompat="@android:drawable/ic_input_add"
+            android:src="@android:drawable/ic_input_add"
             android:layout_marginLeft="25dp"
             android:tag="add_ax"/>
     </LinearLayout>
@@ -184,20 +184,21 @@
             android:id="@+id/reduce_wz"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginRight="25dp"
             android:layout_weight="1"
             android:backgroundTint="#FFFFFF"
             android:clickable="true"
+            android:tag="reduce_wz"
             app:backgroundTint="#FFFFFF"
             app:rippleColor="#E91E63"
             app:srcCompat="@android:drawable/dialog_holo_light_frame"
-            android:layout_marginRight="25dp"
-            android:tag="reduce_wz"/>
+            tools:ignore="SpeakableTextPresentCheck" />
 
         <ImageView
             android:id="@+id/wz_image"
             android:layout_width="100dp"
             android:layout_height="100dp"
-            tools:srcCompat="@tools:sample/avatars" />
+            android:src="@drawable/wz" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/add_wz"

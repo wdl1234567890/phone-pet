@@ -1,6 +1,7 @@
 package com.fl.phone_pet;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.ComponentName;
@@ -167,6 +168,13 @@ public class MainActivity extends AppCompatActivity {
         initButtons();
         bindButtonsEvent();
     }
+
+
+//    @Override
+//    protected void onCreate(@Nullable Bundle savedInstanceState) {
+//        super.onCreate(savedInstanceState);
+//        setContentView(R.layout.wz_func_panel_layout);
+//    }
 
     private void initButtons(){
         if(buttons == null)buttons = new HashMap<>();

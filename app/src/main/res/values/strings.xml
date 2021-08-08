@@ -34,7 +34,7 @@
         <item>坏人放下屠刀可立地成佛 好人做了坏事 难道就永世不得超生 没这个道理</item>
         <item>你说了，我才能帮你</item>
         <item>你就是我认识的那个人</item>
-        <item>到不砍在自己身上 不知道疼啊</item>
+        <item>刀不砍在自己身上 不知道疼啊</item>
         <item>来和你这个疯子死在一处</item>
         <item>我四季山庄的人你也敢动！</item>
         <item>我不知道你什么时候来 怎么来 但我知道 你一定会来</item>
@@ -210,8 +210,85 @@
         <item>zhizizhishou</item>
         <item>zhongridayan</item>
         <item>zhuowuying</item>
+		<item>tianshang</item>
+		<item>yiruguigu</item>
+		<item>shirenjiefuwo</item>
+		<item>yuruhonhchen</item>
+		<item>renshengdeyixujinhuan</item>
+		<item>erbuyizhitu</item>
+		<item>diyubukong</item>
+		<item>tianxiabenwushi</item>
     </string-array>
-
+    <string-array name="ax_voices">
+		<item>bugouzao</item>
+		<item>daobukanzaizijishenshang</item>
+		<item>dejunweiyou</item>
+		<item>fanggepi</item>
+		<item>guiyubenzairenxin</item>
+		<item>hezhiyusi</item>
+		<item>huarenfangxiatudao</item>
+		<item>jiaohunne</item>
+		<item>kexingsuiyunle</item>
+		<item>laozishinizuzong</item>
+		<item>laozixiangshazhiren</item>
+		<item>lw</item>
+		<item>meima</item>
+		<item>mingnvbeiqiang</item>
+		<item>mingzhibukeweierweizhi</item>
+		<item>nianglegetui3</item>
+		<item>nibupei</item>
+		<item>nixiangshuodeshihoou</item>
+		<item>niyidinghuilai</item>
+		<item>qibulai</item>
+		<item>qinengjinrurenyi</item>
+		<item>qingshanbugai</item>
+		<item>renshengbuguoyirisancan</item>
+		<item>shanhebuzuzhong</item>
+		<item>shenshengbani</item>
+		<item>shishangwunanshi</item>
+		<item>sijihuachangzai</item>
+		<item>tianyaguhong</item>
+		<item>woshangdezhemezhong</item>
+		<item>woshiaxu</item>
+		<item>wosijishanzhuangderen</item>
+		<item>woyiweinengmanmangaibianni</item>
+		<item>xiangshuojiushuo</item>
+		<item>xiaosatitang</item>
+		<item>xiazhidazhe</item>
+		<item>yiqishaleba</item>
+		<item>yirongjurong</item>
+		<item>zhijijiqu</item>
+		<item>zongsuanshuolejurenhua</item>
+	</string-array>
+	<string-array name="wz_voices">
+		<item>axujiaohunne</item>
+		<item>bayifu</item>
+		<item>bienaolewendashanren</item>
+		<item>chuanxibuchuanxu</item>
+		<item>dabuliaowoyihouyegongniquce</item>
+		<item>dejunweiyouxindejunxin</item>
+		<item>gaoshanliushui</item>
+		<item>jingzi</item>
+		<item>keyouyanji</item>
+		<item>liuzheqingmian</item>
+		<item>meimawanmei</item>
+		<item>nibiezou</item>
+		<item>nidaodishizaiduoshuia</item>
+		<item>nishuohuawohaiganbutingma</item>
+		<item>niyoubinga</item>
+		<item>nizenmebuwenwodangnishishenme</item>
+		<item>qianshanmuxue</item>
+		<item>qibulai</item>
+		<item>shayang</item>
+		<item>shazinilaizuoshenme</item>
+		<item>suoyinijuedewishigehaoren</item>
+		<item>tianyaguhongzhizizhishou</item>
+		<item>wobuzhidaonishenmeshihoulai</item>
+		<item>wochengnucaile</item>
+		<item>woshuolenibangwoma</item>
+		<item>zhiqianbushimeiyujiannima</item>
+	</string-array>
+	
     <!--aixin-->
     <string-array name="aixin">
         <item>aixin1</item>
@@ -235,64 +312,33 @@
     <!--mscs-->
     <string-array name="lw_mscs">
         <item>aikanrenaodanbuaicourenao:看热闹</item>
-        <item>badiandaodeyiqiedoufuzhengguolai:颠倒黑白</item>
-        <item>biezhemexiaoqi:还钱</item>
-        <item>bugainiguandeshishaocanhuo:告诉我|我想知道|采访一下|了解一下|洞房|圆房</item>
-        <item>buxupengta:欺负阿絮|碰他|欺负他|碰她|欺负她|摸他|摸她</item>
+        <item>bugainiguandeshishaocanhuo:告诉我|我想知道|采访一下|了解一下</item>
         <item>buzhunku:想哭|流泪|落泪|哭泣</item>
         <item>chengrenwohaokan:你真好看|你好美|你真美|美人|你太好看了|你长得真好看|你真漂亮|温温大美人</item>
-        <item>chuannanbuchuanv:拜我为师|想学吗</item>
-        <item>chushoujiuzhishou:救命|help|帮我</item>
         <item>dangganxiangbenzuotaoyaodongxi:拿来吧你|把,交给我|交出来|我想要</item>
-        <item>feihua:阿絮是你的老婆|阿絮最好看</item>
+        <item>feihua:阿絮是你老婆|阿絮最好看</item>
         <item>gaoshanliushuizhiyinnanmi:知己|知音</item>
-        <item>gongniquce:怎么报答我</item>
         <item>guanhaonideyanjing:你老婆真好看|你老婆真美|阿絮真好看|阿絮好美|阿絮真美</item>
         <item>gun:滚的文雅说法</item>
-        <item>gunba:给爷笑一个|我爱你</item>
         <item>guoleshuangjiangbianshidong:快过年了</item>
         <item>haishiyuanzhuangdezuihaokan:这妆好看吗|好看吗</item>
         <item>haotiana:甜吗|甜不甜</item>
-        <item>haoxinanengshuodeqingchua:详细说说|什么戏|什么情况|描述一下</item>
         <item>hengshudoushuibuzhao:睡不着</item>
-        <item>heshizhuangguobenlaijiushihaoren:别装了|假模假样</item>
-        <item>huadiweilao:我好恨|我恨|恨死|恨你|恨他|恨她</item>
-        <item>hundannihaizhidaoguanxiwo:你没事吧|你怎么样了|最近过得好吗|最近怎么样了</item>
-        <item>junzisizhiji:不能冒险|别冒险|你疯了</item>
         <item>kaixinyeshiyitianbukaixinyeshiyitian:难过|心里,不舒服|心里,别扭|心里难受|不开心|开心不起来|笑不出来</item>
         <item>laotianyedejiezuo:脸,真美|脸,好看|脸,美</item>
         <item>lienvpachanglan:不肯收我为徒|烈女|缠|岂不闻</item>
         <item>meishaonvzhuangshi:柴房|美少女壮士</item>
-        <item>miaoa:妙不妙|觉得怎么样|觉得咋样</item>
         <item>mingzijiaodezhemehaoting:温客行</item>
-        <item>nibujuedezhehenhaoxiaoma:有什么好笑|好笑吗|不好笑|哪里值得笑的|笑点在哪</item>
-        <item>nigewuguiwangbadan:快骂我|快来骂我|来骂我|阿絮是我的|阿絮是我老婆</item>
-        <item>nihushuoshenmene:老婆跑了</item>
         <item>nimobushijiuchongchenglejing.:想喝酒|来一杯|好酒|喝酒啦|干杯|喝一杯</item>
         <item>nipianren:是假的|相信我|真得不能再真|真的,信我</item>
-        <item>niqunawojiuquna:你去哪|你要去哪|你想去哪</item>
-        <item>nishaoewo:骗你是小狗|是真的|没骗你|莫非是你透露出去的|莫非是你说出去的</item>
         <item>nishenshangyouguang:山河不足重,重在遇知己</item>
-        <item>nishizhua:我好笨|我不会|我听不懂|我完全不懂|我完全不会|我搞不明白|我完全搞不明白</item>
-        <item>nizhemecongmingzaixiangxiang:是怎么回事|是这样吗</item>
-        <item>paxie:怕血</item>
-        <item>rangwohuahuanideqianbeibukui:把钱还我|还我钱</item>
         <item>rishangzhongtianle:赖床|睡懒觉|不想起床</item>
         <item>shangnizhesuishiwanduan:好痛|好疼|伤心</item>
-        <item>shanliangrouruodeshusheng:你的荷包呢</item>
         <item>shuodedui:对不对|有没有道理|温周锁了|老温阿絮绝配|老温阿絮天生一对</item>
         <item>suisuipingan):过年啦|过年了|新年快乐</item>
-        <item>tianyalangkeweijunyuwuzuyi:浪客</item>
-        <item>tongnanzi:不怕鬼|鬼不可怕|鬼有啥好怕|鬼有什么好怕</item>
         <item>wenwenkexing:你叫什么|你是谁|你的名字是|你的名字叫|我叫你什么</item>
-        <item>wogaoxingashiyinwei:你为什么高兴|你高兴啥|你开心啥|你乐啥|你开心什么|你为什么这么开心</item>
-        <item>wojiukaokaoni:你不懂吗|你不知道吗</item>
         <item>wonaiwendashanren:你是好人还是坏人|你是坏人吗|你是好人吗</item>
-        <item>woyuanlaishigehaorena:你是温大善人|你是好人|坏人放下屠刀可立地成佛,好人做了坏事难道就永世不得超生</item>
-        <item>wusuowei:该怎么办啊|要怎么办啊|不找你的荷包了吗|荷包不要了吗|不找荷包了吗</item>
-        <item>wuzangliufubanglejia:你身体怎么样了|没事吧|你怎么样了</item>
         <item>xindejunxinsiwoxin:得君为友，不枉此生</item>
-        <item>yanshenbuhaoshi:你眼神不好|眼神不好使</item>
         <item>yaomesiyaomegun:温,周,不配|他不配</item>
         <item>yaoxituichang:世界上最可爱的人是谁</item>
         <item>yesehenmei:夜色很美|月色很美</item>
@@ -310,5 +356,10 @@
 
     <!--wh_rate-->
     <string name="wz_wh_rate">1.417</string>
-    <string name="ax_wh_rate">1.035</string>
+    <string name="ax_wh_rate">1.246</string>
+
+    <!--func_panel_layout-->
+    <string name="lw_func_panel_layout">lw_func_panel_layout</string>
+    <string name="ax_func_panel_layout">ax_func_panel_layout</string>
+    <string name="wz_func_panel_layout">wz_func_panel_layout</string>
 </resources>

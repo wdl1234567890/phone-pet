@@ -22,6 +22,8 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.InspectableProperty;
@@ -42,6 +44,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.w3c.dom.Text;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -52,7 +55,9 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import pl.droidsonroids.gif.GifDrawable;
 
@@ -83,6 +88,8 @@ public class Pet extends Handler {
     public static final int CLIMB_STAND = 10029;
     public static final int MSC = 10028;
     public static final int TOUCH_REPLY = 10030;
+    public static final int HIDDEN_CONTAINER = 10031;
+    public static final int MOVE = 10032;
     public static final String OSS_BASE = "https://music-fl-wdl.oss-cn-shenzhen.aliyuncs.com/";
     public int BEFORE_MODE = FLY;
     public int CURRENT_ACTION = FLY;
@@ -92,6 +99,7 @@ public class Pet extends Handler {
     public String direction = "left";
     Map<Integer, MediaPlayer> mp;
     private String[] runLevels = {"_low", "_middle", "_high"};
+    private Integer funcPanelLayoutResId;
 
     public static final String WALK_LEFT = "run_left";
     public static final String WALK_RIGHT = "run_right";
@@ -124,14 +132,15 @@ public class Pet extends Handler {
 
     WindowManager wm;
     public WindowManager.LayoutParams params, speechParams, functionPanelParams;
-    public View elfView, speechView, functionPanelView, mscVew;
+    public View elfView, speechView, functionPanelView, mscView;
+    public RelativeLayout downContainerView;
     public ImageView elfBody;
     public TextView speechBody;
-    public FloatingActionButton functionPanelCallButton;
-    public FloatingActionButton functionPanelPropButton;
-    public FloatingActionButton functionPanelVoiceButton;
-    public FloatingActionButton functionPanelMscButton;
-    public FloatingActionButton closeFuncPanelButton;
+    public ImageView functionPanelCallButton;
+    public ImageView functionPanelPropButton;
+    public ImageView functionPanelVoiceButton;
+//    public FloatingActionButton functionPanelMscButton;
+    public ImageView closeFuncPanelButton;
     GifDrawable flyLeftGifDrawable;
     GifDrawable flyRightGifDrawable;
     GifDrawable climbLeftUpGifDrawable;
@@ -174,7 +183,7 @@ public class Pet extends Handler {
     Point size;
     public int speed;
     List<String> callTexts;
-    int deviation = 62;
+    int deviation;
     public int pngDeviation = -1;
     public double whRate;
     public int whDif;
@@ -188,41 +197,45 @@ public class Pet extends Handler {
     private Queue speechStore = new LinkedBlockingQueue(10);
 
 
-    public Pet(Context ctx, String name, WindowManager wm, int currentSize, int normalMoveSpeed, Point size, Map<Integer, MediaPlayer> mp, View mscView) {
+    public Pet(Context ctx, String name, WindowManager wm, int currentSize, int normalMoveSpeed, Point size, Map<Integer, MediaPlayer> mp, View mscView, RelativeLayout downContainerView, int deviation) {
         super();
         this.name = name;
         this.currentSize = currentSize;
         this.speed = normalMoveSpeed;
         this.mp = mp;
-        this.mscVew = mscView;
+        this.mscView = mscView;
         this.ctx = ctx;
         this.wm = wm;
         this.params = new WindowManager.LayoutParams();
         this.speechParams = new WindowManager.LayoutParams();
         this.functionPanelParams = new WindowManager.LayoutParams();
+//        this.downContainerParams = new WindowManager.LayoutParams();
         this.elfView = LayoutInflater.from(ctx).inflate(R.layout.petelf, null);
         this.speechView = LayoutInflater.from(ctx).inflate(R.layout.speech, null);
-        this.functionPanelView = LayoutInflater.from(ctx).inflate(R.layout.function_panel, null);
+//        this.functionPanelView = LayoutInflater.from(ctx).inflate(R.layout.function_panel, null);
+        this.downContainerView = downContainerView;
         this.elfBody = elfView.findViewById(R.id.elfbody);
         this.speechBody = speechView.findViewById(R.id.speech);
-        this.functionPanelCallButton = functionPanelView.findViewById(R.id.call);
-        this.functionPanelPropButton = functionPanelView.findViewById(R.id.prop);
-        this.functionPanelVoiceButton = functionPanelView.findViewById(R.id.voice);
-        this.functionPanelMscButton = functionPanelView.findViewById(R.id.msc);
-        this.closeFuncPanelButton = functionPanelView.findViewById(R.id.close_func_panel);
+//        this.functionPanelCallButton = functionPanelView.findViewById(R.id.call);
+//        this.functionPanelPropButton = functionPanelView.findViewById(R.id.prop);
+//        this.functionPanelVoiceButton = functionPanelView.findViewById(R.id.voice);
+//        this.functionPanelMscButton = functionPanelView.findViewById(R.id.msc);
+//        this.closeFuncPanelButton = functionPanelView.findViewById(R.id.close_func_panel);
         this.size = size;
+        this.deviation = deviation;
         initGifDrawables();
         initPropList();
         initVoiceList();
-        initMscs();
-        initTouchReplyVoices();
+//        initMscs();
+//        initTouchReplyVoices();
         initSpeecList();
         initCallTexts();
         initWhRate();
+        initFuncPanelLayoutResId();
         initParams();
         initView();
         initBindEvent();
-        startMSC();
+//        startMSC();
     }
 
 
@@ -234,17 +247,21 @@ public class Pet extends Handler {
                 params.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
                 speechParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
                 functionPanelParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
+//                downContainerParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
             } else {
                 params.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
                 speechParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
                 functionPanelParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
+//                downContainerParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
             }
 
-            params.format = PixelFormat.RGBA_8888; // 设置图片
+
+            params.format = PixelFormat.RGBA_8888;
             speechParams.format = PixelFormat.RGBA_8888;
             functionPanelParams.format = PixelFormat.RGBA_8888;
+//            downContainerParams.format = PixelFormat.RGBA_8888;
 
-            // 格式，效果为背景透明
+
             params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
                     | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                     | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
@@ -253,6 +270,8 @@ public class Pet extends Handler {
                     | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
             functionPanelParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
                     | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+//            downContainerParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+//                    | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
             int petW = (int) (size.x * (currentSize / 100.0));
 
             params.width = whRate != 0 && whRate != 1 ? (int)(petW * whRate) : petW;
@@ -261,6 +280,9 @@ public class Pet extends Handler {
             pngDeviation = 0;
             params.x = 0;
             params.y = -size.y / 2 + petW / 2 + 20;
+//            downContainerParams.width = this.size.x;
+//            downContainerParams.width = this.size.y;
+
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -270,10 +292,12 @@ public class Pet extends Handler {
     private void initView() {
         speechBody.setTextSize(TypedValue.COMPLEX_UNIT_DIP, currentSize / 2);
         elfView.setVisibility(VISIBLE);
-        functionPanelView.setVisibility(View.GONE);
+//        functionPanelView.setVisibility(View.GONE);
+//        downContainerView.setVisibility(View.GONE);
         wm.addView(elfView, params);
         wm.addView(speechView, speechParams);
-        wm.addView(functionPanelView, functionPanelParams);
+        //wm.addView(functionPanelView, functionPanelParams);
+//        wm.addView(downContainerView, downContainerParams);
     }
 
     private void initBindEvent() {
@@ -285,6 +309,7 @@ public class Pet extends Handler {
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
+                        CURRENT_ACTION = MOVE;
                         replyFlag = 0;
                         downTime = System.currentTimeMillis();
                         removeAllMessages();
@@ -298,10 +323,6 @@ public class Pet extends Handler {
 
                         tempX = (int) (event.getRawX() < 0 ? 0 : event.getRawX() > size.x ? size.x : event.getRawX());
                         tempY = (int) (event.getRawY() < 0 ? 0 : event.getRawY() > size.y ? size.y : event.getRawY());
-                        Log.i("----tempX---", String.valueOf(tempX));
-                        Log.i("----size.x---", String.valueOf(size.x));
-                        Log.i("----tempY---", String.valueOf(tempY));
-                        Log.i("----size.y---", String.valueOf(size.y));
                         dx = tempX - lastX;
                         dy = tempY - lastY;
 
@@ -310,7 +331,7 @@ public class Pet extends Handler {
                         lastX = tempX;
                         lastY = tempY;
 
-                        if (dx != 0 && dy != 0) {
+                        if (dx != 0 || dy != 0) {
                             if (dx > 10 && dx < 20)
                                 elfBody.setImageDrawable(moveRightLightGifDrawable);
                             else if (dx >= 20 && dx < 32)
@@ -336,7 +357,6 @@ public class Pet extends Handler {
                         long moveX = (long) event.getRawX() - x0;
                         long moveY = (long) event.getRawY() - y0;
                         if (moveX == 0 && moveY == 0 && BEFORE_MODE != Pet.FLY && upTime - downTime <= 500) {
-                            Log.i("^^^^^BEFORE_MODE---" ,String.valueOf(BEFORE_MODE));
                             sendEmptyMessage(Pet.SPEECH_START);
                             return true;
                         } else if (moveX == 0 && moveY == 0 && BEFORE_MODE != Pet.FLY && upTime - downTime > 500 && upTime - downTime <= 850) {
@@ -360,59 +380,52 @@ public class Pet extends Handler {
                 return true;
             }
         });
-        closeFuncPanelButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                functionPanelView.setVisibility(View.GONE);
-                sendEmptyMessage(BEFORE_MODE);
-            }
-        });
-        functionPanelCallButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                sendEmptyMessage(CALL);
-                functionPanelView.setVisibility(View.GONE);
-                sendEmptyMessage(BEFORE_MODE);
-            }
-        });
-        functionPanelPropButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                sendEmptyMessage(PROP);
-                functionPanelView.setVisibility(View.GONE);
-                sendEmptyMessage(BEFORE_MODE);
-            }
-        });
-        functionPanelVoiceButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                sendEmptyMessage(VOICE);
-                functionPanelView.setVisibility(View.GONE);
-                sendEmptyMessage(BEFORE_MODE);
-            }
-        });
-        functionPanelMscButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (mscVew.getVisibility() != VISIBLE) {
-                    sendEmptyMessage(MSC);
-                    sendEmptyMessage(BEFORE_MODE);
-                }
-                functionPanelView.setVisibility(View.GONE);
-            }
-        });
+//        closeFuncPanelButton.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                functionPanelView.setVisibility(View.GONE);
+//                sendEmptyMessage(BEFORE_MODE);
+//            }
+//        });
+//        functionPanelCallButton.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                sendEmptyMessage(CALL);
+//                functionPanelView.setVisibility(View.GONE);
+//                sendEmptyMessage(BEFORE_MODE);
+//            }
+//        });
+//        functionPanelPropButton.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                sendEmptyMessage(PROP);
+//                functionPanelView.setVisibility(View.GONE);
+//                sendEmptyMessage(BEFORE_MODE);
+//            }
+//        });
+//        functionPanelVoiceButton.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                sendEmptyMessage(VOICE);
+//                functionPanelView.setVisibility(View.GONE);
+//                sendEmptyMessage(BEFORE_MODE);
+//            }
+//        });
+//        functionPanelMscButton.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                if (mscVew.getVisibility() != VISIBLE) {
+//                    sendEmptyMessage(MSC);
+//                    sendEmptyMessage(BEFORE_MODE);
+//                }
+//                functionPanelView.setVisibility(View.GONE);
+//            }
+//        });
     }
 
     private void startMSC() {
         if (mIat == null) {
-            mIat = SpeechRecognizer.createRecognizer(ctx, new InitListener() {
-                @Override
-                public void onInit(int i) {
-                    if (i != ErrorCode.SUCCESS) {
-                        Log.i("-----code----", String.valueOf(i));
-                    }
-                }
-            });
+            mIat = SpeechRecognizer.createRecognizer(ctx, null);
 
         }
         mIat.setParameter(SpeechConstant.CLOUD_GRAMMAR, null);
@@ -657,7 +670,6 @@ public class Pet extends Handler {
 
                 speechBody.setText(text);
                 speechParams.width = (int) (speechBody.getPaint().measureText(speechBody.getText().toString()) + 120);
-                Log.i("++++BEFORE_MODE---" ,String.valueOf(BEFORE_MODE));
                 switch (BEFORE_MODE) {
                     case TIMER_START:
                         speechParams.x = params.x;
@@ -688,7 +700,6 @@ public class Pet extends Handler {
                 sendEmptyMessageDelayed(SPEECH_STOP, 3000);
                 break;
             case SPEECH_STOP:
-                Log.i("---BEFORE_MODE---" ,String.valueOf(BEFORE_MODE));
                 sendEmptyMessage(BEFORE_MODE);
                 break;
             case SLEEP:
@@ -712,10 +723,10 @@ public class Pet extends Handler {
                 removeMessages(MSC);
                 mscFunction();
                 break;
-            case TOUCH_REPLY:
-                removeMessages(TOUCH_REPLY);
-                touchReply();
-                break;
+//            case TOUCH_REPLY:
+//                removeMessages(TOUCH_REPLY);
+//                touchReply();
+//                break;
             case FALL_TO_THE_GROUND:
                 removeAllMessages();
                 elfBody.setImageDrawable(direction.equals("left") ? fallToGroundLeftGifDrawable : fallToGroundRightGifDrawable);
@@ -727,7 +738,7 @@ public class Pet extends Handler {
                         else standRight();
                     }
                 }, 200);
-                sendEmptyMessageDelayed(TIMER_START, 1200);
+                sendEmptyMessageDelayed(TIMER_START, 3000);
                 break;
             case FLY:
                 if (BEFORE_MODE != FLY) BEFORE_MODE = FLY;
@@ -755,37 +766,59 @@ public class Pet extends Handler {
                 params.x = (int) (params.x + vX0 + (1 / 2) * fs);
                 vX0 = vX0 + fs;
                 vY0 = vY0 + g;
+                int flag = -1;
                 if (params.y + params.height / 2 + deviation > size.y / 2) {
                     params.y = size.y / 2 - params.height / 2 - deviation;
-                    sendEmptyMessage(FALL_TO_THE_GROUND);
-                    wm.updateViewLayout(elfView, params);
-                    return;
+                    Log.i("*********************", String.valueOf(deviation));
+                    flag = 0;
+//                    sendEmptyMessage(FALL_TO_THE_GROUND);
+//                    wm.updateViewLayout(elfView, params);
+//                    return;
                 } else if (params.y - params.height / 2 < -size.y / 2) {
                     params.y = -size.y / 2 + params.height / 2;
-                    sendEmptyMessage(TIMER_TOP_START);
-                    wm.updateViewLayout(elfView, params);
-                    return;
+                    if(flag == -1)flag = 1;
+//                    sendEmptyMessage(TIMER_TOP_START);
+//                    wm.updateViewLayout(elfView, params);
+//                    return;
                 }
 
                 if (params.x - params.width / 2 < -size.x / 2) {
                     params.x = -size.x / 2 + params.width / 2 - whDif / 2;
-                    sendEmptyMessage(TIMER_LEFT_START);
-                    wm.updateViewLayout(elfView, params);
-                    return;
+                    if(flag == -1)flag = 2;
+//                    sendEmptyMessage(TIMER_LEFT_START);
+//                    wm.updateViewLayout(elfView, params);
+//                    return;
                 } else if (params.x + params.width / 2> size.x / 2) {
                     params.x = size.x / 2 - params.width / 2 + whDif / 2;
-                    sendEmptyMessage(TIMER_RIGHT_START);
-                    wm.updateViewLayout(elfView, params);
-                    return;
+                    if(flag == -1)flag = 3;
+//                    sendEmptyMessage(TIMER_RIGHT_START);
+//                    wm.updateViewLayout(elfView, params);
+//                    return;
+                }
+                switch (flag){
+                    case 0:sendEmptyMessage(FALL_TO_THE_GROUND);
+                        break;
+                    case 1:sendEmptyMessage(TIMER_TOP_START);
+                        break;
+                    case 2:sendEmptyMessage(TIMER_LEFT_START);
+                        break;
+                    case 3:sendEmptyMessage(TIMER_RIGHT_START);
+                        break;
                 }
 
                 wm.updateViewLayout(elfView, params);
                 sendEmptyMessageDelayed(FLY, 50);
                 break;
+            case HIDDEN_CONTAINER:
+                removeMessages(HIDDEN_CONTAINER);
+                if(downContainerView.getVisibility() == VISIBLE)downContainerView.setVisibility(View.GONE);
+//                this.downContainerView.removeAllViews();
+                break;
         }
     }
 
     public void removeAllMessages() {
+        if(elfView.getVisibility() != VISIBLE)elfView.setVisibility(VISIBLE);
         removeMessages(TIMER_START);
         removeMessages(TIMER_LEFT_START);
         removeMessages(TIMER_RIGHT_START);
@@ -802,7 +835,7 @@ public class Pet extends Handler {
         removeMessages(LEFT_STAND);
         removeMessages(RIGHT_STAND);
         speechView.setVisibility(View.GONE);
-        functionPanelView.setVisibility(View.GONE);
+//        functionPanelView.setVisibility(View.GONE);
     }
 
     private void sleep() {
@@ -884,14 +917,29 @@ public class Pet extends Handler {
     }
 
     public void callFunction() {
-        int randomCount = new Random().nextInt(5) + 10;
+        if(this.downContainerView.getVisibility() != VISIBLE)this.downContainerView.setVisibility(VISIBLE);
+//        this.downContainerView.removeAllViews();
+        int randomCount = new Random().nextInt(15) + 30;
         int randomIndex;
         int i = 0;
+        CountDownLatch cdl = new CountDownLatch(randomCount);
         while (i < randomCount) {
             randomIndex = new Random().nextInt(this.callTexts.size());
-            new CallMsg(ctx, wm, size, this.callTexts.get(randomIndex)).run();
+            CallMsg cm = new CallMsg(ctx, wm, size, this.callTexts.get(randomIndex), cdl);
+            this.downContainerView.addView(cm.callView, cm.callParams);
             i++;
         }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    cdl.await(10, TimeUnit.SECONDS);
+                    sendEmptyMessage(HIDDEN_CONTAINER);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 
     public void propFunction() {
@@ -922,13 +970,13 @@ public class Pet extends Handler {
             public void onBeginOfSpeech() {
                 if (mIatResults == null) mIatResults = new LinkedHashMap<>();
                 mIatResults.clear();
-                mscVew.setVisibility(VISIBLE);
+                mscView.setVisibility(VISIBLE);
                 Log.i("---start----", "start speech");
             }
 
             @Override
             public void onEndOfSpeech() {
-                mscVew.setVisibility(View.GONE);
+                mscView.setVisibility(View.GONE);
                 Log.i("---stop----", "stop speech");
             }
 
@@ -979,11 +1027,11 @@ public class Pet extends Handler {
         });
     }
 
-    private void touchReply(){
-        if(this.touchReplyVoices == null || this.touchReplyVoices.isEmpty())return;
-        playVoice("touch_reply/" + this.touchReplyVoices.get(currentReplyVoice));
-        currentReplyVoice = currentReplyVoice + 1 >= touchReplyVoices.size() ? 0 : currentReplyVoice + 1;
-    }
+//    private void touchReply(){
+//        if(this.touchReplyVoices == null || this.touchReplyVoices.isEmpty())return;
+//        playVoice("touch_reply/" + this.touchReplyVoices.get(currentReplyVoice));
+//        currentReplyVoice = currentReplyVoice + 1 >= touchReplyVoices.size() ? 0 : currentReplyVoice + 1;
+//    }
 
     synchronized private void playVoice(String resId) {
         if (this.mp.get(1) != null) {
@@ -1016,8 +1064,48 @@ public class Pet extends Handler {
     }
 
     private void showFuncPanel() {
-        functionPanelParams.width = 400;
-        functionPanelParams.height = 400;
+        if(this.functionPanelView != null)return;
+        this.functionPanelView = LayoutInflater.from(ctx).inflate(funcPanelLayoutResId, null);
+        this.functionPanelCallButton = functionPanelView.findViewById(R.id.call);
+        this.functionPanelPropButton = functionPanelView.findViewById(R.id.prop);
+        this.functionPanelVoiceButton = functionPanelView.findViewById(R.id.voice);
+        this.closeFuncPanelButton = functionPanelView.findViewById(R.id.close_func_panel);
+
+        closeFuncPanelButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                hideFuncPanel();
+                sendEmptyMessage(BEFORE_MODE);
+            }
+        });
+        functionPanelCallButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sendEmptyMessage(CALL);
+                hideFuncPanel();
+                sendEmptyMessage(BEFORE_MODE);
+            }
+        });
+        functionPanelPropButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sendEmptyMessage(PROP);
+                hideFuncPanel();
+                sendEmptyMessage(BEFORE_MODE);
+            }
+        });
+        functionPanelVoiceButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sendEmptyMessage(VOICE);
+                hideFuncPanel();
+                sendEmptyMessage(BEFORE_MODE);
+            }
+        });
+
+
+        functionPanelParams.width = 600;
+        functionPanelParams.height = 600;
         switch (BEFORE_MODE) {
             case TIMER_START:
                 functionPanelParams.x = params.x;
@@ -1036,8 +1124,13 @@ public class Pet extends Handler {
                 functionPanelParams.y = params.y;
                 break;
         }
-        functionPanelView.setVisibility(VISIBLE);
-        wm.updateViewLayout(functionPanelView, functionPanelParams);
+        wm.addView(functionPanelView, functionPanelParams);
+        Log.i("^^^^^^^^^width^^^^", String.valueOf(functionPanelParams.width));
+        Log.i("^^^^^^^^^height^^^^", String.valueOf(functionPanelParams.height));
+        Log.i("^^^^^^^^^x^^^^", String.valueOf(functionPanelParams.x));
+        Log.i("^^^^^^^^^y^^^^", String.valueOf(functionPanelParams.y));
+//        functionPanelView.setVisibility(VISIBLE);
+//        wm.updateViewLayout(functionPanelView, functionPanelParams);
     }
 
     private void initGifDrawables() {
@@ -1141,18 +1234,18 @@ public class Pet extends Handler {
 
     }
 
-    private void initMscs() {
-        int resId = ctx.getResources().getIdentifier(name + "_mscs", "array", ctx.getPackageName());
-        if (mscs == null) mscs = new LinkedHashMap<>();
-        if (resId != 0) {
-            String[] voiceAndMsc;
-            String[] mscStrs = ctx.getResources().getStringArray(resId);
-            for (String mscStr : mscStrs) {
-                voiceAndMsc = mscStr.trim().split(":");
-                mscs.put(voiceAndMsc[0], voiceAndMsc[1]);
-            }
-        }
-    }
+//    private void initMscs() {
+//        int resId = ctx.getResources().getIdentifier(name + "_mscs", "array", ctx.getPackageName());
+//        if (mscs == null) mscs = new LinkedHashMap<>();
+//        if (resId != 0) {
+//            String[] voiceAndMsc;
+//            String[] mscStrs = ctx.getResources().getStringArray(resId);
+//            for (String mscStr : mscStrs) {
+//                voiceAndMsc = mscStr.trim().split(":");
+//                mscs.put(voiceAndMsc[0], voiceAndMsc[1]);
+//            }
+//        }
+//    }
 
     private void initWhRate(){
         int resId = ctx.getResources().getIdentifier(name + "_wh_rate", "string", ctx.getPackageName());
@@ -1161,14 +1254,32 @@ public class Pet extends Handler {
         }
     }
 
-    private void initTouchReplyVoices(){
-        int resId = ctx.getResources().getIdentifier(name + "_touch_reply_voices", "array", ctx.getPackageName());
+    private void initFuncPanelLayoutResId(){
+        int resId = ctx.getResources().getIdentifier(name + "_func_panel_layout", "string", ctx.getPackageName());
         if(resId != 0){
-            String[] replyVoiceStrs = ctx.getResources().getStringArray(resId);
-            this.touchReplyVoices = new LinkedList<>(Arrays.asList(replyVoiceStrs));
+            this.funcPanelLayoutResId = ctx.getResources().getIdentifier(ctx.getResources().getString(resId), "layout", ctx.getPackageName());
+        }else{
+            this.funcPanelLayoutResId = R.layout.function_panel;
         }
-
     }
+
+//    private void initTouchReplyVoices(){
+//        int resId = ctx.getResources().getIdentifier(name + "_touch_reply_voices", "array", ctx.getPackageName());
+//        if(resId != 0){
+//            String[] replyVoiceStrs = ctx.getResources().getStringArray(resId);
+//            this.touchReplyVoices = new LinkedList<>(Arrays.asList(replyVoiceStrs));
+//        }
+//
+//    }
+
+    private void hideFuncPanel(){
+        if(this.functionPanelView != null){
+            wm.removeView(this.functionPanelView);
+            this.functionPanelView = null;
+        }
+    }
+
+
 
     private String printResult(RecognizerResult results) {
         String text = com.fl.phone_pet.util.JsonParser.parseIatResult(results.getResultString());

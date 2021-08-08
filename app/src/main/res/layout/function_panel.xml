@@ -1,61 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="200dp"
     android:layout_height="200dp"
     android:layout_gravity="center"
     android:orientation="vertical">
 
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
+    <ImageView
         android:id="@+id/call"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:clickable="true"
+		android:layout_gravity="top|center"
         android:theme="@style/Theme.AppCompat"
-        app:backgroundTint="#F3CAD8"
-        app:rippleColor="#EFACC3"
         app:srcCompat="?attr/selectableItemBackgroundBorderless" />
 
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
+    <ImageView
         android:id="@+id/close_func_panel"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:layout_gravity="center"
-        android:background="#B0D8EA"
         android:clickable="true"
-        android:foreground="@android:drawable/ic_menu_close_clear_cancel"
-        android:foregroundGravity="center"
-        android:foregroundTint="#FFFFFF"
-        android:foregroundTintMode="src_in"
         android:theme="@style/Theme.AppCompat"
-        app:backgroundTint="#8BD1F1"
         app:srcCompat="?attr/selectableItemBackgroundBorderless" />
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
+    <ImageView
         android:id="@+id/prop"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="right"
+        android:layout_gravity="bottom|left"
         android:clickable="true"
         android:theme="@style/Theme.AppCompat"
-        app:backgroundTint="#F8DA7F"
-        app:rippleColor="#EFACC3"
         app:srcCompat="?attr/selectableItemBackgroundBorderless" />
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
+    <ImageView
         android:id="@+id/voice"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
+        android:layout_gravity="bottom|right"
         android:clickable="true"
         android:theme="@style/Theme.AppCompat"
-        app:backgroundTint="#6DC3BA"
-        app:rippleColor="#EFACC3"
         app:srcCompat="?attr/selectableItemBackgroundBorderless" />
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
+    <!--<com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/msc"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -64,7 +54,8 @@
         android:theme="@style/Theme.AppCompat"
         app:backgroundTint="#E19178"
         app:rippleColor="#EFACC3"
-        app:srcCompat="?attr/selectableItemBackgroundBorderless" />
+        app:srcCompat="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="与吾语"/>-->
 
 
 </FrameLayout>
