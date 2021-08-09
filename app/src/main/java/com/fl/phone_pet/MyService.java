@@ -129,12 +129,7 @@ public class MyService extends Service {
                 wm.removeView(downContainerView);
             }
 
-            if(collisionHandler.hugViews != null && collisionHandler.hugViews.size() > 0){
-                collisionHandler.removeMessages(CollisionHandler.END_HUG);
-                int hugViewsCount = collisionHandler.hugViews.size();
-                for(int f = 0; f < hugViewsCount; f++)wm.removeView(collisionHandler.hugViews.get(f));
-                collisionHandler.hugViews.clear();
-            }
+            collisionHandler.destoryRes();
 
 //            wm.removeView(mscView);
             wm = null;
@@ -195,12 +190,7 @@ public class MyService extends Service {
             if(downContainerView != null && downContainerView.getVisibility() == View.VISIBLE){
                 for (CountDownLatch cdl : this.downList)cdl.notifyAll();
             }
-            if(collisionHandler.hugViews != null && collisionHandler.hugViews.size() > 0){
-                collisionHandler.removeMessages(CollisionHandler.END_HUG);
-                int hugViewsCount = collisionHandler.hugViews.size();
-                for(int f = 0; f < hugViewsCount; f++)wm.removeView(collisionHandler.hugViews.get(f));
-                collisionHandler.hugViews.clear();
-            }
+            collisionHandler.destoryRes();
             goPets();
 
         }
@@ -339,12 +329,7 @@ public class MyService extends Service {
     private void updateSize(){
         int petW = (int) (size.x * (currentSize / 100.0));
         Iterator<Map.Entry<String, List<Pet>>> it = groupPets.entrySet().iterator();
-        if(collisionHandler.hugViews != null && collisionHandler.hugViews.size() > 0){
-            collisionHandler.removeMessages(CollisionHandler.END_HUG);
-            int hugViewsCount = collisionHandler.hugViews.size();
-            for (int k = 0; k < hugViewsCount; k++)wm.removeView(collisionHandler.hugViews.get(k));
-            collisionHandler.hugViews.clear();
-        }
+        collisionHandler.destoryRes();
 
         if(downContainerView != null && downContainerView.getVisibility() == View.VISIBLE){
             for (CountDownLatch cdl : this.downList)cdl.notifyAll();

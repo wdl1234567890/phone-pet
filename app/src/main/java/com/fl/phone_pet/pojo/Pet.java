@@ -927,7 +927,7 @@ public class Pet extends Handler {
 
         if(this.downContainerView.getVisibility() != VISIBLE)this.downContainerView.setVisibility(VISIBLE);
 //        this.downContainerView.removeAllViews();
-        int randomCount = new Random().nextInt(15) + 30;
+        int randomCount = new Random().nextInt(50) + 180;
         int randomIndex;
         int i = 0;
         CountDownLatch cdl = new CountDownLatch(randomCount);
@@ -955,7 +955,7 @@ public class Pet extends Handler {
     public void propFunction() {
 
         if(this.downContainerView.getVisibility() != VISIBLE)this.downContainerView.setVisibility(VISIBLE);
-        int randomCount = new Random().nextInt(15) + 30;
+        int randomCount = new Random().nextInt(50) + 180;
         int randomIndex;
         int i = 0;
         CountDownLatch cdl = new CountDownLatch(randomCount);
@@ -1153,10 +1153,6 @@ public class Pet extends Handler {
                 break;
         }
         wm.addView(functionPanelView, functionPanelParams);
-        Log.i("^^^^^^^^^width^^^^", String.valueOf(functionPanelParams.width));
-        Log.i("^^^^^^^^^height^^^^", String.valueOf(functionPanelParams.height));
-        Log.i("^^^^^^^^^x^^^^", String.valueOf(functionPanelParams.x));
-        Log.i("^^^^^^^^^y^^^^", String.valueOf(functionPanelParams.y));
 //        functionPanelView.setVisibility(VISIBLE);
 //        wm.updateViewLayout(functionPanelView, functionPanelParams);
     }

@@ -11,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 
 import androidx.annotation.NonNull;
 
@@ -20,11 +21,15 @@ import com.fl.phone_pet.pojo.AiXin;
 import com.fl.phone_pet.pojo.Pet;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import pl.droidsonroids.gif.GifDrawable;
 
@@ -35,12 +40,15 @@ public class CollisionHandler extends Handler {
     Context ctx;
     Point size;
     WindowManager wm;
-    public List<View> hugViews;
+    public CopyOnWriteArrayList<View> hugViews;
+    private CopyOnWriteArrayList<CountDownLatch> cdls;
+
     final int deviation = 60;
     int pngDeviation;
 
     public static final int COLLISION = 40001;
     public static final int END_HUG = 40002;
+    public static final int REMOVE_AIXIN_VIEW = 40003;
 //
     public CollisionHandler(Context ctx, Map<String, List<Pet>> groupPets, WindowManager wm, Point size){
         this.ctx = ctx;
@@ -62,11 +70,32 @@ public class CollisionHandler extends Handler {
         }
     }
 
-    private void run(int centralPoint, int status, int objSize){
+    private void run(int status, int objSize, Map<String, Object> datas){
+        RelativeLayout aiXinContainerView = (RelativeLayout)datas.get("view");
+        WindowManager.LayoutParams params = (WindowManager.LayoutParams)datas.get("params");
         int count = new Random().nextInt(10) + 10;
+        CountDownLatch cdl = new CountDownLatch(count);
+        if(cdls == null)cdls = new CopyOnWriteArrayList<>();
+        cdls.add(cdl);
         for(int i = 0; i < count; i++){
-            new AiXin(ctx, wm, size, this.resIds.get(new Random().nextInt(this.resIds.size())), centralPoint, objSize, status).run();
+            AiXin aixim = new AiXin(ctx, this.resIds.get(new Random().nextInt(this.resIds.size())), status, objSize, params, cdl);
+            aiXinContainerView.addView(aixim.aiXinView, aixim.aiXinParams);
         }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    cdl.await(10, TimeUnit.SECONDS);
+                    cdls.remove(cdl);
+                    Message msg = new Message();
+                    msg.what = REMOVE_AIXIN_VIEW;
+                    msg.obj = aiXinContainerView;
+                    sendMessage(msg);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 
     @Override
@@ -119,7 +148,7 @@ public class CollisionHandler extends Handler {
                                 shouHug((pet.params.x + pet1.params.x)/2, this.size.y/2 - pet.params.height/2 - MyService.deviation, flag, pet.params.height);
                                 //run((pet.params.x + pet1.params.x)/2 , AiXin.BOTTOM_STATUS, pet.params.width);
                             }else if(pet.BEFORE_MODE == Pet.TIMER_TOP_START){
-                                run((pet.params.x + pet1.params.x)/2 , AiXin.TOP_STATUS, pet.params.width);
+                                run(AiXin.TOP_STATUS, pet.params.height, createAiXinContainer(Math.abs(pet.params.x - pet1.params.x), pet.params.height*3, (pet.params.x + pet1.params.x)/2, -size.y/2 + pet.params.height + (pet.params.height*3)/2));
                             }
                             pet.sendEmptyMessageDelayed(pet.BEFORE_MODE, 3800);
                             pet1.sendEmptyMessageDelayed(pet1.BEFORE_MODE, 3800);
@@ -137,9 +166,9 @@ public class CollisionHandler extends Handler {
                             pet.CURRENT_ACTION = Pet.COLLISION;
                             pet1.CURRENT_ACTION = Pet.COLLISION;
                             if(pet.BEFORE_MODE == Pet.TIMER_LEFT_START){
-                                run((pet.params.y + pet1.params.y)/2 , AiXin.LEFT_STATUS, pet.params.width);
+                                run(AiXin.LEFT_STATUS, pet.params.width, createAiXinContainer(pet.params.width*3, Math.abs(pet.params.y - pet1.params.y), -size.x/2 + pet.params.width + (pet.params.width*3)/2, (pet.params.y + pet1.params.y)/2));
                             }else if(pet.BEFORE_MODE == Pet.TIMER_RIGHT_START){
-                                run((pet.params.y + pet1.params.y)/2 , AiXin.RIGHT_STATUS, pet.params.width);
+                                run(AiXin.RIGHT_STATUS, pet.params.width, createAiXinContainer(pet.params.width*3, Math.abs(pet.params.y - pet1.params.y), size.x/2 - pet.params.width - (pet.params.width*3)/2, (pet.params.y + pet1.params.y)/2));
                             }
                             pet.sendEmptyMessageDelayed(pet.BEFORE_MODE, 3000);
                             pet1.sendEmptyMessageDelayed(pet1.BEFORE_MODE, 3000);
@@ -153,6 +182,10 @@ public class CollisionHandler extends Handler {
                 View hugView = (View)msg.obj;
                 hugViews.remove(hugView);
                 if(wm != null)wm.removeView(hugView);
+                break;
+            case REMOVE_AIXIN_VIEW:
+                removeMessages(REMOVE_AIXIN_VIEW);
+                if(wm != null)wm.removeView((View) msg.obj);
                 break;
         }
 
@@ -189,7 +222,7 @@ public class CollisionHandler extends Handler {
             hugParam.width = (int)(height *  1.084);
             hugParam.x = x;
             hugParam.y = y;
-            if(hugViews == null)hugViews = new ArrayList<>();
+            if(hugViews == null)hugViews = new CopyOnWriteArrayList<>();
             hugViews.add(hugView);
             wm.addView(hugView, hugParam);
             Message msg = new Message();
@@ -198,6 +231,44 @@ public class CollisionHandler extends Handler {
             sendMessageDelayed(msg, 3800);
         }catch (Exception e){
             e.printStackTrace();
+        }
+    }
+
+    private Map<String, Object> createAiXinContainer(int width, int height, int x, int y){
+        WindowManager.LayoutParams aiXinContainerParams = new WindowManager.LayoutParams();
+        RelativeLayout aiXinContainerView = (RelativeLayout)LayoutInflater.from(ctx).inflate(R.layout.container, null);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {//6.0
+            aiXinContainerParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
+        } else {
+            aiXinContainerParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
+        }
+        aiXinContainerParams.format = PixelFormat.RGBA_8888;
+        aiXinContainerParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+                | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+        aiXinContainerParams.width = width;
+        aiXinContainerParams.height = height;
+        aiXinContainerParams.x = x;
+        aiXinContainerParams.y = y;
+        wm.addView(aiXinContainerView, aiXinContainerParams);
+        Map<String, Object> datas = new HashMap<>();
+        datas.put("view", aiXinContainerView);
+        datas.put("params", aiXinContainerParams);
+        return datas;
+    }
+
+    public void destoryRes(){
+        if(cdls != null && cdls.size() > 0){
+            for (CountDownLatch cdl : cdls) {
+                cdl.notifyAll();
+            }
+            cdls.clear();
+        }
+
+        if(hugViews != null && hugViews.size() > 0){
+            removeMessages(END_HUG);
+            int hugViewsCount = hugViews.size();
+            for (int k = 0; k < hugViewsCount; k++)wm.removeView(hugViews.get(k));
+            hugViews.clear();
         }
     }
 //

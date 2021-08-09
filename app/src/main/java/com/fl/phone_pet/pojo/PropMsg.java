@@ -53,19 +53,19 @@ public class PropMsg{
         this.propParams = new RelativeLayout.LayoutParams(randomSize, randomSize);
         int randomRotation = (int) (Math.random() * 110 - 90);
         propView.setRotation(randomRotation);
-        int randomX = (int) (Math.random() * this.size.x);
+        int randomX = (int) (Math.random() * (this.size.x - randomSize));
         int randomY = (int) (Math.random() * 70);
         propView.setX(randomX);
         propView.setY(randomY);
         propView.setAlpha(1);
-        float downY = -randomY + this.size.y - propParams.height/2;
+        float downY = -randomY + this.size.y - propParams.height;
         ObjectAnimator downAnimator = ObjectAnimator.ofFloat(this.propView, "translationY", 0, downY);
         ObjectAnimator hideAnimator = ObjectAnimator.ofFloat(this.propView, "alpha", 1, 0);
         downAnimator.setDuration(3000);
         hideAnimator.setDuration(1300);
         AnimatorSet animatorSet = new AnimatorSet();
         animatorSet.play(hideAnimator).after(downAnimator);
-        animatorSet.setStartDelay(new Random().nextInt(500) * 2);
+        animatorSet.setStartDelay(new Random().nextInt(1200) * 2);
         animatorSet.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {

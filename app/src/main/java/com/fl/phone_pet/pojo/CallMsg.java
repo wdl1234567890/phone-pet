@@ -39,13 +39,14 @@ public class CallMsg{
     private void initParams(){
         int randomSize = new Random().nextInt(30) + 4;
         callText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, randomSize);
-        this.callParams = new RelativeLayout.LayoutParams((int) (callText.getPaint().measureText(callText.getText().toString())), randomSize * 2 * 5);
-        int randomX = (int) (Math.random() * this.size.x);
+        int textWidth = (int) (callText.getPaint().measureText(callText.getText().toString()));
+        this.callParams = new RelativeLayout.LayoutParams(textWidth, randomSize * 10);
+        int randomX = (int) (Math.random() * (this.size.x - textWidth));
         int randomY = (int) (Math.random() * 70);
         callView.setAlpha(1);
         this.callView.setX(randomX);
         this.callView.setY(randomY);
-        float downY = -randomY + this.size.y - callParams.height/2;
+        float downY = -randomY + this.size.y - callParams.height;
 
 //        ValueAnimator downAnimator = ValueAnimator.ofFloat(0f, downY);
 //        downAnimator.setDuration(3000);
@@ -78,7 +79,7 @@ public class CallMsg{
         hideAnimator.setDuration(1300);
         AnimatorSet animatorSet = new AnimatorSet();
         animatorSet.play(hideAnimator).after(downAnimator);
-        animatorSet.setStartDelay(new Random().nextInt(500) * 2);
+        animatorSet.setStartDelay(new Random().nextInt(1200) * 2);
         animatorSet.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
