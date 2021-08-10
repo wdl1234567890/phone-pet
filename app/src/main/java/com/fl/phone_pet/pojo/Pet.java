@@ -3,6 +3,7 @@ package com.fl.phone_pet.pojo;
 import android.content.Context;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
+import android.graphics.drawable.AnimationDrawable;
 import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
@@ -146,6 +147,7 @@ public class Pet extends Handler {
     GifDrawable flyLeftGifDrawable;
     GifDrawable flyRightGifDrawable;
     GifDrawable climbLeftUpGifDrawable;
+    //AnimationDrawable climbLeftDownGifDrawable;
     GifDrawable climbLeftDownGifDrawable;
     GifDrawable climbLeftStandGifDrawable;
     GifDrawable climbRightUpGifDrawable;
@@ -189,7 +191,7 @@ public class Pet extends Handler {
     public int pngDeviation = -1;
     public double whRate;
     public int whDif;
-    int distance = 10;
+    int distance = 50;
 
     public static final float g = 9.8f;
     public static float fs = 2f;
@@ -578,20 +580,27 @@ public class Pet extends Handler {
             case RUN_LEFT:
                 if (CURRENT_ACTION != RUN_LEFT) CURRENT_ACTION = RUN_LEFT;
                 removeMessages(RUN_LEFT);
-                params.x = params.x - distance;
-                wm.updateViewLayout(elfView, params);
-                if (BEFORE_MODE == TIMER_TOP_START && params.x - params.width / 2  + whDif / 2< (-size.x / 2)) {
+
+                if(params.x - params.width / 2  + whDif / 2< (-size.x / 2)){
                     removeAllMessages();
-                    if (BEFORE_MODE != TIMER_LEFT_START) BEFORE_MODE = TIMER_LEFT_START;
-                    climbToDown();
-                    sendEmptyMessageDelayed(TIMER_LEFT_START, 6000 + (int) Math.random() * 6000);
-                } else if(BEFORE_MODE == TIMER_START && params.x - params.width / 2  + whDif / 2 + pngDeviation< (-size.x / 2)){
-                    removeAllMessages();
-                    if (BEFORE_MODE != TIMER_LEFT_START) BEFORE_MODE = TIMER_LEFT_START;
-                    climbToUp();
-                    sendEmptyMessage(CLIMB_UP);
-                    sendEmptyMessageDelayed(TIMER_LEFT_START, 6000 + (int) Math.random() * 6000);
-                } else {
+
+                    if(params.x != -size.x / 2 + params.width / 2 - whDif / 2){
+                        params.x = -size.x / 2 + params.width / 2 - whDif / 2;
+                        wm.updateViewLayout(elfView, params);
+                    }
+
+                    if(BEFORE_MODE == TIMER_TOP_START){
+                        if (BEFORE_MODE != TIMER_LEFT_START) BEFORE_MODE = TIMER_LEFT_START;
+                        climbToDown();
+                        sendEmptyMessageDelayed(TIMER_LEFT_START, 6000 + (int) Math.random() * 6000);
+                    }else {
+                        if (BEFORE_MODE != TIMER_LEFT_START) BEFORE_MODE = TIMER_LEFT_START;
+                        climbToUp();
+                        sendEmptyMessageDelayed(TIMER_LEFT_START, 6000 + (int) Math.random() * 6000);
+                    }
+                }else {
+                    params.x = params.x - distance;
+                    wm.updateViewLayout(elfView, params);
                     if (BEFORE_MODE == TIMER_TOP_START) sendEmptyMessageDelayed(RUN_LEFT, 100 * (20/speed));
                     else sendEmptyMessageDelayed(RUN_LEFT, 60 * (20/speed));
                 }
@@ -599,19 +608,27 @@ public class Pet extends Handler {
             case RUN_RIGHT:
                 if (CURRENT_ACTION != RUN_RIGHT) CURRENT_ACTION = RUN_RIGHT;
                 removeMessages(RUN_RIGHT);
-                params.x = params.x + distance;
-                wm.updateViewLayout(elfView, params);
-                if (BEFORE_MODE == TIMER_TOP_START && params.x + params.width / 2 - whDif / 2 > (size.x / 2)) {
+
+                if(params.x + params.width / 2 - whDif / 2 > (size.x / 2)){
                     removeAllMessages();
-                    if (BEFORE_MODE != TIMER_RIGHT_START) BEFORE_MODE = TIMER_RIGHT_START;
-                    climbToDown();
-                    sendEmptyMessageDelayed(TIMER_RIGHT_START, 6000 + (int) Math.random() * 6000);
-                }else if(BEFORE_MODE == TIMER_START && params.x + params.width / 2 - whDif / 2 - pngDeviation > (size.x / 2)){
-                    removeAllMessages();
-                    if (BEFORE_MODE != TIMER_RIGHT_START) BEFORE_MODE = TIMER_RIGHT_START;
-                    climbToUp();
-                    sendEmptyMessageDelayed(TIMER_RIGHT_START, 6000 + (int) Math.random() * 6000);
-                } else {
+
+                    if(params.x != size.x / 2 - params.width / 2 + whDif / 2){
+                        params.x = size.x / 2 - params.width / 2 + whDif / 2;
+                        wm.updateViewLayout(elfView, params);
+                    }
+
+                    if (BEFORE_MODE == TIMER_TOP_START){
+                        if (BEFORE_MODE != TIMER_RIGHT_START) BEFORE_MODE = TIMER_RIGHT_START;
+                        climbToDown();
+                        sendEmptyMessageDelayed(TIMER_RIGHT_START, 6000 + (int) Math.random() * 6000);
+                    }else{
+                        if (BEFORE_MODE != TIMER_RIGHT_START) BEFORE_MODE = TIMER_RIGHT_START;
+                        climbToUp();
+                        sendEmptyMessageDelayed(TIMER_RIGHT_START, 6000 + (int) Math.random() * 6000);
+                    }
+                }else {
+                    params.x = params.x + distance;
+                    wm.updateViewLayout(elfView, params);
                     if (BEFORE_MODE == TIMER_TOP_START) sendEmptyMessageDelayed(RUN_RIGHT, 100 * (20/speed));
                     else sendEmptyMessageDelayed(RUN_RIGHT, 60 * (20/speed));
                 }
@@ -620,43 +637,54 @@ public class Pet extends Handler {
             case CLIMB_UP:
                 if (CURRENT_ACTION != CLIMB_UP) CURRENT_ACTION = CLIMB_UP;
                 removeMessages(CLIMB_UP);
-                params.y = params.y - distance;
-                wm.updateViewLayout(elfView, params);
                 if (params.y - params.height / 2 < -size.y / 2) {
+                    removeAllMessages();
+                    if(params.y != -size.y / 2 + params.height / 2){
+                        params.y = -size.y / 2 + params.height / 2;
+                        wm.updateViewLayout(elfView, params);
+                    }
+
                     if (BEFORE_MODE == TIMER_LEFT_START) {
-                        removeAllMessages();
                         if (BEFORE_MODE != TIMER_TOP_START) BEFORE_MODE = TIMER_TOP_START;
                         walkToRight();
                         sendEmptyMessageDelayed(TIMER_TOP_START, 6000 + (int) Math.random() * 6000);
                     } else {
-                        removeAllMessages();
                         if (BEFORE_MODE != TIMER_TOP_START) BEFORE_MODE = TIMER_TOP_START;
                         walkToLeft();
                         sendEmptyMessageDelayed(TIMER_TOP_START, 6000 + (int) Math.random() * 6000);
                     }
                 } else {
+                    params.y = params.y - distance;
+                    wm.updateViewLayout(elfView, params);
                     sendEmptyMessageDelayed(CLIMB_UP, 100 * (20/speed));
                 }
                 break;
             case CLIMB_DOWN:
                 if (CURRENT_ACTION != CLIMB_DOWN) CURRENT_ACTION = CLIMB_DOWN;
                 removeMessages(CLIMB_DOWN);
-                params.y = params.y + distance;
-                wm.updateViewLayout(elfView, params);
                 if (params.y + params.height / 2 + MyService.deviation > size.y / 2) {
+                    removeAllMessages();
+                    if(params.y != size.y / 2 - params.height / 2 - MyService.deviation){
+                        params.y = size.y / 2 - params.height / 2 - MyService.deviation;
+                        wm.updateViewLayout(elfView, params);
+                    }
+
                     if (BEFORE_MODE == TIMER_LEFT_START) {
-                        removeAllMessages();
                         if (BEFORE_MODE != TIMER_START) BEFORE_MODE = TIMER_START;
                         walkToRight();
                         sendEmptyMessageDelayed(TIMER_START, 6000 + (int) Math.random() * 6000);
                     } else {
-                        removeAllMessages();
                         if (BEFORE_MODE != TIMER_START) BEFORE_MODE = TIMER_START;
                         walkToLeft();
                         sendEmptyMessageDelayed(TIMER_START, 6000 + (int) Math.random() * 6000);
                     }
                 } else {
-                    sendEmptyMessageDelayed(CLIMB_DOWN, 100 * (20/speed));
+                    elfBody.setImageResource(R.drawable.ax_climb_down);
+                    AnimationDrawable ani = (AnimationDrawable)(elfBody.getDrawable());
+                    ani.start();
+                    params.y = params.y + distance;
+                    wm.updateViewLayout(elfView, params);
+                    sendEmptyMessageDelayed(CLIMB_DOWN, 40 * (20/speed));
                 }
                 break;
             case SPEECH_START:
@@ -861,7 +889,6 @@ public class Pet extends Handler {
     private void walkToLeft() {
         removeAllMessages();
         direction = "left";
-
         elfBody.setImageDrawable(BEFORE_MODE == TIMER_TOP_START ? climbTopLeftGifDrawable :
                 runAnimations.get("left").get(new Random().nextInt(runSize)));
         sendEmptyMessage(RUN_LEFT);
@@ -889,21 +916,22 @@ public class Pet extends Handler {
     }
 
     private void climbToUp() {
-        removeAllMessages();
-        elfBody.setImageDrawable(direction.equals("left") ? climbLeftUpGifDrawable : climbRightUpGifDrawable);
+//        removeAllMessages();
+        elfBody.setImageDrawable(BEFORE_MODE == TIMER_LEFT_START ? climbLeftUpGifDrawable :
+                climbRightUpGifDrawable);
         sendEmptyMessage(CLIMB_UP);
 
     }
 
     private void climbToDown() {
-        removeAllMessages();
-        elfBody.setImageDrawable(direction.equals("left") ? climbLeftDownGifDrawable : climbRightDownGifDrawable);
+//        removeAllMessages();
+        //elfBody.setImageDrawable(direction.equals("left") ? climbLeftDownGifDrawable : climbRightDownGifDrawable);
         sendEmptyMessage(CLIMB_DOWN);
     }
 
     private void climbStand() {
         if (CURRENT_ACTION != CLIMB_STAND) CURRENT_ACTION = CLIMB_STAND;
-        elfBody.setImageDrawable(direction.equals("left") ? climbLeftStandGifDrawable : climbRightStandGifDrawable);
+        elfBody.setImageDrawable(BEFORE_MODE == TIMER_LEFT_START ? climbLeftStandGifDrawable : climbRightStandGifDrawable);
     }
 
     public void go() {
@@ -1167,7 +1195,6 @@ public class Pet extends Handler {
             this.moveRightMiddleGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + MOVE_RIGHT_MIDDLE + imageExt);
             this.moveLeftWeightGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + MOVE_LEFT_WEIGHT + imageExt);
             this.moveRightWeightGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + MOVE_RIGHT_WEIGHT + imageExt);
-
             this.climbLeftUpGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_LEFT_UP + level + imageExt);
             this.climbLeftDownGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_LEFT_DOWN + level + imageExt);
             this.climbLeftStandGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_LEFT_STAND + imageExt);
@@ -1346,6 +1373,7 @@ public class Pet extends Handler {
         String level = runLevels[this.speed / 7];
         try {
             this.climbLeftUpGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_LEFT_UP + level + imageExt);
+            //this.climbLeftDownGifDrawable = new AnimationDrawable();
             this.climbLeftDownGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_LEFT_DOWN + level + imageExt);
             this.climbRightUpGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_RIGHT_UP + level + imageExt);
             this.climbRightDownGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_RIGHT_DOWN + level + imageExt);

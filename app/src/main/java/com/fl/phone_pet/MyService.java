@@ -276,11 +276,11 @@ public class MyService extends Service {
         Pet axPet = new Pet(this, AX, wm, currentSize, speed, size, mp, mscView, this.downContainerView, this.downList);
         groupPets.put(AX, new LinkedList<>(Arrays.asList(axPet)));
 
-        Pet lwPet = new Pet(this, LW, wm, currentSize, speed, size, mp, mscView, this.downContainerView, this.downList);
-        groupPets.put(LW, new LinkedList<>(Arrays.asList(lwPet)));
-
-        Pet wzPet = new Pet(this, WZ, wm, currentSize, speed, size, mp, mscView, this.downContainerView, this.downList);
-        groupPets.put(WZ, new LinkedList<>(Arrays.asList(wzPet)));
+//        Pet lwPet = new Pet(this, LW, wm, currentSize, speed, size, mp, mscView, this.downContainerView, this.downList);
+//        groupPets.put(LW, new LinkedList<>(Arrays.asList(lwPet)));
+//
+//        Pet wzPet = new Pet(this, WZ, wm, currentSize, speed, size, mp, mscView, this.downContainerView, this.downList);
+//        groupPets.put(WZ, new LinkedList<>(Arrays.asList(wzPet)));
 
     }
 

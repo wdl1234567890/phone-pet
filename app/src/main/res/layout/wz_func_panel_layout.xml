@@ -17,17 +17,16 @@
         android:animateLayoutChanges="true"
         android:layout_centerInParent="true"
         android:orientation="horizontal"
-        android:layoutAnimation="@anim/wz_func_panel_layout_anim"
         ><!--android:layoutAnimation="@anim/wz_func_panel_layout_anim"-->
 
         <ImageView
             android:id="@+id/call"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:scaleType="centerCrop"
-            android:translationX="50dp"
-            android:translationY="200dp"
             android:src="@drawable/wz_junzhiming"
+            android:translationX="20dp"
+            android:translationY="20dp"
             tools:ignore="SpeakableTextPresentCheck" />
 
         <ImageView
@@ -35,29 +34,29 @@
             android:layout_width="61dp"
             android:layout_height="61dp"
             android:scaleType="centerCrop"
-            android:translationX="80dp"
-            android:translationY="300dp"
             android:src="@drawable/wz_wuzhiwu"
+            android:translationX="30dp"
+            android:translationY="30dp"
             tools:ignore="SpeakableTextPresentCheck" />
 
         <ImageView
             android:id="@+id/voice"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:scaleType="centerCrop"
-            android:translationX="100dp"
-            android:translationY="250dp"
             android:src="@drawable/wz_tingwuyan"
+            android:translationX="40dp"
+            android:translationY="40dp"
             tools:ignore="SpeakableTextPresentCheck" />
 
         <ImageView
             android:id="@+id/close_func_panel"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:scaleType="centerCrop"
-            android:translationX="-40dp"
-            android:translationY="400dp"
             android:src="@drawable/wz_gaoci"
+            android:translationX="50dp"
+            android:translationY="70dp"
             tools:ignore="SpeakableTextPresentCheck" />
     </LinearLayout>
 
