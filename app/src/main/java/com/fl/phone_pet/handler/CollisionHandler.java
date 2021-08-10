@@ -1,13 +1,17 @@
 package com.fl.phone_pet.handler;
 
+import static android.view.View.VISIBLE;
+
 import android.content.Context;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
+import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
@@ -19,6 +23,7 @@ import com.fl.phone_pet.MyService;
 import com.fl.phone_pet.R;
 import com.fl.phone_pet.pojo.AiXin;
 import com.fl.phone_pet.pojo.Pet;
+import com.fl.phone_pet.pojo.PropMsg;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,7 +46,10 @@ public class CollisionHandler extends Handler {
     Point size;
     WindowManager wm;
     public CopyOnWriteArrayList<View> hugViews;
-    private CopyOnWriteArrayList<CountDownLatch> cdls;
+//    private CopyOnWriteArrayList<CountDownLatch> cdls;
+    Map<Integer, MediaPlayer> mp;
+    RelativeLayout downContainerView;
+    CopyOnWriteArrayList downList;
 
     final int deviation = 60;
     int pngDeviation;
@@ -49,11 +57,15 @@ public class CollisionHandler extends Handler {
     public static final int COLLISION = 40001;
     public static final int END_HUG = 40002;
     public static final int REMOVE_AIXIN_VIEW = 40003;
+    public static final int HIDDEN_CONTAINER = 40004;
 //
-    public CollisionHandler(Context ctx, Map<String, List<Pet>> groupPets, WindowManager wm, Point size){
+    public CollisionHandler(Context ctx, Map<String, List<Pet>> groupPets, WindowManager wm, Point size, Map<Integer, MediaPlayer> mp, RelativeLayout downContainerView, CopyOnWriteArrayList downList){
         this.ctx = ctx;
         this.wm = wm;
         this.size = size;
+        this.mp = mp;
+        this.downContainerView = downContainerView;
+        this.downList = downList;
         initResIds();
         if(groupPets != null && !groupPets.isEmpty())this.pets = new LinkedList<>();
         Set<String> keys = groupPets.keySet();
@@ -73,10 +85,10 @@ public class CollisionHandler extends Handler {
     private void run(int status, int objSize, Map<String, Object> datas){
         RelativeLayout aiXinContainerView = (RelativeLayout)datas.get("view");
         WindowManager.LayoutParams params = (WindowManager.LayoutParams)datas.get("params");
-        int count = new Random().nextInt(10) + 10;
+        int count = new Random().nextInt(50) + 100;
         CountDownLatch cdl = new CountDownLatch(count);
-        if(cdls == null)cdls = new CopyOnWriteArrayList<>();
-        cdls.add(cdl);
+//        if(cdls == null)cdls = new CopyOnWriteArrayList<>();
+//        cdls.add(cdl);
         for(int i = 0; i < count; i++){
             AiXin aixim = new AiXin(ctx, this.resIds.get(new Random().nextInt(this.resIds.size())), status, objSize, params, cdl);
             aiXinContainerView.addView(aixim.aiXinView, aixim.aiXinParams);
@@ -86,7 +98,7 @@ public class CollisionHandler extends Handler {
             public void run() {
                 try {
                     cdl.await(10, TimeUnit.SECONDS);
-                    cdls.remove(cdl);
+//                    cdls.remove(cdl);
                     Message msg = new Message();
                     msg.what = REMOVE_AIXIN_VIEW;
                     msg.obj = aiXinContainerView;
@@ -148,7 +160,7 @@ public class CollisionHandler extends Handler {
                                 shouHug((pet.params.x + pet1.params.x)/2, this.size.y/2 - pet.params.height/2 - MyService.deviation, flag, pet.params.height);
                                 //run((pet.params.x + pet1.params.x)/2 , AiXin.BOTTOM_STATUS, pet.params.width);
                             }else if(pet.BEFORE_MODE == Pet.TIMER_TOP_START){
-                                run(AiXin.TOP_STATUS, pet.params.height, createAiXinContainer(Math.abs(pet.params.x - pet1.params.x), pet.params.height*3, (pet.params.x + pet1.params.x)/2, -size.y/2 + pet.params.height + (pet.params.height*3)/2));
+                                run(AiXin.TOP_STATUS, pet.params.height, createAiXinContainer((int)(Math.abs(pet.params.x - pet1.params.x)/1.4), pet.params.height*2, (pet.params.x + pet1.params.x)/2, -size.y/2 + pet.params.height + (pet.params.height*2)/2 - pet.params.height / 2));
                             }
                             pet.sendEmptyMessageDelayed(pet.BEFORE_MODE, 3800);
                             pet1.sendEmptyMessageDelayed(pet1.BEFORE_MODE, 3800);
@@ -166,9 +178,9 @@ public class CollisionHandler extends Handler {
                             pet.CURRENT_ACTION = Pet.COLLISION;
                             pet1.CURRENT_ACTION = Pet.COLLISION;
                             if(pet.BEFORE_MODE == Pet.TIMER_LEFT_START){
-                                run(AiXin.LEFT_STATUS, pet.params.width, createAiXinContainer(pet.params.width*3, Math.abs(pet.params.y - pet1.params.y), -size.x/2 + pet.params.width + (pet.params.width*3)/2, (pet.params.y + pet1.params.y)/2));
+                                run(AiXin.LEFT_STATUS, pet.params.width, createAiXinContainer(pet.params.width*2, (int)(Math.abs(pet.params.y - pet1.params.y)/1.4), -size.x/2 + pet.params.width + (pet.params.width*2)/2 - pet.params.width / 2, (pet.params.y + pet1.params.y)/2));
                             }else if(pet.BEFORE_MODE == Pet.TIMER_RIGHT_START){
-                                run(AiXin.RIGHT_STATUS, pet.params.width, createAiXinContainer(pet.params.width*3, Math.abs(pet.params.y - pet1.params.y), size.x/2 - pet.params.width - (pet.params.width*3)/2, (pet.params.y + pet1.params.y)/2));
+                                run(AiXin.RIGHT_STATUS, pet.params.width, createAiXinContainer(pet.params.width*2, (int)(Math.abs(pet.params.y - pet1.params.y)/1.4), size.x/2 - pet.params.width - (pet.params.width*2)/2 + pet.params.width / 2, (pet.params.y + pet1.params.y)/2));
                             }
                             pet.sendEmptyMessageDelayed(pet.BEFORE_MODE, 3000);
                             pet1.sendEmptyMessageDelayed(pet1.BEFORE_MODE, 3000);
@@ -186,6 +198,13 @@ public class CollisionHandler extends Handler {
             case REMOVE_AIXIN_VIEW:
                 removeMessages(REMOVE_AIXIN_VIEW);
                 if(wm != null)wm.removeView((View) msg.obj);
+                break;
+            case HIDDEN_CONTAINER:
+                removeMessages(HIDDEN_CONTAINER);
+                if(downContainerView.getVisibility() == VISIBLE){
+                    downContainerView.setVisibility(View.GONE);
+                    this.downContainerView.removeAllViews();
+                }
                 break;
         }
 
@@ -224,6 +243,18 @@ public class CollisionHandler extends Handler {
             hugParam.y = y;
             if(hugViews == null)hugViews = new CopyOnWriteArrayList<>();
             hugViews.add(hugView);
+            hugView.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View view, MotionEvent motionEvent) {
+                    switch (motionEvent.getAction()) {
+                        case MotionEvent.ACTION_DOWN:
+                            showGun();
+                            playVoiceGun();
+                            break;
+                    }
+                    return true;
+                }
+            });
             wm.addView(hugView, hugParam);
             Message msg = new Message();
             msg.obj = hugView;
@@ -257,12 +288,12 @@ public class CollisionHandler extends Handler {
     }
 
     public void destoryRes(){
-        if(cdls != null && cdls.size() > 0){
-            for (CountDownLatch cdl : cdls) {
-                cdl.notifyAll();
-            }
-            cdls.clear();
-        }
+//        if(cdls != null && cdls.size() > 0){
+//            for (CountDownLatch cdl : cdls) {
+//                cdl.notifyAll();
+//            }
+//            cdls.clear();
+//        }
 
         if(hugViews != null && hugViews.size() > 0){
             removeMessages(END_HUG);
@@ -270,6 +301,56 @@ public class CollisionHandler extends Handler {
             for (int k = 0; k < hugViewsCount; k++)wm.removeView(hugViews.get(k));
             hugViews.clear();
         }
+    }
+
+    synchronized private void playVoiceGun() {
+        if (this.mp.get(1) != null) {
+            if (this.mp.get(1).isPlaying()) this.mp.get(1).stop();
+            this.mp.get(1).release();
+        }
+        MediaPlayer mp1 = new MediaPlayer();
+        mp1.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+            @Override
+            public void onPrepared(MediaPlayer mp) {
+                mp.start();
+            }
+        });
+        try {
+            this.mp.put(1, mp1);
+            mp1.setDataSource(MyService.OSS_BASE + "lw/mscs/gunba.mp3");
+            mp1.prepare();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        this.mp.get(1).setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mp1) {
+                mp1.stop();
+                mp1.release();
+                mp.put(1, null);
+            }
+        });
+    }
+
+    private void showGun(){
+        if(this.downContainerView.getVisibility() != VISIBLE)this.downContainerView.setVisibility(VISIBLE);
+        CountDownLatch cdl = new CountDownLatch(1);
+        this.downList.add(cdl);
+        PropMsg pm = new PropMsg(ctx, size, R.drawable.gun, cdl, (int)(this.size.x / 1.1));
+        this.downContainerView.addView(pm.propView, pm.propParams);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    cdl.await(10, TimeUnit.SECONDS);
+                    downList.remove(cdl);
+                    if(downList.size() <= 0)sendEmptyMessage(HIDDEN_CONTAINER);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 //
 //    @Override

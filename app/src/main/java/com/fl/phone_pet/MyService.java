@@ -49,6 +49,7 @@ public class MyService extends Service {
     public static final String AX = "ax";
     public static final String LW = "lw";
     public static final String WZ = "wz";
+    public static final String OSS_BASE = "https://music-fl-wdl.oss-cn-shenzhen.aliyuncs.com/";
     Map<String, List<Pet>> groupPets;
     Messenger serviceMessenger = new Messenger(new ActivityMsgHandler());
     Messenger activityMessenger;
@@ -125,7 +126,10 @@ public class MyService extends Service {
                 }
             }
             if(downContainerView != null && downContainerView.getVisibility() == View.VISIBLE){
-                for (CountDownLatch cdl : this.downList)cdl.notifyAll();
+                for (CountDownLatch cdl : this.downList){
+                    int countSize = (int)cdl.getCount();
+                    for (int count = 0; count < countSize; count++)cdl.countDown();
+                }
                 wm.removeView(downContainerView);
             }
 
@@ -175,6 +179,8 @@ public class MyService extends Service {
             size.x = size.y;
             size.y = temp;
 
+            initDownContainer();
+
             Iterator<Map.Entry<String, List<Pet>>> it = groupPets.entrySet().iterator();
             while (it.hasNext()){
                 Map.Entry<String, List<Pet>> entry = it.next();
@@ -188,7 +194,10 @@ public class MyService extends Service {
                 }
             }
             if(downContainerView != null && downContainerView.getVisibility() == View.VISIBLE){
-                for (CountDownLatch cdl : this.downList)cdl.notifyAll();
+                for (CountDownLatch cdl : this.downList) {
+                    int countSize = (int)cdl.getCount();
+                    for (int count = 0; count < countSize; count++)cdl.countDown();
+                }
             }
             collisionHandler.destoryRes();
             goPets();
@@ -198,7 +207,8 @@ public class MyService extends Service {
     }
 
     private void initDownContainer(){
-        this.downContainerView = (RelativeLayout) LayoutInflater.from(this).inflate(R.layout.container, null);
+        RelativeLayout downContainerView = null;
+        if(this.downContainerView == null)downContainerView = (RelativeLayout) LayoutInflater.from(this).inflate(R.layout.container, null);
         WindowManager.LayoutParams downContainerParams = new WindowManager.LayoutParams();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {//6.0
             downContainerParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
@@ -212,9 +222,15 @@ public class MyService extends Service {
         downContainerParams.height = this.size.y;
         downContainerParams.x = 0;
         downContainerParams.y = 0;
-        downContainerView.setVisibility(View.GONE);
-        wm.addView(downContainerView, downContainerParams);
+        if(this.downContainerView == null){
+            downContainerView.setVisibility(View.GONE);
+            wm.addView(downContainerView, downContainerParams);
+            this.downContainerView = downContainerView;
+        }else{
+            wm.updateViewLayout(this.downContainerView, downContainerParams);
+        }
     }
+
 
 //    private void initCollisionHandler(){
 //        collisionHandler = new CollisionHandler(groupPets);
@@ -322,7 +338,7 @@ public class MyService extends Service {
     }
 
     private void initCollisionHandler(){
-        if(collisionHandler == null)collisionHandler = new CollisionHandler(this, groupPets, wm, size);
+        if(collisionHandler == null)collisionHandler = new CollisionHandler(this, groupPets, wm, size, mp, downContainerView, downList);
         collisionHandler.sendEmptyMessage(CollisionHandler.COLLISION);
     }
 
@@ -332,7 +348,10 @@ public class MyService extends Service {
         collisionHandler.destoryRes();
 
         if(downContainerView != null && downContainerView.getVisibility() == View.VISIBLE){
-            for (CountDownLatch cdl : this.downList)cdl.notifyAll();
+            for (CountDownLatch cdl : this.downList){
+                int countSize = (int)cdl.getCount();
+                for (int count = 0; count < countSize; count++)cdl.countDown();
+            }
         }
 
         while (it.hasNext()){

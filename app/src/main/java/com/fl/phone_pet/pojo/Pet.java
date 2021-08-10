@@ -93,7 +93,6 @@ public class Pet extends Handler {
     public static final int TOUCH_REPLY = 10030;
     public static final int HIDDEN_CONTAINER = 10031;
     public static final int MOVE = 10032;
-    public static final String OSS_BASE = "https://music-fl-wdl.oss-cn-shenzhen.aliyuncs.com/";
     public int BEFORE_MODE = FLY;
     public int CURRENT_ACTION = FLY;
     public String name;
@@ -190,11 +189,12 @@ public class Pet extends Handler {
     public int pngDeviation = -1;
     public double whRate;
     public int whDif;
+    int distance = 10;
 
     public static final float g = 9.8f;
     public static float fs = 2f;
     private float vX0, vY0;
-    private final long moveMin = 20;
+    private final long moveMin = 10;
     private final float v0 = 1.2f;
     private Context ctx;
     private Queue speechStore = new LinkedBlockingQueue(10);
@@ -578,7 +578,7 @@ public class Pet extends Handler {
             case RUN_LEFT:
                 if (CURRENT_ACTION != RUN_LEFT) CURRENT_ACTION = RUN_LEFT;
                 removeMessages(RUN_LEFT);
-                params.x = params.x - speed;
+                params.x = params.x - distance;
                 wm.updateViewLayout(elfView, params);
                 if (BEFORE_MODE == TIMER_TOP_START && params.x - params.width / 2  + whDif / 2< (-size.x / 2)) {
                     removeAllMessages();
@@ -592,14 +592,14 @@ public class Pet extends Handler {
                     sendEmptyMessage(CLIMB_UP);
                     sendEmptyMessageDelayed(TIMER_LEFT_START, 6000 + (int) Math.random() * 6000);
                 } else {
-                    if (BEFORE_MODE == TIMER_TOP_START) sendEmptyMessageDelayed(RUN_LEFT, 100);
-                    else sendEmptyMessageDelayed(RUN_LEFT, 60);
+                    if (BEFORE_MODE == TIMER_TOP_START) sendEmptyMessageDelayed(RUN_LEFT, 100 * (20/speed));
+                    else sendEmptyMessageDelayed(RUN_LEFT, 60 * (20/speed));
                 }
                 break;
             case RUN_RIGHT:
                 if (CURRENT_ACTION != RUN_RIGHT) CURRENT_ACTION = RUN_RIGHT;
                 removeMessages(RUN_RIGHT);
-                params.x = params.x + speed;
+                params.x = params.x + distance;
                 wm.updateViewLayout(elfView, params);
                 if (BEFORE_MODE == TIMER_TOP_START && params.x + params.width / 2 - whDif / 2 > (size.x / 2)) {
                     removeAllMessages();
@@ -612,15 +612,15 @@ public class Pet extends Handler {
                     climbToUp();
                     sendEmptyMessageDelayed(TIMER_RIGHT_START, 6000 + (int) Math.random() * 6000);
                 } else {
-                    if (BEFORE_MODE == TIMER_TOP_START) sendEmptyMessageDelayed(RUN_RIGHT, 100);
-                    else sendEmptyMessageDelayed(RUN_RIGHT, 60);
+                    if (BEFORE_MODE == TIMER_TOP_START) sendEmptyMessageDelayed(RUN_RIGHT, 100 * (20/speed));
+                    else sendEmptyMessageDelayed(RUN_RIGHT, 60 * (20/speed));
                 }
 
                 break;
             case CLIMB_UP:
                 if (CURRENT_ACTION != CLIMB_UP) CURRENT_ACTION = CLIMB_UP;
                 removeMessages(CLIMB_UP);
-                params.y = params.y - speed;
+                params.y = params.y - distance;
                 wm.updateViewLayout(elfView, params);
                 if (params.y - params.height / 2 < -size.y / 2) {
                     if (BEFORE_MODE == TIMER_LEFT_START) {
@@ -635,13 +635,13 @@ public class Pet extends Handler {
                         sendEmptyMessageDelayed(TIMER_TOP_START, 6000 + (int) Math.random() * 6000);
                     }
                 } else {
-                    sendEmptyMessageDelayed(CLIMB_UP, 100);
+                    sendEmptyMessageDelayed(CLIMB_UP, 100 * (20/speed));
                 }
                 break;
             case CLIMB_DOWN:
                 if (CURRENT_ACTION != CLIMB_DOWN) CURRENT_ACTION = CLIMB_DOWN;
                 removeMessages(CLIMB_DOWN);
-                params.y = params.y + speed;
+                params.y = params.y + distance;
                 wm.updateViewLayout(elfView, params);
                 if (params.y + params.height / 2 + MyService.deviation > size.y / 2) {
                     if (BEFORE_MODE == TIMER_LEFT_START) {
@@ -656,7 +656,7 @@ public class Pet extends Handler {
                         sendEmptyMessageDelayed(TIMER_START, 6000 + (int) Math.random() * 6000);
                     }
                 } else {
-                    sendEmptyMessageDelayed(CLIMB_DOWN, 100);
+                    sendEmptyMessageDelayed(CLIMB_DOWN, 100 * (20/speed));
                 }
                 break;
             case SPEECH_START:
@@ -757,7 +757,7 @@ public class Pet extends Handler {
                     long moveXDirection = data.get("moveXDirection");
                     long moveYDirection = data.get("moveYDirection");
 
-                    direction = moveXDirection > 0 ? "right" : "left";
+                    direction = Math.abs(moveXDirection) > moveMin ? moveXDirection > 0 ? "right" : "left" : direction;
 
                     if (data.get("jump") != null) jump();
                     else fly();
@@ -774,7 +774,6 @@ public class Pet extends Handler {
                 int flag = -1;
                 if (params.y + params.height / 2 + MyService.deviation > size.y / 2) {
                     params.y = size.y / 2 - params.height / 2 - MyService.deviation;
-                    Log.i("*********************", String.valueOf(MyService.deviation));
                     flag = 0;
 //                    sendEmptyMessage(FALL_TO_THE_GROUND);
 //                    wm.updateViewLayout(elfView, params);
@@ -923,7 +922,7 @@ public class Pet extends Handler {
         sendMessage(msg);
     }
 
-    synchronized public void callFunction() {
+    public void callFunction() {
 
         if(this.downContainerView.getVisibility() != VISIBLE)this.downContainerView.setVisibility(VISIBLE);
 //        this.downContainerView.removeAllViews();
@@ -934,7 +933,7 @@ public class Pet extends Handler {
         this.downList.add(cdl);
         while (i < randomCount) {
             randomIndex = new Random().nextInt(this.callTexts.size());
-            CallMsg cm = new CallMsg(ctx, size, this.callTexts.get(randomIndex), cdl);
+            CallMsg cm = new CallMsg(ctx, size, this.callTexts.get(randomIndex), cdl, name);
             this.downContainerView.addView(cm.callView, cm.callParams);
             i++;
         }
@@ -962,7 +961,7 @@ public class Pet extends Handler {
         this.downList.add(cdl);
         while (i < randomCount) {
             randomIndex = new Random().nextInt(this.propList.size());
-            PropMsg pm = new PropMsg(ctx, size, this.propList.get(randomIndex), cdl);
+            PropMsg pm = new PropMsg(ctx, size, this.propList.get(randomIndex), cdl, -1);
             this.downContainerView.addView(pm.propView, pm.propParams);
             i++;
         }
@@ -1075,7 +1074,7 @@ public class Pet extends Handler {
         });
         try {
             this.mp.put(1, mp1);
-            mp1.setDataSource(OSS_BASE + name + "/" + resId + mscExt);
+            mp1.setDataSource(MyService.OSS_BASE + name + "/" + resId + mscExt);
             mp1.prepare();
         } catch (Exception e) {
             e.printStackTrace();

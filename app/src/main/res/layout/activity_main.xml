@@ -83,6 +83,7 @@
             android:layout_height="wrap_content"
             android:enabled="false"
             android:max="20"
+            android:min="1"
             android:progress="5"
             android:progressTint="#EC98B5" />
 

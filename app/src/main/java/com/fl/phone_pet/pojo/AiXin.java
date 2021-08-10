@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.animation.TimeInterpolator;
 import android.content.Context;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
@@ -14,6 +15,12 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.AnticipateInterpolator;
+import android.view.animation.AnticipateOvershootInterpolator;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.OvershootInterpolator;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
@@ -89,36 +96,37 @@ public class AiXin  extends Handler {
 //        }
         switch (this.status){
             case LEFT_STATUS:
-                randomX = (int) (Math.random() * 6 );
+                randomX = (int) (Math.random() * 6);
                 randomY = (int) (Math.random() * (this.params.height - randomSize));
                 aiXinView.setRotation(90);
-                flyAnimator = ObjectAnimator.ofFloat(aiXinView, "translationX", (int)(Math.random() * (this.params.width - randomSize - 6) + 6));
+                flyAnimator = ObjectAnimator.ofFloat(aiXinView, "translationX", (int)(Math.random() * (this.params.width - randomX - randomSize - 6) + 6));
                 break;
             case RIGHT_STATUS:
                 randomX = (int) (this.params.width - randomSize - Math.random() * 6);
                 randomY = (int) (Math.random() * (this.params.height - randomSize));
                 aiXinView.setRotation(-90);
-                flyAnimator = ObjectAnimator.ofFloat(aiXinView, "translationX", -(int)(Math.random() * (this.params.width - randomSize - 6) + 6));
+                flyAnimator = ObjectAnimator.ofFloat(aiXinView, "translationX", -(int)(Math.random() * (randomX - 6 - randomSize*17) + 6));
                 break;
             case TOP_STATUS:
                 randomX = (int) (Math.random() * (this.params.width - randomSize));
                 randomY = (int) (Math.random() * 6);
                 aiXinView.setRotation(180);
-                flyAnimator = ObjectAnimator.ofFloat(aiXinView, "translationY", (int)(Math.random() * (this.params.height - randomSize - 6) + 6));
+                flyAnimator = ObjectAnimator.ofFloat(aiXinView, "translationY", (int)(Math.random() * (this.params.height - randomY - randomSize - 6) + 6));
                 break;
             case BOTTOM_STATUS:
                 randomX = (int) (Math.random() * (this.params.width - randomSize));
                 randomY = (int) (this.params.height - randomSize - Math.random() * 6);
                 aiXinView.setRotation(0);
-                flyAnimator = ObjectAnimator.ofFloat(aiXinView, "translationY", -(int)(Math.random() * (this.params.height - randomSize - 6) + 6));
+                flyAnimator = ObjectAnimator.ofFloat(aiXinView, "translationY", -(int)(Math.random() * (randomY - 6) + 6));
                 break;
         }
         aiXinView.setAlpha(1);
         aiXinView.setX(randomX);
         aiXinView.setY(randomY);
-        flyAnimator.setDuration(2000);
+        flyAnimator.setDuration(300);
         hidenAnimator = ObjectAnimator.ofFloat(aiXinView,"alpha", 0);
-        hidenAnimator.setDuration(1500);
+        hidenAnimator.setInterpolator(new AnticipateInterpolator());//new AnticipateInterpolator()//OvershootInterpolator
+        hidenAnimator.setDuration(100);
         animatorSet.play(hidenAnimator).after(flyAnimator);
         animatorSet.addListener(new AnimatorListenerAdapter() {
             @Override
@@ -127,6 +135,7 @@ public class AiXin  extends Handler {
                 cdl.countDown();
             }
         });
+        animatorSet.setStartDelay(new Random().nextInt(1700));
         animatorSet.start();
     }
 

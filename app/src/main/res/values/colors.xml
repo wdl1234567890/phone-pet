@@ -7,4 +7,7 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="ax_call">#ED7870</color>
+    <color name="lw_call">#69A8DA</color>
+    <color name="wz_call">#ECA9BF</color>
 </resources>

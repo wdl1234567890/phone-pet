@@ -9,7 +9,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="777777"
-        android:textColor="#ECA9BF"
+        android:text="老温"
+        android:textColor="#69A8DA"
         android:textStyle="bold" />
 </LinearLayout>
