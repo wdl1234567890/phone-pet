@@ -82,7 +82,7 @@
             android:layout_width="230dp"
             android:layout_height="wrap_content"
             android:enabled="false"
-            android:max="20"
+            android:max="25"
             android:min="1"
             android:progress="5"
             android:progressTint="#EC98B5" />

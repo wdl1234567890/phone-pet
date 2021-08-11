@@ -4,11 +4,8 @@ import android.content.Context;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.graphics.drawable.AnimationDrawable;
-import android.media.AudioAttributes;
-import android.media.AudioManager;
+import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
-import android.media.SoundPool;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -20,36 +17,23 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.Button;
-import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import androidx.annotation.InspectableProperty;
-
 import com.fl.phone_pet.MyService;
 import com.fl.phone_pet.R;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.iflytek.cloud.ErrorCode;
-import com.iflytek.cloud.InitListener;
 import com.iflytek.cloud.RecognizerListener;
 import com.iflytek.cloud.RecognizerResult;
 import com.iflytek.cloud.SpeechConstant;
 import com.iflytek.cloud.SpeechError;
 import com.iflytek.cloud.SpeechRecognizer;
-import com.iflytek.cloud.ui.RecognizerDialog;
-import com.iflytek.cloud.ui.RecognizerDialogListener;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -61,7 +45,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import pl.droidsonroids.gif.GifDrawable;
 
@@ -103,6 +86,7 @@ public class Pet extends Handler {
     Map<Integer, MediaPlayer> mp;
     private String[] runLevels = {"_low", "_middle", "_high"};
     private Integer funcPanelLayoutResId;
+//    private final double perTime = 5;
 
     public static final String WALK_LEFT = "run_left";
     public static final String WALK_RIGHT = "run_right";
@@ -132,8 +116,6 @@ public class Pet extends Handler {
     public static final String JUMP_RIGHT = "jump_right";
     public static final String STAND_LEFT = "stand_left";
     public static final String STAND_RIGHT = "stand_right";
-
-    WindowManager wm;
     public WindowManager.LayoutParams params, speechParams, functionPanelParams;
     public View elfView, speechView, functionPanelView, mscView;
     public RelativeLayout downContainerView;
@@ -144,33 +126,34 @@ public class Pet extends Handler {
     public ImageView functionPanelVoiceButton;
 //    public FloatingActionButton functionPanelMscButton;
     public ImageView closeFuncPanelButton;
-    GifDrawable flyLeftGifDrawable;
-    GifDrawable flyRightGifDrawable;
-    GifDrawable climbLeftUpGifDrawable;
-    //AnimationDrawable climbLeftDownGifDrawable;
-    GifDrawable climbLeftDownGifDrawable;
-    GifDrawable climbLeftStandGifDrawable;
-    GifDrawable climbRightUpGifDrawable;
-    GifDrawable climbRightDownGifDrawable;
-    GifDrawable climbRightStandGifDrawable;
-    GifDrawable climbTopLeftGifDrawable;
-    GifDrawable climbTopRightGifDrawable;
-    GifDrawable climbTopLeftStandGifDrawable;
-    GifDrawable climbTopRightStandGifDrawable;
-    GifDrawable moveLeftGifDrawable;
-    GifDrawable moveRightGifDrawable;
-    GifDrawable moveRightLightGifDrawable;
-    GifDrawable moveLeftLightGifDrawable;
-    GifDrawable moveRightWeightGifDrawable;
-    GifDrawable moveLeftWeightGifDrawable;
-    GifDrawable moveRightMiddleGifDrawable;
-    GifDrawable moveLeftMiddleGifDrawable;
-    GifDrawable fallToGroundLeftGifDrawable;
-    GifDrawable fallToGroundRightGifDrawable;
-    GifDrawable jumpLeftGifDrawable;
-    GifDrawable jumpRightGifDrawable;
-    GifDrawable standLeftGifDrawable;
-    GifDrawable standRightGifDrawable;
+    Drawable flyLeftGifDrawable;
+    Drawable flyRightGifDrawable;
+    Drawable climbLeftUpGifDrawable;
+    //GifDrawable climbLeftUpGifDrawable;
+    Drawable climbLeftDownGifDrawable;
+    //GifDrawable climbLeftDownGifDrawable;
+    Drawable climbLeftStandGifDrawable;
+    Drawable climbRightUpGifDrawable;
+    Drawable climbRightDownGifDrawable;
+    Drawable climbRightStandGifDrawable;
+    Drawable climbTopLeftGifDrawable;
+    Drawable climbTopRightGifDrawable;
+    Drawable climbTopLeftStandGifDrawable;
+    Drawable climbTopRightStandGifDrawable;
+    Drawable moveLeftGifDrawable;
+    Drawable moveRightGifDrawable;
+    Drawable moveRightLightGifDrawable;
+    Drawable moveLeftLightGifDrawable;
+    Drawable moveRightWeightGifDrawable;
+    Drawable moveLeftWeightGifDrawable;
+    Drawable moveRightMiddleGifDrawable;
+    Drawable moveLeftMiddleGifDrawable;
+    Drawable fallToGroundLeftGifDrawable;
+    Drawable fallToGroundRightGifDrawable;
+    Drawable jumpLeftGifDrawable;
+    Drawable jumpRightGifDrawable;
+    Drawable standLeftGifDrawable;
+    Drawable standRightGifDrawable;
     List<String> speechList;
     List<String> voiceIds;
     List<Integer> propList;
@@ -191,7 +174,9 @@ public class Pet extends Handler {
     public int pngDeviation = -1;
     public double whRate;
     public int whDif;
-    int distance = 50;
+    final int distance = 55;
+    final int climbTimeConst = 40;
+    final double runDistanceMultiply = 50.0;
 
     public static final float g = 9.8f;
     public static float fs = 2f;
@@ -203,7 +188,7 @@ public class Pet extends Handler {
     private CopyOnWriteArrayList<CountDownLatch> downList;
 
 
-    public Pet(Context ctx, String name, WindowManager wm, int currentSize, int normalMoveSpeed, Point size, Map<Integer, MediaPlayer> mp, View mscView, RelativeLayout downContainerView, CopyOnWriteArrayList downList) {
+    public Pet(Context ctx, String name, int currentSize, int normalMoveSpeed, Point size, Map<Integer, MediaPlayer> mp, View mscView, RelativeLayout downContainerView, CopyOnWriteArrayList downList) {
         super();
         this.name = name;
         this.currentSize = currentSize;
@@ -211,7 +196,7 @@ public class Pet extends Handler {
         this.mp = mp;
         this.mscView = mscView;
         this.ctx = ctx;
-        this.wm = wm;
+//        this.wm = wm;
         this.params = new WindowManager.LayoutParams();
         this.speechParams = new WindowManager.LayoutParams();
         this.functionPanelParams = new WindowManager.LayoutParams();
@@ -301,8 +286,8 @@ public class Pet extends Handler {
         elfView.setVisibility(VISIBLE);
 //        functionPanelView.setVisibility(View.GONE);
 //        downContainerView.setVisibility(View.GONE);
-        wm.addView(elfView, params);
-        wm.addView(speechView, speechParams);
+        MyService.wm.addView(elfView, params);
+        MyService.wm.addView(speechView, speechParams);
         //wm.addView(functionPanelView, functionPanelParams);
 //        wm.addView(downContainerView, downContainerParams);
     }
@@ -357,7 +342,7 @@ public class Pet extends Handler {
                             showFuncPanel();
                             return true;
                         }
-                        wm.updateViewLayout(elfView, params);
+                        MyService.wm.updateViewLayout(elfView, params);
                         break;
                     case MotionEvent.ACTION_UP:
                         upTime = System.currentTimeMillis();
@@ -586,7 +571,7 @@ public class Pet extends Handler {
 
                     if(params.x != -size.x / 2 + params.width / 2 - whDif / 2){
                         params.x = -size.x / 2 + params.width / 2 - whDif / 2;
-                        wm.updateViewLayout(elfView, params);
+                        MyService.wm.updateViewLayout(elfView, params);
                     }
 
                     if(BEFORE_MODE == TIMER_TOP_START){
@@ -599,10 +584,33 @@ public class Pet extends Handler {
                         sendEmptyMessageDelayed(TIMER_LEFT_START, 6000 + (int) Math.random() * 6000);
                     }
                 }else {
-                    params.x = params.x - distance;
-                    wm.updateViewLayout(elfView, params);
-                    if (BEFORE_MODE == TIMER_TOP_START) sendEmptyMessageDelayed(RUN_LEFT, 100 * (20/speed));
-                    else sendEmptyMessageDelayed(RUN_LEFT, 60 * (20/speed));
+
+                    if(BEFORE_MODE == TIMER_TOP_START){
+                        int resId = ctx.getResources().getIdentifier(name + "_top_" + this.direction + "_climb", "drawable", ctx.getPackageName());
+                        elfBody.setImageResource(resId);
+                        AnimationDrawable ani = (AnimationDrawable)(elfBody.getDrawable());
+                        ani.start();
+                        postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                if(MyService.wm != null && CURRENT_ACTION == RUN_LEFT){
+                                    params.x = params.x - distance;
+                                    MyService.wm.updateViewLayout(elfView, params);
+                                    sendEmptyMessageDelayed(RUN_LEFT, (long)(climbTimeConst * (625.0/Math.pow(speed, 2))));
+                                }
+                            }
+                        }, 200);
+                    }else {
+                        params.x = (int)(params.x - distance * (this.speed/runDistanceMultiply));
+                        MyService.wm.updateViewLayout(elfView, params);
+                        sendEmptyMessageDelayed(RUN_LEFT, 100);
+                    }
+
+                    //params.x = params.x - distance;
+                    //wm.updateViewLayout(elfView, params);
+                    //if (BEFORE_MODE == TIMER_TOP_START) sendEmptyMessageDelayed(RUN_LEFT, 100 * (20/speed));
+//                    else sendEmptyMessageDelayed(RUN_LEFT, 60 * (20/speed));
+                    //else sendEmptyMessageDelayed(RUN_LEFT, 300);
                 }
                 break;
             case RUN_RIGHT:
@@ -614,7 +622,7 @@ public class Pet extends Handler {
 
                     if(params.x != size.x / 2 - params.width / 2 + whDif / 2){
                         params.x = size.x / 2 - params.width / 2 + whDif / 2;
-                        wm.updateViewLayout(elfView, params);
+                        MyService.wm.updateViewLayout(elfView, params);
                     }
 
                     if (BEFORE_MODE == TIMER_TOP_START){
@@ -627,10 +635,48 @@ public class Pet extends Handler {
                         sendEmptyMessageDelayed(TIMER_RIGHT_START, 6000 + (int) Math.random() * 6000);
                     }
                 }else {
-                    params.x = params.x + distance;
-                    wm.updateViewLayout(elfView, params);
-                    if (BEFORE_MODE == TIMER_TOP_START) sendEmptyMessageDelayed(RUN_RIGHT, 100 * (20/speed));
-                    else sendEmptyMessageDelayed(RUN_RIGHT, 60 * (20/speed));
+
+                    if(BEFORE_MODE == TIMER_TOP_START){
+                        int resId = ctx.getResources().getIdentifier(name + "_top_" + this.direction + "_climb", "drawable", ctx.getPackageName());
+                        elfBody.setImageResource(resId);
+                        AnimationDrawable ani = (AnimationDrawable)(elfBody.getDrawable());
+                        ani.start();
+                        postDelayed(new Runnable() {
+                           @Override
+                           public void run() {
+                               if(MyService.wm != null && CURRENT_ACTION == RUN_RIGHT){
+                                   params.x = params.x + distance;
+                                   MyService.wm.updateViewLayout(elfView, params);
+                                   sendEmptyMessageDelayed(RUN_RIGHT, (long)(climbTimeConst * (625.0/Math.pow(speed, 2))));
+                               }
+                           }
+                        }, 200);
+                    }else {
+                        params.x = (int)(params.x + distance * (this.speed/runDistanceMultiply));
+                        MyService.wm.updateViewLayout(elfView, params);
+                        sendEmptyMessageDelayed(RUN_RIGHT, 100);
+                    }
+
+//                    String direction1 = BEFORE_MODE == TIMER_LEFT_START ? "left" : "right";
+//                    int resId = ctx.getResources().getIdentifier(name + "_top_" + direction1 + "_climb", "drawable", ctx.getPackageName());
+//                    elfBody.setImageResource(resId);
+//                    AnimationDrawable ani = (AnimationDrawable)(elfBody.getDrawable());
+//                    ani.start();
+//                    postDelayed(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            params.x = params.x + distance;
+//                            wm.updateViewLayout(elfView, params);
+//                            sendEmptyMessageDelayed(CLIMB_DOWN, 200 * (20/speed));
+//                        }
+//                    }, 200);
+
+//                    params.x = params.x + distance;
+//                    wm.updateViewLayout(elfView, params);
+//                    if (BEFORE_MODE == TIMER_TOP_START) sendEmptyMessageDelayed(RUN_RIGHT, 300);
+//                    else sendEmptyMessageDelayed(RUN_RIGHT, 300);
+                    //if (BEFORE_MODE == TIMER_TOP_START) sendEmptyMessageDelayed(RUN_RIGHT, 100 * (20/speed));
+//                  //else sendEmptyMessageDelayed(RUN_RIGHT, 60 * (20/speed));
                 }
 
                 break;
@@ -638,10 +684,11 @@ public class Pet extends Handler {
                 if (CURRENT_ACTION != CLIMB_UP) CURRENT_ACTION = CLIMB_UP;
                 removeMessages(CLIMB_UP);
                 if (params.y - params.height / 2 < -size.y / 2) {
+                    Log.i("*********yy********","***************");
                     removeAllMessages();
                     if(params.y != -size.y / 2 + params.height / 2){
                         params.y = -size.y / 2 + params.height / 2;
-                        wm.updateViewLayout(elfView, params);
+                        MyService.wm.updateViewLayout(elfView, params);
                     }
 
                     if (BEFORE_MODE == TIMER_LEFT_START) {
@@ -654,9 +701,21 @@ public class Pet extends Handler {
                         sendEmptyMessageDelayed(TIMER_TOP_START, 6000 + (int) Math.random() * 6000);
                     }
                 } else {
-                    params.y = params.y - distance;
-                    wm.updateViewLayout(elfView, params);
-                    sendEmptyMessageDelayed(CLIMB_UP, 100 * (20/speed));
+                    String direction1 = BEFORE_MODE == TIMER_LEFT_START ? "left" : "right";
+                    int resId = ctx.getResources().getIdentifier(name + "_" + direction1 + "_climb", "drawable", ctx.getPackageName());
+                    elfBody.setImageResource(resId);
+                    AnimationDrawable ani = (AnimationDrawable)(elfBody.getDrawable());
+                    ani.start();
+                    postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            if(MyService.wm != null && CURRENT_ACTION == CLIMB_UP){
+                                params.y = params.y - distance;
+                                MyService.wm.updateViewLayout(elfView, params);
+                                sendEmptyMessageDelayed(CLIMB_UP, (long)(climbTimeConst * (625.0/Math.pow(speed, 2))));
+                            }
+                        }
+                    }, 200);
                 }
                 break;
             case CLIMB_DOWN:
@@ -666,7 +725,7 @@ public class Pet extends Handler {
                     removeAllMessages();
                     if(params.y != size.y / 2 - params.height / 2 - MyService.deviation){
                         params.y = size.y / 2 - params.height / 2 - MyService.deviation;
-                        wm.updateViewLayout(elfView, params);
+                        MyService.wm.updateViewLayout(elfView, params);
                     }
 
                     if (BEFORE_MODE == TIMER_LEFT_START) {
@@ -679,12 +738,21 @@ public class Pet extends Handler {
                         sendEmptyMessageDelayed(TIMER_START, 6000 + (int) Math.random() * 6000);
                     }
                 } else {
-                    elfBody.setImageResource(R.drawable.ax_climb_down);
+                    String direction1 = BEFORE_MODE == TIMER_LEFT_START ? "left" : "right";
+                    int resId = ctx.getResources().getIdentifier(name + "_" + direction1 + "_climb", "drawable", ctx.getPackageName());
+                    elfBody.setImageResource(resId);
                     AnimationDrawable ani = (AnimationDrawable)(elfBody.getDrawable());
                     ani.start();
-                    params.y = params.y + distance;
-                    wm.updateViewLayout(elfView, params);
-                    sendEmptyMessageDelayed(CLIMB_DOWN, 40 * (20/speed));
+                    postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            if(MyService.wm != null && CURRENT_ACTION == CLIMB_DOWN){
+                                params.y = params.y + distance;
+                                MyService.wm.updateViewLayout(elfView, params);
+                                sendEmptyMessageDelayed(CLIMB_DOWN, (long)(climbTimeConst * (625.0/Math.pow(speed, 2))));
+                            }
+                        }
+                    }, 200);
                 }
                 break;
             case SPEECH_START:
@@ -715,12 +783,12 @@ public class Pet extends Handler {
                         speechBody.setBackgroundResource(R.drawable.speech_top);
                         break;
                     case TIMER_LEFT_START:
-                        speechParams.x = (int)(params.x + params.width / 2 + speechParams.width / 2 - params.width * 0.4);
+                        speechParams.x = (int)(params.x + params.width / 2 + speechParams.width / 2 - params.width * 0.4 - this.whDif);
                         speechParams.y = params.y;
                         speechBody.setBackgroundResource(R.drawable.speech_left);
                         break;
                     case TIMER_RIGHT_START:
-                        speechParams.x = (int)(params.x - params.width / 2 - speechParams.width / 2 + params.width * 0.4);
+                        speechParams.x = (int)(params.x - params.width / 2 - speechParams.width / 2 + params.width * 0.4 + this.whDif);
                         speechParams.y = params.y;
                         speechBody.setBackgroundResource(R.drawable.speech_right);
                         break;
@@ -729,7 +797,7 @@ public class Pet extends Handler {
                 }
                 if (speechView.getVisibility() != View.VISIBLE)
                     speechView.setVisibility(View.VISIBLE);
-                wm.updateViewLayout(speechView, speechParams);
+                MyService.wm.updateViewLayout(speechView, speechParams);
                 sendEmptyMessageDelayed(SPEECH_STOP, 3000);
                 break;
             case SPEECH_STOP:
@@ -838,7 +906,7 @@ public class Pet extends Handler {
                         break;
                 }
 
-                wm.updateViewLayout(elfView, params);
+                MyService.wm.updateViewLayout(elfView, params);
                 sendEmptyMessageDelayed(FLY, 50);
                 break;
             case HIDDEN_CONTAINER:
@@ -887,19 +955,17 @@ public class Pet extends Handler {
     }
 
     private void walkToLeft() {
-        removeAllMessages();
         direction = "left";
-        elfBody.setImageDrawable(BEFORE_MODE == TIMER_TOP_START ? climbTopLeftGifDrawable :
-                runAnimations.get("left").get(new Random().nextInt(runSize)));
+        if(BEFORE_MODE == TIMER_START)elfBody.setImageDrawable(runAnimations.get("left").get(new Random().nextInt(runSize)));
+//        elfBody.setImageDrawable(BEFORE_MODE == TIMER_TOP_START ? climbTopLeftGifDrawable :
+//                runAnimations.get("left").get(new Random().nextInt(runSize)));
         sendEmptyMessage(RUN_LEFT);
 
     }
 
     private void walkToRight() {
-        removeAllMessages();
         direction = "right";
-        elfBody.setImageDrawable(BEFORE_MODE == TIMER_TOP_START ? climbTopRightGifDrawable :
-                runAnimations.get("right").get(new Random().nextInt(runSize)));
+        if(BEFORE_MODE == TIMER_START)elfBody.setImageDrawable(runAnimations.get("right").get(new Random().nextInt(runSize)));
         sendEmptyMessage(RUN_RIGHT);
     }
 
@@ -926,6 +992,8 @@ public class Pet extends Handler {
     private void climbToDown() {
 //        removeAllMessages();
         //elfBody.setImageDrawable(direction.equals("left") ? climbLeftDownGifDrawable : climbRightDownGifDrawable);
+        //elfBody.setImageResource(BEFORE_MODE == TIMER_LEFT_START ? R.drawable.ax_climb_down : R.drawable.ax_climb_down);
+        //elfBody.setImageResource(R.drawable.ax_climb_down);
         sendEmptyMessage(CLIMB_DOWN);
     }
 
@@ -1179,14 +1247,14 @@ public class Pet extends Handler {
                 functionPanelParams.y = params.y;
                 break;
         }
-        wm.addView(functionPanelView, functionPanelParams);
+        MyService.wm.addView(functionPanelView, functionPanelParams);
 //        functionPanelView.setVisibility(VISIBLE);
 //        wm.updateViewLayout(functionPanelView, functionPanelParams);
     }
 
     private void initGifDrawables() {
         try {
-            String level = runLevels[speed / 7];
+            //String level = runLevels[speed / 7];
             this.moveLeftGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + MOVE_LEFT + imageExt);
             this.moveRightGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + MOVE_RIGHT + imageExt);
             this.moveRightLightGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + MOVE_RIGHT_LIGHT + imageExt);
@@ -1195,14 +1263,18 @@ public class Pet extends Handler {
             this.moveRightMiddleGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + MOVE_RIGHT_MIDDLE + imageExt);
             this.moveLeftWeightGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + MOVE_LEFT_WEIGHT + imageExt);
             this.moveRightWeightGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + MOVE_RIGHT_WEIGHT + imageExt);
-            this.climbLeftUpGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_LEFT_UP + level + imageExt);
-            this.climbLeftDownGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_LEFT_DOWN + level + imageExt);
+
+//            this.climbLeftUpGifDrawable = leftClimbDrawable;
+//            this.climbLeftDownGifDrawable = leftClimbDrawable;
+//            this.climbLeftUpGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_LEFT_UP + level + imageExt);
+//            this.climbLeftDownGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_LEFT_DOWN + level + imageExt);
+
             this.climbLeftStandGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_LEFT_STAND + imageExt);
-            this.climbRightUpGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_RIGHT_UP + level + imageExt);
-            this.climbRightDownGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_RIGHT_DOWN + level + imageExt);
+            //this.climbRightUpGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_RIGHT_UP + level + imageExt);
+            //this.climbRightDownGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_RIGHT_DOWN + level + imageExt);
             this.climbRightStandGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_RIGHT_STAND + imageExt);
-            this.climbTopLeftGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_TOP_LEFT + level + imageExt);
-            this.climbTopRightGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_TOP_RIGHT + level + imageExt);
+            //this.climbTopLeftGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_TOP_LEFT + level + imageExt);
+            //this.climbTopRightGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_TOP_RIGHT + level + imageExt);
             this.climbTopLeftStandGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_TOP_LEFT_STAND + imageExt);
             this.climbTopRightStandGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_TOP_RIGHT_STAND + imageExt);
             this.flyLeftGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + FLY_LEFT + imageExt);
@@ -1324,12 +1396,33 @@ public class Pet extends Handler {
 
     public void hideFuncPanel(){
         if(this.functionPanelView != null){
-            wm.removeView(this.functionPanelView);
+            MyService.wm.removeView(this.functionPanelView);
             this.functionPanelView = null;
         }
     }
 
+//    public AnimationDrawable createAnimationDrawable(double multiple, int resId1, int resId2, int resId3){
+//        final int[] times = new int[]{800, 900, 800};
+//        int time1 = (int)(times[0] * multiple);
+//        int time2 = (int)(times[1] * multiple);
+//        int time3 = (int)(times[2] * multiple);
+//        Log.i("^^^^time1^^^^^^", String.valueOf(time1));
+//        Log.i("^^^^time2^^^^^^", String.valueOf(time2));
+//        Log.i("^^^^time3^^^^^^", String.valueOf(time3));
+//        AnimationDrawable ani = new AnimationDrawable();
+//        ani.setOneShot(true);
+//        ani.addFrame(ctx.getResources().getDrawable(resId1), time1);
+//        ani.addFrame(ctx.getResources().getDrawable(resId2), time2);
+//        ani.addFrame(ctx.getResources().getDrawable(resId3), time3);
+//        return ani;
+//    }
 
+//    private AnimationDrawable getLeftClimb(double multiple){
+//        int resId1 = ctx.getResources().getIdentifier("left_climb1", "drawable", ctx.getPackageName());
+//        int resId2 = ctx.getResources().getIdentifier("left_climb2", "drawable", ctx.getPackageName());
+//        int resId3 = ctx.getResources().getIdentifier("left_climb3", "drawable", ctx.getPackageName());
+//        return createAnimationDrawable(multiple, resId1, resId2, resId3);
+//    }
 
     private String printResult(RecognizerResult results) {
         String text = com.fl.phone_pet.util.JsonParser.parseIatResult(results.getResultString());
@@ -1370,22 +1463,23 @@ public class Pet extends Handler {
 
     public void updateSpeed(int speed){
         this.speed = speed;
-        String level = runLevels[this.speed / 7];
-        try {
-            this.climbLeftUpGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_LEFT_UP + level + imageExt);
-            //this.climbLeftDownGifDrawable = new AnimationDrawable();
-            this.climbLeftDownGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_LEFT_DOWN + level + imageExt);
-            this.climbRightUpGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_RIGHT_UP + level + imageExt);
-            this.climbRightDownGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_RIGHT_DOWN + level + imageExt);
-            this.climbTopLeftGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_TOP_LEFT + level + imageExt);
-            this.climbTopRightGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_TOP_RIGHT + level + imageExt);
-            if(BEFORE_MODE == TIMER_TOP_START || BEFORE_MODE == TIMER_LEFT_START || BEFORE_MODE == TIMER_RIGHT_START){
-                removeAllMessages();
-                sendEmptyMessage(BEFORE_MODE);
-            }
-        }catch (Exception e){
-            e.printStackTrace();
-        }
+        //String level = runLevels[this.speed / 7];
+//        try {
+//            this.climbLeftUpGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_LEFT_UP + level + imageExt);
+//            //this.climbLeftDownGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_LEFT_DOWN + level + imageExt);
+////            this.climbLeftUpGifDrawable = leftClimbDrawable;
+////            this.climbLeftDownGifDrawable = leftClimbDrawable;
+//            this.climbRightUpGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_RIGHT_UP + level + imageExt);
+//            this.climbRightDownGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_RIGHT_DOWN + level + imageExt);
+//            this.climbTopLeftGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_TOP_LEFT + level + imageExt);
+//            this.climbTopRightGifDrawable = new GifDrawable(ctx.getAssets(), name + "/" + CLIMB_TOP_RIGHT + level + imageExt);
+//            if(BEFORE_MODE == TIMER_TOP_START || BEFORE_MODE == TIMER_LEFT_START || BEFORE_MODE == TIMER_RIGHT_START){
+//                removeAllMessages();
+//                sendEmptyMessage(BEFORE_MODE);
+//            }
+//        }catch (Exception e){
+//            e.printStackTrace();
+//        }
     }
 }
 

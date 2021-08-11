@@ -44,7 +44,7 @@ public class CollisionHandler extends Handler {
     List<Integer> resIds;
     Context ctx;
     Point size;
-    WindowManager wm;
+//    WindowManager wm;
     public CopyOnWriteArrayList<View> hugViews;
 //    private CopyOnWriteArrayList<CountDownLatch> cdls;
     Map<Integer, MediaPlayer> mp;
@@ -59,9 +59,8 @@ public class CollisionHandler extends Handler {
     public static final int REMOVE_AIXIN_VIEW = 40003;
     public static final int HIDDEN_CONTAINER = 40004;
 //
-    public CollisionHandler(Context ctx, Map<String, List<Pet>> groupPets, WindowManager wm, Point size, Map<Integer, MediaPlayer> mp, RelativeLayout downContainerView, CopyOnWriteArrayList downList){
+    public CollisionHandler(Context ctx, Map<String, List<Pet>> groupPets, Point size, Map<Integer, MediaPlayer> mp, RelativeLayout downContainerView, CopyOnWriteArrayList downList){
         this.ctx = ctx;
-        this.wm = wm;
         this.size = size;
         this.mp = mp;
         this.downContainerView = downContainerView;
@@ -158,7 +157,7 @@ public class CollisionHandler extends Handler {
                                 pet.elfView.setVisibility(View.GONE);
                                 pet1.elfView.setVisibility(View.GONE);
                                 shouHug((pet.params.x + pet1.params.x)/2, this.size.y/2 - pet.params.height/2 - MyService.deviation, flag, pet.params.height);
-                                //run((pet.params.x + pet1.params.x)/2 , AiXin.BOTTOM_STATUS, pet.params.width);
+                                run(AiXin.BOTTOM_STATUS, pet.params.height, createAiXinContainer((int)(Math.abs(pet.params.x - pet1.params.x)/1.4), pet.params.height*2, (pet.params.x + pet1.params.x)/2, size.y/2 - pet.params.height - (pet.params.height*2)/2 + pet.params.height / 2));
                             }else if(pet.BEFORE_MODE == Pet.TIMER_TOP_START){
                                 run(AiXin.TOP_STATUS, pet.params.height, createAiXinContainer((int)(Math.abs(pet.params.x - pet1.params.x)/1.4), pet.params.height*2, (pet.params.x + pet1.params.x)/2, -size.y/2 + pet.params.height + (pet.params.height*2)/2 - pet.params.height / 2));
                             }
@@ -193,11 +192,11 @@ public class CollisionHandler extends Handler {
                 removeMessages(END_HUG);
                 View hugView = (View)msg.obj;
                 hugViews.remove(hugView);
-                if(wm != null)wm.removeView(hugView);
+                if(MyService.wm != null)MyService.wm.removeView(hugView);
                 break;
             case REMOVE_AIXIN_VIEW:
                 removeMessages(REMOVE_AIXIN_VIEW);
-                if(wm != null)wm.removeView((View) msg.obj);
+                if(MyService.wm != null)MyService.wm.removeView((View) msg.obj);
                 break;
             case HIDDEN_CONTAINER:
                 removeMessages(HIDDEN_CONTAINER);
@@ -255,7 +254,7 @@ public class CollisionHandler extends Handler {
                     return true;
                 }
             });
-            wm.addView(hugView, hugParam);
+            MyService.wm.addView(hugView, hugParam);
             Message msg = new Message();
             msg.obj = hugView;
             msg.what = END_HUG;
@@ -280,7 +279,7 @@ public class CollisionHandler extends Handler {
         aiXinContainerParams.height = height;
         aiXinContainerParams.x = x;
         aiXinContainerParams.y = y;
-        wm.addView(aiXinContainerView, aiXinContainerParams);
+        MyService.wm.addView(aiXinContainerView, aiXinContainerParams);
         Map<String, Object> datas = new HashMap<>();
         datas.put("view", aiXinContainerView);
         datas.put("params", aiXinContainerParams);
@@ -298,7 +297,7 @@ public class CollisionHandler extends Handler {
         if(hugViews != null && hugViews.size() > 0){
             removeMessages(END_HUG);
             int hugViewsCount = hugViews.size();
-            for (int k = 0; k < hugViewsCount; k++)wm.removeView(hugViews.get(k));
+            for (int k = 0; k < hugViewsCount; k++)MyService.wm.removeView(hugViews.get(k));
             hugViews.clear();
         }
     }

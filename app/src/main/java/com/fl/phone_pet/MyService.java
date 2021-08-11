@@ -54,7 +54,7 @@ public class MyService extends Service {
     Messenger serviceMessenger = new Messenger(new ActivityMsgHandler());
     Messenger activityMessenger;
     Handler handler = new Handler();
-    WindowManager wm;
+    public static WindowManager wm;
     Point size;
     Map<Integer, MediaPlayer> mp;
     CollisionHandler collisionHandler;
@@ -270,22 +270,23 @@ public class MyService extends Service {
 //        }
 //    }
 
+
     private void initPets(){
         if(groupPets == null)groupPets = new HashMap<>();
 
-        Pet axPet = new Pet(this, AX, wm, currentSize, speed, size, mp, mscView, this.downContainerView, this.downList);
+        Pet axPet = new Pet(this, AX, currentSize, speed, size, mp, mscView, this.downContainerView, this.downList);
         groupPets.put(AX, new LinkedList<>(Arrays.asList(axPet)));
 
-//        Pet lwPet = new Pet(this, LW, wm, currentSize, speed, size, mp, mscView, this.downContainerView, this.downList);
-//        groupPets.put(LW, new LinkedList<>(Arrays.asList(lwPet)));
-//
-//        Pet wzPet = new Pet(this, WZ, wm, currentSize, speed, size, mp, mscView, this.downContainerView, this.downList);
-//        groupPets.put(WZ, new LinkedList<>(Arrays.asList(wzPet)));
+        Pet lwPet = new Pet(this, LW, currentSize, speed, size, mp, mscView, this.downContainerView, this.downList);
+        groupPets.put(LW, new LinkedList<>(Arrays.asList(lwPet)));
+
+        Pet wzPet = new Pet(this, WZ, currentSize, speed, size, mp, mscView, this.downContainerView, this.downList);
+        groupPets.put(WZ, new LinkedList<>(Arrays.asList(wzPet)));
 
     }
 
     private void addPetOneCount(String name){
-        Pet pet = new Pet(this, name, wm, currentSize, speed, size, mp, mscView, this.downContainerView, this.downList);
+        Pet pet = new Pet(this, name, currentSize, speed, size, mp, mscView, this.downContainerView, this.downList);
         List<Pet> pets = groupPets.get(name);
         if(pets == null){
             pets = new LinkedList<>();
@@ -338,7 +339,7 @@ public class MyService extends Service {
     }
 
     private void initCollisionHandler(){
-        if(collisionHandler == null)collisionHandler = new CollisionHandler(this, groupPets, wm, size, mp, downContainerView, downList);
+        if(collisionHandler == null)collisionHandler = new CollisionHandler(this, groupPets, size, mp, downContainerView, downList);
         collisionHandler.sendEmptyMessage(CollisionHandler.COLLISION);
     }
 

@@ -17,6 +17,7 @@
         android:animateLayoutChanges="true"
         android:layout_centerInParent="true"
         android:orientation="horizontal"
+        android:layoutAnimation="@anim/wz_func_panel_layout_anim"
         ><!--android:layoutAnimation="@anim/wz_func_panel_layout_anim"-->
 
         <ImageView
@@ -26,27 +27,27 @@
             android:scaleType="centerCrop"
             android:src="@drawable/wz_junzhiming"
             android:translationX="20dp"
-            android:translationY="20dp"
+            android:translationY="0dp"
             tools:ignore="SpeakableTextPresentCheck" />
 
         <ImageView
             android:id="@+id/prop"
-            android:layout_width="61dp"
-            android:layout_height="61dp"
+            android:layout_width="51dp"
+            android:layout_height="51dp"
             android:scaleType="centerCrop"
             android:src="@drawable/wz_wuzhiwu"
             android:translationX="30dp"
-            android:translationY="30dp"
+            android:translationY="50dp"
             tools:ignore="SpeakableTextPresentCheck" />
 
         <ImageView
             android:id="@+id/voice"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:scaleType="centerCrop"
             android:src="@drawable/wz_tingwuyan"
-            android:translationX="40dp"
-            android:translationY="40dp"
+            android:translationX="20dp"
+            android:translationY="100dp"
             tools:ignore="SpeakableTextPresentCheck" />
 
         <ImageView
@@ -55,8 +56,8 @@
             android:layout_height="40dp"
             android:scaleType="centerCrop"
             android:src="@drawable/wz_gaoci"
-            android:translationX="50dp"
-            android:translationY="70dp"
+            android:translationX="-50dp"
+            android:translationY="150dp"
             tools:ignore="SpeakableTextPresentCheck" />
     </LinearLayout>
 

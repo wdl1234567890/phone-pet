@@ -72,13 +72,17 @@ public class MainActivity extends AppCompatActivity {
         SeekBar sizeSetting = findViewById(R.id.selectSize);
         sizeSetting.setEnabled(false);
         TextView sizeShow = findViewById(R.id.sizeShow);
-        sizeShow.setText(String.valueOf(getSharedPreferences("pet_store",
-                Context.MODE_PRIVATE).getInt("current_size", MyService.currentSize)));
+        int size1 = getSharedPreferences("pet_store",
+                Context.MODE_PRIVATE).getInt("current_size", MyService.currentSize);
+        sizeShow.setText(String.valueOf(size1));
+        sizeSetting.setProgress(size1);
         SeekBar vSetting = findViewById(R.id.selectV);
         vSetting.setEnabled(false);
         TextView vShow = findViewById(R.id.vShow);
-        vShow.setText(String.valueOf(getSharedPreferences("pet_store",
-                Context.MODE_PRIVATE).getInt("speed", MyService.speed)));
+        int speed1 = getSharedPreferences("pet_store",
+                Context.MODE_PRIVATE).getInt("speed", MyService.speed);
+        vShow.setText(String.valueOf(speed1));
+        vSetting.setProgress(speed1);
         Switch switch1 = findViewById(R.id.switch1);
         switch1.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
 
