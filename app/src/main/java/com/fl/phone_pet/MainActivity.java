@@ -1,7 +1,6 @@
 package com.fl.phone_pet;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.ComponentName;
@@ -37,6 +36,9 @@ public class MainActivity extends AppCompatActivity {
     public static final int BUTTON_DISENABLED = 20004;
     public static final int DISCONNECTION = 20005;
     public static final int SPEED_CHANGE = 20006;
+
+    public static SeekBar bottomSetting;
+    public static Switch switch2;
 
     Map<String, FloatingActionButton> buttons;
 
@@ -113,6 +115,44 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
+        bottomSetting = findViewById(R.id.selectBottom);
+        bottomSetting.setProgress(getSharedPreferences("pet_store", Context.MODE_PRIVATE).getInt("bottom_y", 0));
+        bottomSetting.setEnabled(false);
+        switch2 = findViewById(R.id.switch2);
+        switch2.setEnabled(false);
+        switch2.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                if(isChecked){
+                    bottomSetting.setEnabled(true);
+                    MyService.oldDeviation = bottomSetting.getProgress();
+                    MyService.deviation = bottomSetting.getProgress();
+                }else{
+                    bottomSetting.setEnabled(false);
+                    MyService.oldDeviation = 0;
+                    MyService.deviation = 0;
+                }
+            }
+        });
+        bottomSetting.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                MyService.deviation = i;
+                MyService.oldDeviation = i;
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+
         sizeSetting.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
 
             @Override
@@ -173,12 +213,6 @@ public class MainActivity extends AppCompatActivity {
         bindButtonsEvent();
     }
 
-
-//    @Override
-//    protected void onCreate(@Nullable Bundle savedInstanceState) {
-//        super.onCreate(savedInstanceState);
-//        setContentView(R.layout.wz_func_panel_layout);
-//    }
 
     private void initButtons(){
         if(buttons == null)buttons = new HashMap<>();

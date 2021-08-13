@@ -8,17 +8,16 @@
     <pl.droidsonroids.gif.GifImageView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/ax_bg2"
+        android:background="@drawable/ax_bg"
         tools:ignore="ImageContrastCheck"></pl.droidsonroids.gif.GifImageView>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_centerInParent="true"
         android:animateLayoutChanges="true"
         android:layoutAnimation="@anim/ax_func_panel_layout_anim"
-        android:layout_centerInParent="true"
-        android:orientation="horizontal"
-        ><!--android:layoutAnimation="@anim/ax_func_panel_layout_anim"-->
+        android:orientation="horizontal"><!--android:layoutAnimation="@anim/ax_func_panel_layout_anim"-->
 
         <ImageView
             android:id="@+id/call"

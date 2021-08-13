@@ -4,26 +4,31 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#E69595"
+    android:background="@drawable/tm"
     android:orientation="vertical"
     android:padding="20dp"
-    tools:context=".MainActivity">
+    tools:context=".MainActivity"><!--#E69595-->
 
     <Switch
         android:id="@+id/switch1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="right"
+        android:backgroundTint="#46BCF1"
         android:checked="false"
         android:scaleX="1"
         android:showText="false"
+        android:splitTrack="false"
         android:textColor="#390202"
         android:textColorHighlight="#EC92B0"
         android:textColorHint="#73B7ED"
         android:textColorLink="#FFFFFF"
+        android:textOff="off"
+        android:textOn="on"
         android:textSize="14sp"
         android:textStyle="bold"
-        android:thumbTint="#FFFFFF" />
+        android:thumbTint="@color/switch_thumb_color"
+        android:trackTint="@color/switch_track_color" />
 
 
     <LinearLayout
@@ -40,7 +45,8 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:text="宠物大小"
-            android:textSize="16dp" />
+            android:textSize="16dp"
+            android:textColor="#666"/>
 
         <SeekBar
             android:id="@+id/selectSize"
@@ -49,7 +55,7 @@
             android:layout_height="wrap_content"
             android:enabled="false"
             android:max="50"
-            android:progress="20"
+            android:progress="23"
             android:progressTint="#EC98B5" />
 
         <TextView
@@ -58,7 +64,8 @@
             android:layout_height="wrap_content"
             android:layout_alignLeft="@id/selectSize"
             android:textSize="16dp"
-            tools:text="20" />
+            tools:text="20"
+            android:textColor="#666"/>
     </LinearLayout>
 
     <LinearLayout
@@ -74,7 +81,8 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:text="速度大小"
-            android:textSize="16dp" />
+            android:textSize="16dp"
+            android:textColor="#666"/>
 
         <SeekBar
             android:id="@+id/selectV"
@@ -93,7 +101,8 @@
             android:layout_height="wrap_content"
             android:layout_alignLeft="@id/selectSize"
             android:textSize="16dp"
-            tools:text="5" />
+            tools:text="5"
+            android:textColor="#666"/>
     </LinearLayout>
 
     <LinearLayout
@@ -108,14 +117,14 @@
             android:id="@+id/reduce_lw"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:backgroundTint="#FFFFFF"
-            android:clickable="true"
-            app:backgroundTint="#FFFFFF"
-            app:rippleColor="#E91E63"
-            app:srcCompat="@android:drawable/dialog_holo_light_frame"
             android:layout_marginRight="25dp"
-            android:tag="reduce_lw"/>
+            android:layout_weight="1"
+            android:backgroundTint="#EA7A7A"
+            android:clickable="true"
+            android:tag="reduce_lw"
+            app:backgroundTint="#FFFFFF"
+            app:rippleColor="#EA7A7A"
+            app:srcCompat="@android:drawable/dialog_holo_light_frame" />
 
         <ImageView
             android:id="@+id/lw_image"
@@ -127,12 +136,12 @@
             android:id="@+id/add_lw"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginLeft="25dp"
             android:layout_weight="1"
             android:clickable="true"
-            app:backgroundTint="#B8DDED"
-            app:srcCompat="@android:drawable/ic_input_add"
-            android:layout_marginLeft="25dp"
-            android:tag="add_lw"/>
+            android:tag="add_lw"
+            app:backgroundTint="#82CCEC"
+            app:srcCompat="@android:drawable/ic_input_add" />
     </LinearLayout>
 
     <LinearLayout
@@ -147,14 +156,14 @@
             android:id="@+id/reduce_ax"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:backgroundTint="#FFFFFF"
-            android:clickable="true"
-            app:backgroundTint="#FFFFFF"
-            app:rippleColor="#E91E63"
-            android:src="@android:drawable/dialog_holo_light_frame"
             android:layout_marginRight="25dp"
-            android:tag="reduce_ax"/>
+            android:layout_weight="1"
+            android:backgroundTint="#EA7A7A"
+            android:clickable="true"
+            android:src="@android:drawable/dialog_holo_light_frame"
+            android:tag="reduce_ax"
+            app:backgroundTint="#FFFFFF"
+            app:rippleColor="#EA7A7A" />
 
         <ImageView
             android:id="@+id/ax_image"
@@ -166,12 +175,12 @@
             android:id="@+id/add_ax"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginLeft="25dp"
             android:layout_weight="1"
             android:clickable="true"
-            app:backgroundTint="#B8DDED"
             android:src="@android:drawable/ic_input_add"
-            android:layout_marginLeft="25dp"
-            android:tag="add_ax"/>
+            android:tag="add_ax"
+            app:backgroundTint="#82CCEC" />
     </LinearLayout>
     <LinearLayout
         android:layout_width="wrap_content"
@@ -187,11 +196,11 @@
             android:layout_height="wrap_content"
             android:layout_marginRight="25dp"
             android:layout_weight="1"
-            android:backgroundTint="#FFFFFF"
+            android:backgroundTint="#EA7A7A"
             android:clickable="true"
             android:tag="reduce_wz"
             app:backgroundTint="#FFFFFF"
-            app:rippleColor="#E91E63"
+            app:rippleColor="#EA7A7A"
             app:srcCompat="@android:drawable/dialog_holo_light_frame"
             tools:ignore="SpeakableTextPresentCheck" />
 
@@ -205,11 +214,45 @@
             android:id="@+id/add_wz"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginLeft="25dp"
             android:layout_weight="1"
             android:clickable="true"
-            app:backgroundTint="#B8DDED"
-            app:srcCompat="@android:drawable/ic_input_add"
-            android:layout_marginLeft="25dp"
-            android:tag="add_wz"/>
+            android:tag="add_wz"
+            app:backgroundTint="#82CCEC"
+            app:srcCompat="@android:drawable/ic_input_add" />
     </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <SeekBar
+            android:id="@+id/selectBottom"
+            style="@style/Widget.AppCompat.SeekBar"
+            android:layout_width="230dp"
+            android:layout_height="wrap_content"
+            android:enabled="false"
+            android:max="100"
+            android:min="0"
+            android:progress="0"
+            android:progressTint="#EC98B5" />
+        <Switch
+            android:id="@+id/switch2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:checked="false"
+            android:scaleX="1"
+            android:showText="false"
+            android:textColor="#390202"
+            android:textColorHighlight="#EC92B0"
+            android:textColorHint="#73B7ED"
+            android:textColorLink="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:thumbTint="#FFFFFF" />
+    </LinearLayout>
+
 </LinearLayout>

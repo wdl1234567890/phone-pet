@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">phone-pet</string>
+    <string name="app_name">温周桌宠</string>
 
     <!--speechs-->
     <string-array name="lw_speechs">
@@ -108,6 +108,12 @@
     <string-array name="wz_runs">
         <item>cheyifu</item>
         <item>chidongxi</item>
+    </string-array>
+    <string-array name="ax_runs">
+        <item>haixiu</item>
+    </string-array>
+    <string-array name="lw_runs">
+        <item>haixiu</item>
     </string-array>
 
     <!--prop-->
@@ -312,57 +318,9 @@
         <item>aixin16</item>
     </string-array>
 
-    <!--mscs-->
-    <string-array name="lw_mscs">
-        <item>aikanrenaodanbuaicourenao:看热闹</item>
-        <item>bugainiguandeshishaocanhuo:告诉我|我想知道|采访一下|了解一下</item>
-        <item>buzhunku:想哭|流泪|落泪|哭泣</item>
-        <item>chengrenwohaokan:你真好看|你好美|你真美|美人|你太好看了|你长得真好看|你真漂亮|温温大美人</item>
-        <item>dangganxiangbenzuotaoyaodongxi:拿来吧你|把,交给我|交出来|我想要</item>
-        <item>feihua:阿絮是你老婆|阿絮最好看</item>
-        <item>gaoshanliushuizhiyinnanmi:知己|知音</item>
-        <item>guanhaonideyanjing:你老婆真好看|你老婆真美|阿絮真好看|阿絮好美|阿絮真美</item>
-        <item>gun:滚的文雅说法</item>
-        <item>guoleshuangjiangbianshidong:快过年了</item>
-        <item>haishiyuanzhuangdezuihaokan:这妆好看吗|好看吗</item>
-        <item>haotiana:甜吗|甜不甜</item>
-        <item>hengshudoushuibuzhao:睡不着</item>
-        <item>kaixinyeshiyitianbukaixinyeshiyitian:难过|心里,不舒服|心里,别扭|心里难受|不开心|开心不起来|笑不出来</item>
-        <item>laotianyedejiezuo:脸,真美|脸,好看|脸,美</item>
-        <item>lienvpachanglan:不肯收我为徒|烈女|缠|岂不闻</item>
-        <item>meishaonvzhuangshi:柴房|美少女壮士</item>
-        <item>mingzijiaodezhemehaoting:温客行</item>
-        <item>nimobushijiuchongchenglejing.:想喝酒|来一杯|好酒|喝酒啦|干杯|喝一杯</item>
-        <item>nipianren:是假的|相信我|真得不能再真|真的,信我</item>
-        <item>nishenshangyouguang:山河不足重,重在遇知己</item>
-        <item>rishangzhongtianle:赖床|睡懒觉|不想起床</item>
-        <item>shangnizhesuishiwanduan:好痛|好疼|伤心</item>
-        <item>shuodedui:对不对|有没有道理|温周锁了|老温阿絮绝配|老温阿絮天生一对</item>
-        <item>suisuipingan):过年啦|过年了|新年快乐</item>
-        <item>wenwenkexing:你叫什么|你是谁|你的名字是|你的名字叫|我叫你什么</item>
-        <item>wonaiwendashanren:你是好人还是坏人|你是坏人吗|你是好人吗</item>
-        <item>xindejunxinsiwoxin:得君为友，不枉此生</item>
-        <item>yaomesiyaomegun:温,周,不配|他不配</item>
-        <item>yaoxituichang:世界上最可爱的人是谁</item>
-        <item>yesehenmei:夜色很美|月色很美</item>
-        <item>youtiaoshiyouaoye:熬夜|挑食</item>
-        <item>zameng:咱们</item>
-        <item>zenmehaizaishui:再睡一会|起床困难</item>
-        <item>zhizizhishou:天涯孤鸿,无根行客</item>
-    </string-array>
-
-    <!--touch_reply_voices-->
-    <string-array name="lw_touch_reply_voices">
-        <item>zhuazishouhuiqu</item>
-        <item>zhuaziyouqianyounan</item>
-    </string-array>
 
     <!--wh_rate-->
     <string name="wz_wh_rate">1.417</string>
     <string name="ax_wh_rate">1.246</string>
 
-    <!--func_panel_layout-->
-    <string name="lw_func_panel_layout">lw_func_panel_layout</string>
-    <string name="ax_func_panel_layout">ax_func_panel_layout</string>
-    <string name="wz_func_panel_layout">wz_func_panel_layout</string>
 </resources>

@@ -5,27 +5,15 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Context;
-import android.content.Intent;
-import android.graphics.PixelFormat;
 import android.graphics.Point;
-import android.os.Build;
-import android.os.Handler;
-import android.os.Message;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.WindowManager;
 import android.view.animation.BounceInterpolator;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
-
-import androidx.annotation.NonNull;
-
 import com.fl.phone_pet.R;
-
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
-
-import pl.droidsonroids.gif.GifDrawable;
 
 public class PropMsg{
 

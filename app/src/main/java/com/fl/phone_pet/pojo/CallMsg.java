@@ -6,12 +6,9 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.graphics.Point;
-import android.graphics.Typeface;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.animation.AnticipateOvershootInterpolator;
 import android.view.animation.BounceInterpolator;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -67,39 +64,13 @@ public class CallMsg{
         int textWidth = (int) (callText.getPaint().measureText(callText.getText().toString()));
         this.callParams = new RelativeLayout.LayoutParams(textWidth, randomSize * 10);
         int randomX = (int) (Math.random() * (this.size.x - textWidth));
-        Log.i("++++++size.x+++++", String.valueOf(this.size.x));
-        Log.i("+++++++randomX++++", String.valueOf(randomX));
         int randomY = (int) (Math.random() * 70);
         callView.setAlpha(1);
         this.callView.setX(randomX);
         this.callView.setY(randomY);
         float downY = -randomY + this.size.y - callParams.height;
 
-//        ValueAnimator downAnimator = ValueAnimator.ofFloat(0f, downY);
-//        downAnimator.setDuration(3000);
-//        downAnimator.setStartDelay(new Random().nextInt(500) * 2);
-//        downAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-//            @Override
-//            public void onAnimationUpdate(ValueAnimator valueAnimator) {
-//                float value = (float)valueAnimator.getAnimatedValue();
-//                Log.i("value--------",String.valueOf(value));
-//                callParams.y = callParams.y + (int)value;
-//                wm.updateViewLayout(callView, callParams);
-//                if(value == downY){
-//                    ObjectAnimator hideAnimator = ObjectAnimator.ofFloat(callView, "alpha", 0);
-//                    hideAnimator.setDuration(1300);
-//                    hideAnimator.addListener(new AnimatorListenerAdapter() {
-//                        @Override
-//                        public void onAnimationEnd(Animator animation) {
-//                            super.onAnimationEnd(animation);
-//                            wm.removeView(callView);
-//                        }
-//                    });
-//                    hideAnimator.start();
-//                }
-//            }
-//        });
-//        downAnimator.start();
+
         ObjectAnimator downAnimator = ObjectAnimator.ofFloat(this.callView, "translationY", 0, downY);
         ObjectAnimator hideAnimator = ObjectAnimator.ofFloat(this.callView, "alpha", 1, 0);
         downAnimator.setDuration(4000);

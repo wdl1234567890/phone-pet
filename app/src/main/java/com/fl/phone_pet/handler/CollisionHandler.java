@@ -9,7 +9,6 @@ import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -25,7 +24,6 @@ import com.fl.phone_pet.pojo.AiXin;
 import com.fl.phone_pet.pojo.Pet;
 import com.fl.phone_pet.pojo.PropMsg;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -44,9 +42,7 @@ public class CollisionHandler extends Handler {
     List<Integer> resIds;
     Context ctx;
     Point size;
-//    WindowManager wm;
     public CopyOnWriteArrayList<View> hugViews;
-//    private CopyOnWriteArrayList<CountDownLatch> cdls;
     Map<Integer, MediaPlayer> mp;
     RelativeLayout downContainerView;
     CopyOnWriteArrayList downList;
@@ -86,8 +82,6 @@ public class CollisionHandler extends Handler {
         WindowManager.LayoutParams params = (WindowManager.LayoutParams)datas.get("params");
         int count = new Random().nextInt(50) + 100;
         CountDownLatch cdl = new CountDownLatch(count);
-//        if(cdls == null)cdls = new CopyOnWriteArrayList<>();
-//        cdls.add(cdl);
         for(int i = 0; i < count; i++){
             AiXin aixim = new AiXin(ctx, this.resIds.get(new Random().nextInt(this.resIds.size())), status, objSize, params, cdl);
             aiXinContainerView.addView(aixim.aiXinView, aixim.aiXinParams);
@@ -97,7 +91,6 @@ public class CollisionHandler extends Handler {
             public void run() {
                 try {
                     cdl.await(10, TimeUnit.SECONDS);
-//                    cdls.remove(cdl);
                     Message msg = new Message();
                     msg.what = REMOVE_AIXIN_VIEW;
                     msg.obj = aiXinContainerView;
@@ -131,12 +124,11 @@ public class CollisionHandler extends Handler {
                         leftX = pet.params.x - pet.params.width/2 - pet1.params.width/2;
                         rightX = pet.params.x + pet.params.width/2 + pet1.params.width/2;
 
-//                if(this.deviation == -1)this.deviation = (int)(pet.params.width * 0.07);
                         if(pet.BEFORE_MODE == Pet.TIMER_TOP_START){
                             tempPngDeviation = pngDeviation;
-                            pngDeviation = 0;
+                            pngDeviation = (int)Math.round(pet.whDif/1.7 + pet1.whDif/1.7);
                         }else if(pet.BEFORE_MODE == Pet.TIMER_START){
-                            pngDeviation = (int)(pet.params.height * 0.5 + pet.whDif +pet1.whDif);
+                            pngDeviation = (int)(pet.params.height * 0.4 + pet.whDif/2 +pet1.whDif/2);
                         }
                         if(pet.CURRENT_ACTION == Pet.RUN_RIGHT && pet1.CURRENT_ACTION == Pet.RUN_LEFT && pet.params.x < pet1.params.x && pet1.params.x <= rightX - pngDeviation && pet1.params.x > rightX - pngDeviation - deviation
                                 || pet.CURRENT_ACTION == Pet.RUN_LEFT && pet1.CURRENT_ACTION == Pet.RUN_RIGHT && pet.params.x > pet1.params.x && pet1.params.x >= leftX + pngDeviation && pet1.params.x < leftX + pngDeviation + deviation
@@ -144,8 +136,8 @@ public class CollisionHandler extends Handler {
                                 || pet.CURRENT_ACTION == Pet.RUN_LEFT && pet1.CURRENT_ACTION == Pet.RIGHT_STAND && pet.params.x > pet1.params.x && pet1.params.x >= leftX + pngDeviation && pet1.params.x < leftX + pngDeviation + deviation
                                 || pet.CURRENT_ACTION == Pet.LEFT_STAND && pet1.CURRENT_ACTION == Pet.RUN_RIGHT && pet.params.x > pet1.params.x && pet1.params.x >= leftX + pngDeviation && pet1.params.x < leftX + pngDeviation + deviation
                                 || pet.CURRENT_ACTION == Pet.RIGHT_STAND && pet1.CURRENT_ACTION == Pet.RUN_LEFT && pet.params.x < pet1.params.x && pet1.params.x <= rightX - pngDeviation && pet1.params.x > rightX - pngDeviation - deviation
-                                || pet.CURRENT_ACTION == Pet.LEFT_STAND && pet1.CURRENT_ACTION == Pet.RIGHT_STAND && pet.params.x < pet1.params.x && pet1.params.x <= rightX - pngDeviation && pet1.params.x > rightX - pngDeviation - deviation
-                                || pet.CURRENT_ACTION == Pet.RIGHT_STAND && pet1.CURRENT_ACTION == Pet.LEFT_STAND && pet.params.x > pet1.params.x && pet1.params.x >= leftX + pngDeviation && pet1.params.x < leftX + pngDeviation + deviation
+                                || pet.CURRENT_ACTION == Pet.RIGHT_STAND && pet1.CURRENT_ACTION == Pet.LEFT_STAND && pet.params.x < pet1.params.x && pet1.params.x <= rightX - pngDeviation && pet1.params.x > rightX - pngDeviation - deviation
+                                || pet.CURRENT_ACTION == Pet.LEFT_STAND && pet1.CURRENT_ACTION == Pet.RIGHT_STAND && pet.params.x > pet1.params.x && pet1.params.x >= leftX + pngDeviation && pet1.params.x < leftX + pngDeviation + deviation
                         ){
                             if(pngDeviation == 0)pngDeviation = tempPngDeviation;
                             pet.removeAllMessages();
@@ -157,7 +149,7 @@ public class CollisionHandler extends Handler {
                                 pet.elfView.setVisibility(View.GONE);
                                 pet1.elfView.setVisibility(View.GONE);
                                 shouHug((pet.params.x + pet1.params.x)/2, this.size.y/2 - pet.params.height/2 - MyService.deviation, flag, pet.params.height);
-                                run(AiXin.BOTTOM_STATUS, pet.params.height, createAiXinContainer((int)(Math.abs(pet.params.x - pet1.params.x)/1.4), pet.params.height*2, (pet.params.x + pet1.params.x)/2, size.y/2 - pet.params.height - (pet.params.height*2)/2 + pet.params.height / 2));
+                                run(AiXin.BOTTOM_STATUS, pet.params.height, createAiXinContainer((int)(Math.abs(pet.params.x - pet1.params.x) * 1.4), pet.params.height*2, (pet.params.x + pet1.params.x)/2, size.y/2 - pet.params.height - (pet.params.height*2)/2 - MyService.deviation));
                             }else if(pet.BEFORE_MODE == Pet.TIMER_TOP_START){
                                 run(AiXin.TOP_STATUS, pet.params.height, createAiXinContainer((int)(Math.abs(pet.params.x - pet1.params.x)/1.4), pet.params.height*2, (pet.params.x + pet1.params.x)/2, -size.y/2 + pet.params.height + (pet.params.height*2)/2 - pet.params.height / 2));
                             }
@@ -287,13 +279,6 @@ public class CollisionHandler extends Handler {
     }
 
     public void destoryRes(){
-//        if(cdls != null && cdls.size() > 0){
-//            for (CountDownLatch cdl : cdls) {
-//                cdl.notifyAll();
-//            }
-//            cdls.clear();
-//        }
-
         if(hugViews != null && hugViews.size() > 0){
             removeMessages(END_HUG);
             int hugViewsCount = hugViews.size();
@@ -351,124 +336,4 @@ public class CollisionHandler extends Handler {
             }
         }).start();
     }
-//
-//    @Override
-//    public void handleMessage(@NonNull Message msg) {
-//        int topY, bottomY, leftX, rightX;
-//        for (Pet pet : pets){
-//            for (Pet pet1 : pets){
-//                if(pet == pet1)continue;
-//                topY = pet.params.y - pet.params.height/2 - pet1.params.height/2;
-//                bottomY = pet.params.y + pet.params.height/2 + pet1.params.height/2;
-//                leftX = pet.params.x - pet.params.width/2 - pet1.params.width/2;
-//                rightX = pet.params.x + pet.params.width/2 + pet1.params.width/2;
-//                if(pet1.params.x >= leftX && pet1.params.x <= rightX && pet1.params.y >= topY && pet1.params.y <= bottomY){
-//                    if(pet.CURRENT_ACTION != Pet.SLEEP)pet.pausedCurrentAction();
-//                    if(pet.BEFORE_MODE == Pet.TIMER_START && pet1.BEFORE_MODE == Pet.TIMER_START){
-//                        if(pet.params.x < pet1.params.x){
-//                            if(pet.CURRENT_ACTION == Pet.RUN_RIGHT && pet1.CURRENT_ACTION == Pet.SLEEP){
-////                                pet.moveSlow();
-////                                pet.recoveryCurrentAction();
-//                                pet.sendEmptyMessage(Pet.TIMER_START);
-//                            }else if(pet.CURRENT_ACTION == Pet.SLEEP && pet1.CURRENT_ACTION == Pet.RUN_LEFT){
-////                                pet.pushToLeftSleep();
-//                                pet.sendEmptyMessage(Pet.TIMER_START);
-//                            }else if(pet.CURRENT_ACTION == Pet.RUN_RIGHT && pet1.CURRENT_ACTION == Pet.RUN_LEFT){
-//                                pet.sendEmptyMessage(Pet.TIMER_START);
-//                            }else{
-//                                pet.recoveryCurrentAction();
-//                            }
-//                        }else{
-//                            if(pet.CURRENT_ACTION == Pet.RUN_LEFT && pet1.CURRENT_ACTION == Pet.SLEEP){
-////                                pet.moveSlow();
-////                                pet.recoveryCurrentAction();
-//                                pet.sendEmptyMessage(Pet.TIMER_START);
-//                            }else if(pet.CURRENT_ACTION == Pet.SLEEP && pet1.CURRENT_ACTION == Pet.RUN_RIGHT){
-////                                pet.pushToRightSleep();
-//                                pet.sendEmptyMessage(Pet.TIMER_START);
-//                            }else if(pet.CURRENT_ACTION == Pet.RUN_LEFT && pet1.CURRENT_ACTION == Pet.RUN_RIGHT){
-//                                pet.sendEmptyMessage(Pet.TIMER_START);
-//                            }else{
-//                                pet.recoveryCurrentAction();
-//                            }
-//                        }
-//                    }else if(pet.BEFORE_MODE == Pet.TIMER_LEFT_START && pet1.BEFORE_MODE == Pet.TIMER_LEFT_START){
-//                        if(pet.params.y < pet1.params.y){
-//                            if(pet.CURRENT_ACTION == Pet.CLIMB_DOWN && pet1.CURRENT_ACTION == Pet.CLIMB_UP){
-//                                pet.sendEmptyMessage(Pet.TIMER_LEFT_START);
-//                            }else{
-//                                pet.recoveryCurrentAction();
-//                            }
-//                        }else{
-//                            if(pet.CURRENT_ACTION == Pet.CLIMB_UP && pet1.CURRENT_ACTION == Pet.CLIMB_DOWN){
-//                                pet.sendEmptyMessage(Pet.TIMER_LEFT_START);
-//                            }else{
-//                                pet.recoveryCurrentAction();
-//                            }
-//                        }
-//
-//                    }else if(pet.BEFORE_MODE == Pet.TIMER_RIGHT_START && pet1.BEFORE_MODE == Pet.TIMER_RIGHT_START){
-//                        if(pet.params.y < pet1.params.y){
-//                            if(pet.CURRENT_ACTION == Pet.CLIMB_DOWN && pet1.CURRENT_ACTION == Pet.CLIMB_UP){
-//                                pet.sendEmptyMessage(Pet.TIMER_RIGHT_START);
-//                            }else{
-//                                pet.recoveryCurrentAction();
-//                            }
-//                        }else{
-//                            if(pet.CURRENT_ACTION == Pet.CLIMB_UP && pet1.CURRENT_ACTION == Pet.CLIMB_DOWN){
-//                                pet.sendEmptyMessage(Pet.TIMER_RIGHT_START);
-//                            }else{
-//                                pet.recoveryCurrentAction();
-//                            }
-//                        }
-//
-//                    }else if(pet.BEFORE_MODE == Pet.TIMER_TOP_START && pet1.BEFORE_MODE == Pet.TIMER_TOP_START){
-//                        if (pet.params.x < pet1.params.x){
-//                            if (pet.CURRENT_ACTION == Pet.RUN_RIGHT && pet1.CURRENT_ACTION == Pet.RUN_LEFT){
-//                                pet.sendEmptyMessage(Pet.TIMER_TOP_START);
-//                            }else{
-//                                pet.recoveryCurrentAction();
-//                            }
-//                        }else {
-//                            if (pet.CURRENT_ACTION == Pet.RUN_LEFT && pet1.CURRENT_ACTION == Pet.RUN_RIGHT){
-//                                pet.sendEmptyMessage(Pet.TIMER_TOP_START);
-//                            }else{
-//                                pet.recoveryCurrentAction();
-//                            }
-//                        }
-//
-//                    }else if(pet.BEFORE_MODE == Pet.FLY){
-//
-//                        Log.i("----fly-----","-------fly-----");
-//                        if(pet.params.x == pet1.params.x - pet1.params.width/2 - pet.params.width/2
-//                                && pet.params.y == pet1.params.y + pet1.params.height/2 + pet.params.height/2
-//                                || pet.params.x == pet1.params.x + pet1.params.width/2 + pet.params.width/2
-//                                && pet.params.y == pet1.params.y + pet1.params.height/2 + pet.params.height/2
-//                                || pet.params.x == pet1.params.x + pet1.params.width/2 + pet.params.width/2
-//                                && pet.params.y == pet1.params.y - pet1.params.height/2 - pet.params.height/2
-//                                || pet.params.x == pet1.params.x - pet1.params.width/2 - pet.params.width/2
-//                                && pet.params.y == pet1.params.y - pet1.params.height/2 - pet.params.height/2){
-//                            Log.i("++++++++++","++++++++++++");
-//                            pet.oppositeDirectionFlySpeedXY();
-//                        }else if (pet.params.y >= pet1.params.y + pet1.params.height/2 + pet.params.height/2 - deviation
-//                                || pet.params.y <= pet1.params.y - pet1.params.height/2 - pet.params.height/2 + deviation){
-//                            Log.i("***********","***********");
-//                            pet.oppositeDirectionFlySpeedY();
-//                        }else if (pet.params.x >= pet1.params.x + pet1.params.width/2 + pet.params.width/2 - deviation
-//                                ||pet.params.x <= pet1.params.x - pet1.params.width/2 - pet.params.width/2 + deviation){
-//                            Log.i("(((((((((((","((((((((((((((");
-//                            pet.oppositeDirectionFlySpeedX();
-//                        }
-//                        pet.recoveryCurrentAction();
-//
-//                    }else if(pet.CURRENT_ACTION != Pet.FLY){
-//                        pet.recoveryCurrentAction();
-//                    }else{
-//                        pet.recoveryCurrentAction();
-//                    }
-//                }
-//            }
-//        }
-//        sendEmptyMessageDelayed(0, 10);
-//    }
 }

@@ -4,27 +4,14 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
-import android.animation.TimeInterpolator;
 import android.content.Context;
-import android.graphics.PixelFormat;
-import android.graphics.Point;
-import android.os.Build;
 import android.os.Handler;
-import android.os.Message;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
-import android.view.animation.AccelerateDecelerateInterpolator;
-import android.view.animation.AccelerateInterpolator;
 import android.view.animation.AnticipateInterpolator;
-import android.view.animation.AnticipateOvershootInterpolator;
-import android.view.animation.DecelerateInterpolator;
-import android.view.animation.OvershootInterpolator;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
-
-import androidx.annotation.NonNull;
 
 import com.fl.phone_pet.R;
 
@@ -68,32 +55,6 @@ public class AiXin  extends Handler {
         AnimatorSet animatorSet = new AnimatorSet();
         ObjectAnimator flyAnimator = null;
         ObjectAnimator hidenAnimator = null;
-//        switch (this.status){
-//            case LEFT_STATUS:
-//                randomX = (int) (Math.random() * 15 - (size.x/2) + objSize);
-//                randomY = (int) (Math.random() * (objSize - 8) + centralPoint - objSize/2.0);
-//                aiXinView.setRotation(90);
-//                flyAnimator = ObjectAnimator.ofFloat(aiXinView, "translationX", 300);
-//                break;
-//            case RIGHT_STATUS:
-//                randomX = (int) (-Math.random() * 15 + (size.x/2) - objSize);
-//                randomY = (int) (Math.random() * (objSize - 8) + centralPoint - objSize/2.0);
-//                aiXinView.setRotation(-90);
-//                flyAnimator = ObjectAnimator.ofFloat(aiXinView, "translationX", -300);
-//                break;
-//            case TOP_STATUS:
-//                randomX = (int) (Math.random() * (objSize - 8) + centralPoint - objSize/2.0);
-//                randomY = (int) (int) (Math.random() * 15 - (size.y/2) + objSize);
-//                aiXinView.setRotation(180);
-//                flyAnimator = ObjectAnimator.ofFloat(aiXinView, "translationY", 300);
-//                break;
-//            case BOTTOM_STATUS:
-//                randomX = (int) (Math.random() * (objSize - 8) + centralPoint - objSize/2.0);
-//                randomY = (int) (int) (-Math.random() * 15 + (size.y/2) - objSize);
-//                aiXinView.setRotation(0);
-//                flyAnimator = ObjectAnimator.ofFloat(aiXinView, "translationY", -300);
-//                break;
-//        }
         switch (this.status){
             case LEFT_STATUS:
                 randomX = (int) (Math.random() * 6);
@@ -125,7 +86,7 @@ public class AiXin  extends Handler {
         aiXinView.setY(randomY);
         flyAnimator.setDuration(300);
         hidenAnimator = ObjectAnimator.ofFloat(aiXinView,"alpha", 0);
-        hidenAnimator.setInterpolator(new AnticipateInterpolator());//new AnticipateInterpolator()//OvershootInterpolator
+        hidenAnimator.setInterpolator(new AnticipateInterpolator());
         hidenAnimator.setDuration(100);
         animatorSet.play(hidenAnimator).after(flyAnimator);
         animatorSet.addListener(new AnimatorListenerAdapter() {
@@ -138,74 +99,4 @@ public class AiXin  extends Handler {
         animatorSet.setStartDelay(new Random().nextInt(1700));
         animatorSet.start();
     }
-
-//    @Override
-//    public void handleMessage(@NonNull Message msg) {
-//        switch (msg.what){
-//            case FLY:
-//                removeMessages(FLY);
-//                if(aiXinView.getVisibility() != View.VISIBLE)aiXinView.setVisibility(View.VISIBLE);
-//                switch (status){
-//                    case LEFT_STATUS:
-//                        aiXinParams.x = (int) (aiXinParams.x + v0 + 1/2 * g);
-//                        aiXinParams.y = (int) (Math.random() * (objSize - 16) + centralPoint - objSize/2.0);
-//                        v0 = (int) (v0 + g);
-//                        wm.updateViewLayout(aiXinView, aiXinParams);
-//                        if(aiXinParams.x >= -size.x/2 + 3 * objSize){
-//                            sendEmptyMessage(DISAPPEAR);
-//                        }else {
-//                            sendEmptyMessageDelayed(FLY, 50);
-//                        }
-//                        break;
-//                    case RIGHT_STATUS:
-//                        aiXinParams.x = (int) (aiXinParams.x + v0 + 1/2 * g);
-//                        aiXinParams.y = (int) (Math.random() * (objSize - 16) + centralPoint - objSize/2.0);
-//                        v0 = (int) (v0 + g);
-//                        wm.updateViewLayout(aiXinView, aiXinParams);
-//                        if(aiXinParams.x <= size.x/2 - 3 * objSize){
-//                            sendEmptyMessage(DISAPPEAR);
-//                        }else {
-//                            sendEmptyMessageDelayed(FLY, 50);
-//                        }
-//                        break;
-//                    case TOP_STATUS:
-//                        aiXinParams.y = (int) (aiXinParams.y + v0 + 1/2 * g);
-//                        aiXinParams.x = (int) (Math.random() * (objSize - 16) + centralPoint - objSize/2.0);
-//                        v0 = (int) (v0 + g);
-//                        wm.updateViewLayout(aiXinView, aiXinParams);
-//                        if(aiXinParams.y >= -size.y/2 + 3 * objSize){
-//                            sendEmptyMessage(DISAPPEAR);
-//                        }else {
-//                            sendEmptyMessageDelayed(FLY, 50);
-//                        }
-//                        break;
-//                    case BOTTOM_STATUS:
-//                        aiXinParams.y = (int) (aiXinParams.y + v0 + 1/2 * g);
-//                        aiXinParams.x = (int) (Math.random() * (objSize - 16) + centralPoint - objSize/2.0);
-//                        v0 = (int) (v0 + g);
-//                        wm.updateViewLayout(aiXinView, aiXinParams);
-//                        if(aiXinParams.y <= size.y/2 - 3 * objSize){
-//                            sendEmptyMessage(DISAPPEAR);
-//                        }else {
-//                            sendEmptyMessageDelayed(FLY, 50);
-//                        }
-//                        break;
-//                }
-//                break;
-//            case DISAPPEAR:
-//                removeMessages(DISAPPEAR);
-//                aiXinView.setAlpha((float) (aiXinView.getAlpha() - 0.2));
-//                if(aiXinView.getAlpha() <= 0){
-//                    aiXinView.setVisibility(View.GONE);
-//                }else {
-//                    sendEmptyMessageDelayed(DISAPPEAR, 50);
-//                }
-//                break;
-//        }
-//    }
-//
-//    public void run(){
-//        int randomDelayed = new Random().nextInt(500) * 2;
-//        sendEmptyMessageDelayed(FLY, randomDelayed);
-//    }
 }
