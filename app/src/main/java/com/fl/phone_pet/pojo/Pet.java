@@ -1,9 +1,11 @@
 package com.fl.phone_pet.pojo;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.graphics.drawable.AnimationDrawable;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.os.Build;
@@ -144,6 +146,7 @@ public class Pet extends Handler {
     final int distance = 55;
     final int climbTimeConst = 40;
     final double runDistanceMultiply = 50.0;
+    final int downVy = 7;
 
     public static final float g = 9.8f;
     public static float fs = 2f;
@@ -237,16 +240,29 @@ public class Pet extends Handler {
     }
 
     private void initBindEvent() {
-        elfView.setLongClickable(true);
-        elfView.setOnTouchListener(new View.OnTouchListener() {
+        elfBody.setLongClickable(true);
+        elfBody.setOnTouchListener(new View.OnTouchListener() {
             int lastX, lastY, dx, dy, x0, y0, tempX, tempY;
             long downTime, upTime, moveTime;
             int replyFlag = 0;
+            boolean isDown = false;
+            Bitmap bitmap = null;
+            int eventX = -1;
+            int eventY = -1;
+            long moveX = -1L;
+            long moveY = -1L;
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         CURRENT_ACTION = MOVE;
                         replyFlag = 0;
+                        isDown = false;
+                        bitmap = ((GifDrawable)(elfBody.getDrawable())).getCurrentFrame();
+                        eventX = (int)(event.getX());
+                        eventY = (int)(event.getY());
+                        if(eventX < 0 || eventY < 0 || eventX >= bitmap.getWidth() || eventY >= bitmap.getHeight())return true;
+                        if(bitmap.getPixel(eventX, eventY) == 0)return true;
+                        isDown = true;
                         downTime = System.currentTimeMillis();
                         removeAllMessages();
                         lastX = (int) event.getRawX();
@@ -255,6 +271,7 @@ public class Pet extends Handler {
                         y0 = lastY;
                         break;
                     case MotionEvent.ACTION_MOVE:
+                        if(!isDown)return true;
                         moveTime = System.currentTimeMillis();
 
                         tempX = (int) (event.getRawX() < 0 ? 0 : event.getRawX() > size.x ? size.x : event.getRawX());
@@ -289,9 +306,10 @@ public class Pet extends Handler {
                         MyService.wm.updateViewLayout(elfView, params);
                         break;
                     case MotionEvent.ACTION_UP:
+                        if(!isDown)return true;
                         upTime = System.currentTimeMillis();
-                        long moveX = (long) event.getRawX() - x0;
-                        long moveY = (long) event.getRawY() - y0;
+                        moveX = (long) event.getRawX() - x0;
+                        moveY = (long) event.getRawY() - y0;
                         if (moveX == 0 && moveY == 0 && BEFORE_MODE != Pet.FLY && upTime - downTime <= 500) {
                             sendEmptyMessage(Pet.SPEECH_START);
                             return true;
@@ -722,6 +740,11 @@ public class Pet extends Handler {
                 vX0 = vX0 + fs;
                 vY0 = vY0 + g;
                 int flag = -1;
+
+                if(vY0 > downVy * g){
+                    flag = 0;
+                }
+
                 if (params.y + params.height / 2 + MyService.deviation > size.y / 2) {
                     params.y = size.y / 2 - params.height / 2 - MyService.deviation;
                     flag = 0;

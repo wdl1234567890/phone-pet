@@ -5,6 +5,7 @@ import static android.view.View.VISIBLE;
 import android.content.Context;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
+import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Handler;
@@ -144,12 +145,12 @@ public class CollisionHandler extends Handler {
                             pet1.removeAllMessages();
                             pet.CURRENT_ACTION = Pet.COLLISION;
                             pet1.CURRENT_ACTION = Pet.COLLISION;
-                            if(pet.BEFORE_MODE == Pet.TIMER_START){
+                            if(pet.BEFORE_MODE == Pet.TIMER_START && pet.params.y == pet1.params.y){
                                 int flag = pet.params.x < pet1.params.x && pet.name.equals(MyService.LW) || pet1.params.x < pet.params.x && pet1.name.equals(MyService.LW)? 0 : 1;
-                                pet.elfView.setVisibility(View.GONE);
-                                pet1.elfView.setVisibility(View.GONE);
-                                shouHug((pet.params.x + pet1.params.x)/2, this.size.y/2 - pet.params.height/2 - MyService.deviation, flag, pet.params.height);
-                                run(AiXin.BOTTOM_STATUS, pet.params.height, createAiXinContainer((int)(Math.abs(pet.params.x - pet1.params.x) * 1.4), pet.params.height*2, (pet.params.x + pet1.params.x)/2, size.y/2 - pet.params.height - (pet.params.height*2)/2 - MyService.deviation));
+                                int petX = pet.params.x;
+                                int pet1X = pet1.params.x;
+                                shouHug(pet, pet1, flag);
+                                run(AiXin.BOTTOM_STATUS, pet.params.height, createAiXinContainer((int)(Math.abs(petX- pet1X) * 1.4), pet.params.height*2, (petX + pet1X)/2, size.y/2 - pet.params.height - (pet.params.height*2)/2 - MyService.deviation));
                             }else if(pet.BEFORE_MODE == Pet.TIMER_TOP_START){
                                 run(AiXin.TOP_STATUS, pet.params.height, createAiXinContainer((int)(Math.abs(pet.params.x - pet1.params.x)/1.4), pet.params.height*2, (pet.params.x + pet1.params.x)/2, -size.y/2 + pet.params.height + (pet.params.height*2)/2 - pet.params.height / 2));
                             }
@@ -181,17 +182,28 @@ public class CollisionHandler extends Handler {
                 sendEmptyMessageDelayed(COLLISION, 50);
                 break;
             case END_HUG:
-                removeMessages(END_HUG);
-                View hugView = (View)msg.obj;
-                hugViews.remove(hugView);
-                if(MyService.wm != null)MyService.wm.removeView(hugView);
+//                removeMessages(END_HUG);
+//                View hugView = (View)msg.obj;
+//                hugViews.remove(hugView);
+//                if(MyService.wm != null)MyService.wm.removeView(hugView);
+                Map map = (Map)msg.obj;
+                int petX = (int)map.get("petX");
+                Pet pet = (Pet)map.get("pet");
+                Pet pet1 = (Pet)map.get("pet1");
+                Drawable petImage = (Drawable)map.get("petImage");
+                pet1.elfView.setVisibility(VISIBLE);
+                pet.params.x = petX;
+                pet.elfBody.setImageDrawable(petImage);
+                MyService.wm.updateViewLayout(pet.elfView, pet.params);
+                pet.sendEmptyMessage(pet.BEFORE_MODE);
+                pet1.sendEmptyMessage(pet1.BEFORE_MODE);
                 break;
             case REMOVE_AIXIN_VIEW:
-                removeMessages(REMOVE_AIXIN_VIEW);
+//                removeMessages(REMOVE_AIXIN_VIEW);
                 if(MyService.wm != null)MyService.wm.removeView((View) msg.obj);
                 break;
             case HIDDEN_CONTAINER:
-                removeMessages(HIDDEN_CONTAINER);
+//                removeMessages(HIDDEN_CONTAINER);
                 if(downContainerView.getVisibility() == VISIBLE){
                     downContainerView.setVisibility(View.GONE);
                     this.downContainerView.removeAllViews();
@@ -210,6 +222,32 @@ public class CollisionHandler extends Handler {
     public void removePet(Pet pet){
         if(this.pets == null)return;
         this.pets.remove(pet);
+    }
+
+    private void shouHug(Pet pet, Pet pet1, int flag){
+        pet.removeAllMessages();
+        pet1.removeAllMessages();
+        int petX = pet.params.x;
+        int hugX = (pet.params.x + pet1.params.x)/2;
+        Drawable petImage = pet.elfBody.getDrawable();
+        pet.params.x = hugX;
+        try{
+            pet.elfBody.setImageDrawable(new GifDrawable(ctx.getAssets(), flag == 0 ? "hd/lwaxhug.gif" : "hd/axlwhug.gif"));
+            MyService.wm.updateViewLayout(pet.elfView, pet.params);
+            pet1.elfView.setVisibility(View.GONE);
+            Message msg = new Message();
+            HashMap map = new HashMap<>();
+            map.put("pet", pet);
+            map.put("pet1", pet1);
+            map.put("petX", petX);
+            map.put("petImage", petImage);
+            msg.obj = map;
+            msg.what = END_HUG;
+            sendMessageDelayed(msg, 3800);
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     private void shouHug(int x, int y, int flag, int height){

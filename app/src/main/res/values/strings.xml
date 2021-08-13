@@ -322,5 +322,5 @@
     <!--wh_rate-->
     <string name="wz_wh_rate">1.417</string>
     <string name="ax_wh_rate">1.246</string>
-
+    <string name="lw_wh_rate">1.084</string>
 </resources>
