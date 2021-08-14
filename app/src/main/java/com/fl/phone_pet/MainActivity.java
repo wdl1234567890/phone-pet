@@ -14,6 +14,8 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.Switch;
@@ -69,6 +71,13 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        try{
+            getSupportActionBar().hide();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
         setContentView(R.layout.activity_main);
         Context ct = this;
         SeekBar sizeSetting = findViewById(R.id.selectSize);

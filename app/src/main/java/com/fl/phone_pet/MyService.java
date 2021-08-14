@@ -14,6 +14,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
@@ -61,10 +62,9 @@ public class MyService extends Service {
     View mscView;
     public static int oldDeviation = 0;
     public static int deviation = 0;
-
-
     public static int currentSize = 23;
     public static int speed = 9;
+
 
     public volatile RelativeLayout downContainerView;
     private volatile CopyOnWriteArrayList<CountDownLatch> downList = new CopyOnWriteArrayList<>();
@@ -91,6 +91,7 @@ public class MyService extends Service {
     }
 
     public MyService() {
+
     }
 
     @Override
@@ -161,7 +162,6 @@ public class MyService extends Service {
         MainActivity.bottomSetting.setProgress(bottomY);
         MainActivity.switch2.setEnabled(true);
         MainActivity.switch2.setChecked(isBottomOn);
-
         wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         if(mp == null)mp = new HashMap<>();
         size = new Point();
@@ -175,6 +175,7 @@ public class MyService extends Service {
         initPets();
         initCollisionHandler();
         goPets();
+
     }
 
 
@@ -196,6 +197,7 @@ public class MyService extends Service {
             while (it.hasNext()){
                 Map.Entry<String, List<Pet>> entry = it.next();
                 for (Pet pet : entry.getValue()){
+                    pet.isOnceFly = true;
                     pet.elfView.setVisibility(View.GONE);
                     pet.speechView.setVisibility(View.GONE);
                     if(pet.functionPanelView != null)pet.hideFuncPanel();

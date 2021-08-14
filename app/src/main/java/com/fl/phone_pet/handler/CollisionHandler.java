@@ -111,14 +111,20 @@ public class CollisionHandler extends Handler {
                 if(this.pets == null || this.pets.isEmpty())return;
                 int topY, bottomY, leftX, rightX, tempPngDeviation = 0;
                 for (Pet pet : pets){
-                    if(pet.CURRENT_ACTION == Pet.COLLISION || pet.CURRENT_ACTION == Pet.FLY
-                            || pet.CURRENT_ACTION == Pet.MOVE || pet.name.equals(MyService.WZ)
+                    if(pet.CURRENT_ACTION == Pet.COLLISION
+                            || pet.CURRENT_ACTION == Pet.HUG
+                            || pet.CURRENT_ACTION == Pet.FLY
+                            || pet.CURRENT_ACTION == Pet.MOVE
+                            || pet.name.equals(MyService.WZ)
                             || pet.CURRENT_ACTION == Pet.SPEECH_START)continue;
                     for (Pet pet1 : pets){
                         if(pet == pet1 || pet1.name.equals(MyService.WZ)
                                 || pet.name.equals(pet1.name)
-                                || pet1.CURRENT_ACTION == Pet.COLLISION || pet.BEFORE_MODE != pet1.BEFORE_MODE
-                                || pet1.CURRENT_ACTION == Pet.FLY ||pet1.CURRENT_ACTION == Pet.MOVE
+                                || pet1.CURRENT_ACTION == Pet.COLLISION
+                                || pet1.CURRENT_ACTION == Pet.HUG
+                                || pet.BEFORE_MODE != pet1.BEFORE_MODE
+                                || pet1.CURRENT_ACTION == Pet.FLY
+                                ||pet1.CURRENT_ACTION == Pet.MOVE
                                 || pet1.CURRENT_ACTION == Pet.SPEECH_START)continue;
                         topY = pet.params.y - pet.params.height/2 - pet1.params.height/2;
                         bottomY = pet.params.y + pet.params.height/2 + pet1.params.height/2;
@@ -131,7 +137,7 @@ public class CollisionHandler extends Handler {
                         }else if(pet.BEFORE_MODE == Pet.TIMER_START){
                             pngDeviation = (int)(pet.params.height * 0.4 + pet.whDif/2 +pet1.whDif/2);
                         }
-                        if(pet.CURRENT_ACTION == Pet.RUN_RIGHT && pet1.CURRENT_ACTION == Pet.RUN_LEFT && pet.params.x < pet1.params.x && pet1.params.x <= rightX - pngDeviation && pet1.params.x > rightX - pngDeviation - deviation
+                        if(pet.params.y == pet1.params.y && (pet.CURRENT_ACTION == Pet.RUN_RIGHT && pet1.CURRENT_ACTION == Pet.RUN_LEFT && pet.params.x < pet1.params.x && pet1.params.x <= rightX - pngDeviation && pet1.params.x > rightX - pngDeviation - deviation
                                 || pet.CURRENT_ACTION == Pet.RUN_LEFT && pet1.CURRENT_ACTION == Pet.RUN_RIGHT && pet.params.x > pet1.params.x && pet1.params.x >= leftX + pngDeviation && pet1.params.x < leftX + pngDeviation + deviation
                                 || pet.CURRENT_ACTION == Pet.RUN_RIGHT && pet1.CURRENT_ACTION == Pet.LEFT_STAND && pet.params.x < pet1.params.x && pet1.params.x <= rightX - pngDeviation && pet1.params.x > rightX - pngDeviation - deviation
                                 || pet.CURRENT_ACTION == Pet.RUN_LEFT && pet1.CURRENT_ACTION == Pet.RIGHT_STAND && pet.params.x > pet1.params.x && pet1.params.x >= leftX + pngDeviation && pet1.params.x < leftX + pngDeviation + deviation
@@ -139,13 +145,13 @@ public class CollisionHandler extends Handler {
                                 || pet.CURRENT_ACTION == Pet.RIGHT_STAND && pet1.CURRENT_ACTION == Pet.RUN_LEFT && pet.params.x < pet1.params.x && pet1.params.x <= rightX - pngDeviation && pet1.params.x > rightX - pngDeviation - deviation
                                 || pet.CURRENT_ACTION == Pet.RIGHT_STAND && pet1.CURRENT_ACTION == Pet.LEFT_STAND && pet.params.x < pet1.params.x && pet1.params.x <= rightX - pngDeviation && pet1.params.x > rightX - pngDeviation - deviation
                                 || pet.CURRENT_ACTION == Pet.LEFT_STAND && pet1.CURRENT_ACTION == Pet.RIGHT_STAND && pet.params.x > pet1.params.x && pet1.params.x >= leftX + pngDeviation && pet1.params.x < leftX + pngDeviation + deviation
-                        ){
+                        )){
                             if(pngDeviation == 0)pngDeviation = tempPngDeviation;
                             pet.removeAllMessages();
                             pet1.removeAllMessages();
-                            pet.CURRENT_ACTION = Pet.COLLISION;
-                            pet1.CURRENT_ACTION = Pet.COLLISION;
-                            if(pet.BEFORE_MODE == Pet.TIMER_START && pet.params.y == pet1.params.y){
+                            pet.CURRENT_ACTION = Pet.HUG;
+                            pet1.CURRENT_ACTION = Pet.HUG;
+                            if(pet.BEFORE_MODE == Pet.TIMER_START){
                                 int flag = pet.params.x < pet1.params.x && pet.name.equals(MyService.LW) || pet1.params.x < pet.params.x && pet1.name.equals(MyService.LW)? 0 : 1;
                                 int petX = pet.params.x;
                                 int pet1X = pet1.params.x;

@@ -12,6 +12,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Vibrator;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -66,6 +67,7 @@ public class Pet extends Handler {
     public static final int CLIMB_STAND = 10029;
     public static final int HIDDEN_CONTAINER = 10031;
     public static final int MOVE = 10032;
+    public static final int HUG = 10033;
     public int BEFORE_MODE = FLY;
     public int CURRENT_ACTION = FLY;
     public String name;
@@ -143,13 +145,17 @@ public class Pet extends Handler {
     public int pngDeviation = -1;
     public double whRate;
     public int whDif;
+    public boolean isOnceFly = true;
     final int distance = 55;
     final int climbTimeConst = 40;
     final double runDistanceMultiply = 50.0;
     final int downVy = 7;
 
-    public static final float g = 9.8f;
-    public static float fs = 2f;
+
+    public static final float gConst = 1.088f;//9.8
+    public static final float fsConst = 0.222f;//2
+    public static float g;
+    public static float fs;
     private float vX0, vY0;
     private final long moveMin = 10;
     private final float v0 = 1.2f;
@@ -163,6 +169,8 @@ public class Pet extends Handler {
         this.name = name;
         this.currentSize = currentSize;
         this.speed = normalMoveSpeed;
+        this.g = normalMoveSpeed * gConst;
+        this.fs = normalMoveSpeed * fsConst;
         this.mp = mp;
         this.mscView = mscView;
         this.ctx = ctx;
@@ -209,14 +217,23 @@ public class Pet extends Handler {
             functionPanelParams.format = PixelFormat.RGBA_8888;
 
 
-            params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+            params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
                     | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                     | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
-                    | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED;
-            speechParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-                    | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
-            functionPanelParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-                    | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+                    | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                    | WindowManager.LayoutParams.FLAG_FULLSCREEN
+                    | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                    | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR;
+            speechParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                    | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                    | WindowManager.LayoutParams.FLAG_FULLSCREEN
+                    | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                    | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR;
+            functionPanelParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                    | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                    | WindowManager.LayoutParams.FLAG_FULLSCREEN
+                    | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                    | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR;
             int petW = (int) (size.x * (currentSize / 100.0));
 
             params.width = whRate != 0 && whRate != 1 ? (int)(petW * whRate) : petW;
@@ -254,7 +271,6 @@ public class Pet extends Handler {
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        CURRENT_ACTION = MOVE;
                         replyFlag = 0;
                         isDown = false;
                         bitmap = ((GifDrawable)(elfBody.getDrawable())).getCurrentFrame();
@@ -262,6 +278,12 @@ public class Pet extends Handler {
                         eventY = (int)(event.getY());
                         if(eventX < 0 || eventY < 0 || eventX >= bitmap.getWidth() || eventY >= bitmap.getHeight())return true;
                         if(bitmap.getPixel(eventX, eventY) == 0)return true;
+                        if(CURRENT_ACTION == HUG){
+                            voice(MyService.OSS_BASE + "lw/mscs/gunba.mp3");
+                            return true;
+                        }
+                        CURRENT_ACTION = MOVE;
+                        if(isOnceFly)isOnceFly = false;
                         isDown = true;
                         downTime = System.currentTimeMillis();
                         removeAllMessages();
@@ -285,18 +307,18 @@ public class Pet extends Handler {
                         lastY = tempY;
 
                         if (dx != 0 || dy != 0) {
-                            if (dx > 10 && dx < 20)
+                            if (dx > 0 && dx < 2)
                                 elfBody.setImageDrawable(moveRightLightGifDrawable);
-                            else if (dx >= 20 && dx < 32)
+                            else if (dx >= 2 && dx < 5)
                                 elfBody.setImageDrawable(moveRightMiddleGifDrawable);
-                            else if (dx >= 32) elfBody.setImageDrawable(moveRightWeightGifDrawable);
-                            else if (dx < -10 && dx > -20)
+                            else if (dx >= 5) elfBody.setImageDrawable(moveRightWeightGifDrawable);
+                            else if (dx < 0 && dx > -2)
                                 elfBody.setImageDrawable(moveLeftLightGifDrawable);
-                            else if (dx <= -20 && dx > -32)
+                            else if (dx <= -2 && dx > -5)
                                 elfBody.setImageDrawable(moveLeftMiddleGifDrawable);
-                            else if (dx <= -32) elfBody.setImageDrawable(moveLeftWeightGifDrawable);
-                            else
-                                elfBody.setImageDrawable(direction.equals("left") ? moveLeftGifDrawable : moveRightGifDrawable);
+                            else if (dx <= -5) elfBody.setImageDrawable(moveLeftWeightGifDrawable);
+//                            else
+//                                elfBody.setImageDrawable(direction.equals("left") ? moveLeftGifDrawable : moveRightGifDrawable);
                         } else if (lastX - x0 == 0 && lastY - y0 == 0 && BEFORE_MODE != Pet.FLY && moveTime - downTime > 850) {
                             Vibrator vibrator = (Vibrator) ctx.getSystemService(ctx.VIBRATOR_SERVICE);
                             vibrator.vibrate(100);
@@ -741,7 +763,7 @@ public class Pet extends Handler {
                 vY0 = vY0 + g;
                 int flag = -1;
 
-                if(vY0 > downVy * g){
+                if(vY0 > downVy * g * 0.7 && !isOnceFly){
                     flag = 0;
                 }
 
@@ -761,7 +783,9 @@ public class Pet extends Handler {
                     if(flag == -1)flag = 3;
                 }
                 switch (flag){
-                    case 0:sendEmptyMessage(FALL_TO_THE_GROUND);
+                    case 0:
+                        if(isOnceFly)isOnceFly = false;
+                        sendEmptyMessage(FALL_TO_THE_GROUND);
                         break;
                     case 1:sendEmptyMessage(TIMER_TOP_START);
                         break;
@@ -937,7 +961,11 @@ public class Pet extends Handler {
         playVoice("voices/" + this.voiceIds.get(new Random().nextInt(this.voiceIds.size())));
     }
 
-    synchronized private void playVoice(String resId) {
+    private void playVoice(String resId){
+        voice(MyService.OSS_BASE + name + "/" + resId + mscExt);
+    }
+
+    synchronized private void voice(String resId) {
         if (this.mp.get(1) != null) {
             if (this.mp.get(1).isPlaying()) this.mp.get(1).stop();
             this.mp.get(1).release();
@@ -951,7 +979,7 @@ public class Pet extends Handler {
         });
         try {
             this.mp.put(1, mp1);
-            mp1.setDataSource(MyService.OSS_BASE + name + "/" + resId + mscExt);
+            mp1.setDataSource(resId);
             mp1.prepare();
         } catch (Exception e) {
             e.printStackTrace();
@@ -1147,6 +1175,8 @@ public class Pet extends Handler {
 
     public void updateSpeed(int speed){
         this.speed = speed;
+        this.g = speed * gConst;
+        this.fs = speed * fsConst;
     }
 }
 
