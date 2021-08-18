@@ -38,11 +38,10 @@ public class MainActivity extends AppCompatActivity {
     public static final int BUTTON_DISENABLED = 20004;
     public static final int DISCONNECTION = 20005;
     public static final int SPEED_CHANGE = 20006;
-
-    public static SeekBar bottomSetting;
-    public static Switch switch2;
+    public static final int FREQUEST_CHANGE = 20007;
 
     Map<String, FloatingActionButton> buttons;
+    public static Context ctx;
 
     private ServiceConnection sc = new ServiceConnection(){
 
@@ -79,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         setContentView(R.layout.activity_main);
-        Context ct = this;
+        ctx = this;
         SeekBar sizeSetting = findViewById(R.id.selectSize);
         sizeSetting.setEnabled(false);
         TextView sizeShow = findViewById(R.id.sizeShow);
@@ -87,13 +86,23 @@ public class MainActivity extends AppCompatActivity {
                 Context.MODE_PRIVATE).getInt("current_size", MyService.currentSize);
         sizeShow.setText(String.valueOf(size1));
         sizeSetting.setProgress(size1);
-        SeekBar vSetting = findViewById(R.id.selectV);
-        vSetting.setEnabled(false);
+
+        SeekBar speedSetting = findViewById(R.id.selectSpeed);
+        speedSetting.setEnabled(false);
         TextView vShow = findViewById(R.id.vShow);
         int speed1 = getSharedPreferences("pet_store",
                 Context.MODE_PRIVATE).getInt("speed", MyService.speed);
         vShow.setText(String.valueOf(speed1));
-        vSetting.setProgress(speed1);
+        speedSetting.setProgress(speed1);
+
+        SeekBar frequestSetting = findViewById(R.id.selectFrequest);
+        frequestSetting.setEnabled(false);
+        TextView fShow = findViewById(R.id.fShow);
+        int frequest = getSharedPreferences("pet_store",
+                Context.MODE_PRIVATE).getInt("frequest", MyService.frequest);
+        fShow.setText(String.valueOf(frequest));
+        frequestSetting.setProgress(frequest);
+
         Switch switch1 = findViewById(R.id.switch1);
         switch1.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
 
@@ -101,11 +110,11 @@ public class MainActivity extends AppCompatActivity {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if(isChecked){
                     if(serviceMessenger == null){
-                        myService = new Intent(ct, MyService.class);
+                        myService = new Intent(ctx, MyService.class);
                         myService.putExtra("clientMessenger", clientMessenger);
                         bindService(myService, sc, Context.BIND_AUTO_CREATE);
                         sizeSetting.setEnabled(true);
-                        vSetting.setEnabled(true);
+                        speedSetting.setEnabled(true);
                         for(FloatingActionButton button : buttons.values()){
                             button.setEnabled(true);
                         }
@@ -115,7 +124,7 @@ public class MainActivity extends AppCompatActivity {
                     if(serviceMessenger != null){
                         unbindService(sc);
                         sizeSetting.setEnabled(false);
-                        vSetting.setEnabled(false);
+                        speedSetting.setEnabled(false);
                         for(FloatingActionButton button : buttons.values()){
                             button.setEnabled(false);
                         }
@@ -125,42 +134,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        bottomSetting = findViewById(R.id.selectBottom);
-        bottomSetting.setProgress(getSharedPreferences("pet_store", Context.MODE_PRIVATE).getInt("bottom_y", 0));
-        bottomSetting.setEnabled(false);
-        switch2 = findViewById(R.id.switch2);
-        switch2.setEnabled(false);
-        switch2.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
-                if(isChecked){
-                    bottomSetting.setEnabled(true);
-                    MyService.oldDeviation = bottomSetting.getProgress();
-                    MyService.deviation = bottomSetting.getProgress();
-                }else{
-                    bottomSetting.setEnabled(false);
-                    MyService.oldDeviation = 0;
-                    MyService.deviation = 0;
-                }
-            }
-        });
-        bottomSetting.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
-
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                MyService.deviation = i;
-                MyService.oldDeviation = i;
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-            }
-        });
 
         sizeSetting.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
 
@@ -190,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-        vSetting.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+        speedSetting.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
 
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -218,10 +191,37 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+        frequestSetting.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean b) {
+                fShow.setText(String.valueOf(progress));
+                if(serviceMessenger != null){
+                    Message msg = new Message();
+                    msg.what = FREQUEST_CHANGE;
+                    msg.arg1 = progress;
+                    msg.replyTo = clientMessenger;
+                    try {
+                        serviceMessenger.send(msg);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
         initButtons();
         bindButtonsEvent();
     }
-
 
     private void initButtons(){
         if(buttons == null)buttons = new HashMap<>();

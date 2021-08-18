@@ -1,5 +1,6 @@
 package com.fl.phone_pet;
 
+import android.app.Activity;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -60,10 +61,11 @@ public class MyService extends Service {
     Map<Integer, MediaPlayer> mp;
     CollisionHandler collisionHandler;
     View mscView;
-    public static int oldDeviation = 0;
+//    public static int oldDeviation = 0;
     public static int deviation = 0;
     public static int currentSize = 23;
     public static int speed = 9;
+    public static int frequest = 3;
 
 
     public volatile RelativeLayout downContainerView;
@@ -85,6 +87,11 @@ public class MyService extends Service {
                 speed = msg.arg1;
                 if(activityMessenger == null)activityMessenger = msg.replyTo;
                 updateSpeed();
+            }else if(msg.what == MainActivity.FREQUEST_CHANGE){
+                frequest = msg.arg1;
+                if(activityMessenger == null)activityMessenger = msg.replyTo;
+                updateFrequest();
+
             }
 
         }
@@ -105,12 +112,10 @@ public class MyService extends Service {
     public void onDestroy() {
         super.onDestroy();
         getSharedPreferences("pet_store", Context.MODE_PRIVATE).edit()
-                .putInt("current_size", currentSize).putInt("speed", speed)
-                .putInt("bottom_y", MainActivity.bottomSetting.getProgress())
-                .putBoolean("bottom_on", MainActivity.bottomSetting.isEnabled())
+                .putInt("current_size", currentSize)
+                .putInt("speed", speed)
+                .putInt("frequest", frequest)
                 .commit();
-        MainActivity.bottomSetting.setEnabled(false);
-        MainActivity.switch2.setEnabled(false);
 
         try {
             Iterator<Map.Entry<String, List<Pet>>> it = groupPets.entrySet().iterator();
@@ -152,17 +157,9 @@ public class MyService extends Service {
         super.onCreate();
         currentSize = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getInt("current_size", currentSize);
         speed = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getInt("speed", speed);
-        Boolean isBottomOn = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getBoolean("bottom_on", false);
-        int bottomY = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getInt("bottom_y", 0);
-        if(isBottomOn){
-            MyService.oldDeviation = bottomY;
-            MyService.deviation = bottomY;
-        }
-        MainActivity.bottomSetting.setEnabled(isBottomOn);
-        MainActivity.bottomSetting.setProgress(bottomY);
-        MainActivity.switch2.setEnabled(true);
-        MainActivity.switch2.setChecked(isBottomOn);
-        wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+        frequest = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getInt("frequest", frequest);
+        wm = (WindowManager) MainActivity.ctx.getSystemService(Context.WINDOW_SERVICE);
+
         if(mp == null)mp = new HashMap<>();
         size = new Point();
         if (Build.VERSION.SDK_INT >= 19){
@@ -170,6 +167,8 @@ public class MyService extends Service {
         }else {
             wm.getDefaultDisplay().getSize(size);
         }
+
+
 
         initDownContainer();
         initPets();
@@ -183,9 +182,6 @@ public class MyService extends Service {
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         if(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE || newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
-            if(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE)deviation = 0;
-            else deviation = oldDeviation;
-
             int temp;
             temp = size.x;
             size.x = size.y;
@@ -229,7 +225,7 @@ public class MyService extends Service {
             downContainerParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
         }
         downContainerParams.format = PixelFormat.RGBA_8888;
-        downContainerParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+        downContainerParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
                 | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
         downContainerParams.width = this.size.x;
         downContainerParams.height = this.size.y;
@@ -247,19 +243,19 @@ public class MyService extends Service {
     private void initPets(){
         if(groupPets == null)groupPets = new HashMap<>();
 
-        Pet axPet = new Pet(this, AX, currentSize, speed, size, mp, mscView, this.downContainerView, this.downList);
+        Pet axPet = new Pet(MainActivity.ctx, AX, currentSize, speed, frequest, size, mp, mscView, this.downContainerView, this.downList);
         groupPets.put(AX, new LinkedList<>(Arrays.asList(axPet)));
 
-        Pet lwPet = new Pet(this, LW, currentSize, speed, size, mp, mscView, this.downContainerView, this.downList);
+        Pet lwPet = new Pet(MainActivity.ctx, LW, currentSize, speed, frequest, size, mp, mscView, this.downContainerView, this.downList);
         groupPets.put(LW, new LinkedList<>(Arrays.asList(lwPet)));
 
-        Pet wzPet = new Pet(this, WZ, currentSize, speed, size, mp, mscView, this.downContainerView, this.downList);
+        Pet wzPet = new Pet(MainActivity.ctx, WZ, currentSize, speed, frequest, size, mp, mscView, this.downContainerView, this.downList);
         groupPets.put(WZ, new LinkedList<>(Arrays.asList(wzPet)));
 
     }
 
     private void addPetOneCount(String name){
-        Pet pet = new Pet(this, name, currentSize, speed, size, mp, mscView, this.downContainerView, this.downList);
+        Pet pet = new Pet(MainActivity.ctx, name, currentSize, speed, frequest, size, mp, mscView, this.downContainerView, this.downList);
         List<Pet> pets = groupPets.get(name);
         if(pets == null){
             pets = new LinkedList<>();
@@ -312,7 +308,7 @@ public class MyService extends Service {
     }
 
     private void initCollisionHandler(){
-        if(collisionHandler == null)collisionHandler = new CollisionHandler(this, groupPets, size, mp, downContainerView, downList);
+        if(collisionHandler == null)collisionHandler = new CollisionHandler(MainActivity.ctx, groupPets, size, mp, downContainerView, downList);
         collisionHandler.sendEmptyMessage(CollisionHandler.COLLISION);
     }
 
@@ -355,6 +351,16 @@ public class MyService extends Service {
             Map.Entry<String, List<Pet>> entry = it.next();
             for (Pet pet : entry.getValue()){
                 pet.updateSpeed(speed);
+            }
+        }
+    }
+
+    public void updateFrequest(){
+        Iterator<Map.Entry<String, List<Pet>>> it = groupPets.entrySet().iterator();
+        while (it.hasNext()){
+            Map.Entry<String, List<Pet>> entry = it.next();
+            for (Pet pet : entry.getValue()){
+                pet.updateFrequest(frequest);
             }
         }
     }

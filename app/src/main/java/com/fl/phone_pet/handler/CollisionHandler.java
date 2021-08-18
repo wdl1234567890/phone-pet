@@ -6,6 +6,7 @@ import android.content.Context;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.LevelListDrawable;
 import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Handler;
@@ -21,6 +22,7 @@ import androidx.annotation.NonNull;
 
 import com.fl.phone_pet.MyService;
 import com.fl.phone_pet.R;
+import com.fl.phone_pet.com.fl.phone_pet.util.Utils;
 import com.fl.phone_pet.pojo.AiXin;
 import com.fl.phone_pet.pojo.Pet;
 import com.fl.phone_pet.pojo.PropMsg;
@@ -50,11 +52,13 @@ public class CollisionHandler extends Handler {
 
     final int deviation = 60;
     int pngDeviation;
+    String imageExt = ".png";
 
     public static final int COLLISION = 40001;
     public static final int END_HUG = 40002;
     public static final int REMOVE_AIXIN_VIEW = 40003;
     public static final int HIDDEN_CONTAINER = 40004;
+    public static final int HUG = 40005;
 //
     public CollisionHandler(Context ctx, Map<String, List<Pet>> groupPets, Point size, Map<Integer, MediaPlayer> mp, RelativeLayout downContainerView, CopyOnWriteArrayList downList){
         this.ctx = ctx;
@@ -187,22 +191,27 @@ public class CollisionHandler extends Handler {
                 }
                 sendEmptyMessageDelayed(COLLISION, 50);
                 break;
-            case END_HUG:
-//                removeMessages(END_HUG);
-//                View hugView = (View)msg.obj;
-//                hugViews.remove(hugView);
-//                if(MyService.wm != null)MyService.wm.removeView(hugView);
-                Map map = (Map)msg.obj;
-                int petX = (int)map.get("petX");
-                Pet pet = (Pet)map.get("pet");
-                Pet pet1 = (Pet)map.get("pet1");
-                Drawable petImage = (Drawable)map.get("petImage");
-                pet1.elfView.setVisibility(VISIBLE);
-                pet.params.x = petX;
-                pet.elfBody.setImageDrawable(petImage);
-                MyService.wm.updateViewLayout(pet.elfView, pet.params);
-                pet.sendEmptyMessage(pet.BEFORE_MODE);
-                pet1.sendEmptyMessage(pet1.BEFORE_MODE);
+            case HUG:
+                removeMessages(HUG);
+                Message msg1 = msg.getTarget().obtainMessage();
+                Map map = (Map)(msg1.obj);
+                int currentLevel = ((LevelListDrawable)((Pet)map.get("pet")).elfBody.getDrawable()).getLevel();
+                currentLevel = currentLevel == 0 ? -1 : currentLevel;
+                if(currentLevel + 1 < (int)(map.get("maxLevel"))){
+                    ((Pet)map.get("pet")).elfBody.setImageLevel(currentLevel + 1);
+                    sendMessageDelayed(msg1, 500);
+                }else{
+                    int petX = (int)map.get("petX");
+                    Pet pet = (Pet)map.get("pet");
+                    Pet pet1 = (Pet)map.get("pet1");
+                    Drawable petImage = (Drawable)map.get("petImage");
+                    pet1.elfView.setVisibility(VISIBLE);
+                    pet.params.x = petX;
+                    pet.elfBody.setImageDrawable(petImage);
+                    MyService.wm.updateViewLayout(pet.elfView, pet.params);
+                    pet.sendEmptyMessage(pet.BEFORE_MODE);
+                    pet1.sendEmptyMessage(pet1.BEFORE_MODE);
+                }
                 break;
             case REMOVE_AIXIN_VIEW:
 //                removeMessages(REMOVE_AIXIN_VIEW);
@@ -231,6 +240,9 @@ public class CollisionHandler extends Handler {
     }
 
     private void shouHug(Pet pet, Pet pet1, int flag){
+        LevelListDrawable levelListDrawable = new LevelListDrawable();
+        String[] hdStrs = ctx.getResources().getStringArray(ctx.getResources().getIdentifier("hd", "array", ctx.getPackageName()));
+        if(hdStrs == null || hdStrs.length <= 0)return;
         pet.removeAllMessages();
         pet1.removeAllMessages();
         int petX = pet.params.x;
@@ -238,7 +250,22 @@ public class CollisionHandler extends Handler {
         Drawable petImage = pet.elfBody.getDrawable();
         pet.params.x = hugX;
         try{
-            pet.elfBody.setImageDrawable(new GifDrawable(ctx.getAssets(), flag == 0 ? "hd/lwaxhug.gif" : "hd/axlwhug.gif"));
+
+            String[] hdInfo = hdStrs[new Random().nextInt(hdStrs.length)].split(":");
+
+            for (int uu = 0; uu < Integer.valueOf(hdInfo[1]); uu++){
+                String prefix;
+                if(flag == 0){
+                    prefix = MyService.LW + MyService.AX;
+                }else{
+                    prefix = MyService.AX + MyService.LW;
+                }
+                levelListDrawable.addLevel(uu, uu, Utils.assets2Drawable(ctx, "hd/" + prefix + hdInfo[0] + Integer.valueOf(uu + 1) + imageExt));
+            }
+
+
+            pet.elfBody.setImageDrawable(levelListDrawable);
+            pet.elfBody.setImageLevel(0);
             MyService.wm.updateViewLayout(pet.elfView, pet.params);
             pet1.elfView.setVisibility(View.GONE);
             Message msg = new Message();
@@ -247,54 +274,11 @@ public class CollisionHandler extends Handler {
             map.put("pet1", pet1);
             map.put("petX", petX);
             map.put("petImage", petImage);
+            map.put("maxLevel", Integer.valueOf(hdInfo[1]));
             msg.obj = map;
-            msg.what = END_HUG;
-            sendMessageDelayed(msg, 3800);
+            msg.what = HUG;
+            sendMessage(msg);
 
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-    }
-
-    private void shouHug(int x, int y, int flag, int height){
-        try{
-            WindowManager.LayoutParams hugParam = new WindowManager.LayoutParams();
-            View hugView = LayoutInflater.from(ctx).inflate(R.layout.petelf, null);
-            ImageView hugImg = hugView.findViewById(R.id.elfbody);
-            hugImg.setImageDrawable(new GifDrawable(ctx.getAssets(), flag == 0 ? "hd/lwaxhug.gif" : "hd/axlwhug.gif"));
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {//6.0
-                hugParam.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
-            } else {
-                hugParam.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
-            }
-            hugParam.format = PixelFormat.RGBA_8888;
-            hugParam.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-                    | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                    | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
-                    | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED;
-            hugParam.height = height;
-            hugParam.width = (int)(height *  1.084);
-            hugParam.x = x;
-            hugParam.y = y;
-            if(hugViews == null)hugViews = new CopyOnWriteArrayList<>();
-            hugViews.add(hugView);
-            hugView.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View view, MotionEvent motionEvent) {
-                    switch (motionEvent.getAction()) {
-                        case MotionEvent.ACTION_DOWN:
-                            showGun();
-                            playVoiceGun();
-                            break;
-                    }
-                    return true;
-                }
-            });
-            MyService.wm.addView(hugView, hugParam);
-            Message msg = new Message();
-            msg.obj = hugView;
-            msg.what = END_HUG;
-            sendMessageDelayed(msg, 3800);
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -324,7 +308,7 @@ public class CollisionHandler extends Handler {
 
     public void destoryRes(){
         if(hugViews != null && hugViews.size() > 0){
-            removeMessages(END_HUG);
+            removeMessages(HUG);
             int hugViewsCount = hugViews.size();
             for (int k = 0; k < hugViewsCount; k++)MyService.wm.removeView(hugViews.get(k));
             hugViews.clear();

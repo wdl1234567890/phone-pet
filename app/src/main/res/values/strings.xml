@@ -84,36 +84,37 @@
 
     <!--sleeps-->
     <string-array name="ax_sleeps">
-        <item>chiguazi</item>
-        <item>suanming</item>
-        <item>wujian</item>
-        <item>zhadan</item>
-        <item>zhaojingzi</item>
+        <item>chiguazi:4</item>
+        <item>suanming:4</item>
+        <item>wujian:5</item>
+        <item>zhadan:4</item>
+        <item>zhaojingzi:3</item>
     </string-array>
     <string-array name="lw_sleeps">
-        <item>chuixiao</item>
-        <item>fengyin</item>
-        <item>kancaipu</item>
-        <item>wushan</item>
-        <item>yiwen</item>
-        <item>zhadan</item>
+        <item>chuixiao:1</item>
+        <item>fengyin:4</item>
+        <item>kancaipu:7</item>
+        <item>wushan:6</item>
+        <item>zhadan:4</item>
     </string-array>
     <string-array name="wz_sleeps">
-        <item>ganbei</item>
-        <item>hejiu</item>
-        <item>wanshanzi</item>
+        <item>ganbei:4</item>
+        <item>hejiu:4</item>
+        <item>hu:4</item>
+        <item>wanshanzi:6</item>
     </string-array>
 
     <!--runs-->
     <string-array name="wz_runs">
-        <item>cheyifu</item>
-        <item>chidongxi</item>
+        <item>cheyifu:2</item>
+        <item>chidongxi:3</item>
     </string-array>
     <string-array name="ax_runs">
-        <item>haixiu</item>
+        <item>haixiu:3</item>
     </string-array>
     <string-array name="lw_runs">
-        <item>haixiu</item>
+        <item>haixiu:3</item>
+        <item>yiwen:2</item>
     </string-array>
 
     <!--prop-->
@@ -323,4 +324,9 @@
     <string name="wz_wh_rate">1.417</string>
     <string name="ax_wh_rate">1.246</string>
     <string name="lw_wh_rate">1.084</string>
+
+    <!--hd-->
+    <string-array name="hd">
+        <item>hug:8</item>
+    </string-array>
 </resources>
