@@ -12,17 +12,16 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
 import androidx.annotation.NonNull;
 
 import com.fl.phone_pet.MyService;
 import com.fl.phone_pet.R;
-import com.fl.phone_pet.com.fl.phone_pet.util.Utils;
+import com.fl.phone_pet.utils.SpeedUtils;
+import com.fl.phone_pet.utils.Utils;
 import com.fl.phone_pet.pojo.AiXin;
 import com.fl.phone_pet.pojo.Pet;
 import com.fl.phone_pet.pojo.PropMsg;
@@ -37,7 +36,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import pl.droidsonroids.gif.GifDrawable;
 
 public class CollisionHandler extends Handler {
 
@@ -54,8 +52,7 @@ public class CollisionHandler extends Handler {
     int pngDeviation;
     String imageExt = ".png";
 
-    public static final int COLLISION = 40001;
-    public static final int END_HUG = 40002;
+    public static final int COLLISION_HAPPEN = 40001;
     public static final int REMOVE_AIXIN_VIEW = 40003;
     public static final int HIDDEN_CONTAINER = 40004;
     public static final int HUG = 40005;
@@ -110,8 +107,8 @@ public class CollisionHandler extends Handler {
     @Override
     public void handleMessage(@NonNull Message msg){
         switch (msg.what){
-            case COLLISION:
-                removeMessages(COLLISION);
+            case COLLISION_HAPPEN:
+                removeMessages(COLLISION_HAPPEN);
                 if(this.pets == null || this.pets.isEmpty())return;
                 int topY, bottomY, leftX, rightX, tempPngDeviation = 0;
                 for (Pet pet : pets){
@@ -160,12 +157,12 @@ public class CollisionHandler extends Handler {
                                 int petX = pet.params.x;
                                 int pet1X = pet1.params.x;
                                 shouHug(pet, pet1, flag);
-                                run(AiXin.BOTTOM_STATUS, pet.params.height, createAiXinContainer((int)(Math.abs(petX- pet1X) * 1.4), pet.params.height*2, (petX + pet1X)/2, size.y/2 - pet.params.height - (pet.params.height*2)/2 - MyService.deviation));
+                                run(AiXin.BOTTOM_STATUS, pet.params.height, createAiXinContainer((int)(Math.abs(petX- pet1X) * 1.4), pet.params.height*2, (petX + pet1X)/2, size.y/2 - pet.params.height - (pet.params.height*2)/2));
                             }else if(pet.BEFORE_MODE == Pet.TIMER_TOP_START){
                                 run(AiXin.TOP_STATUS, pet.params.height, createAiXinContainer((int)(Math.abs(pet.params.x - pet1.params.x)/1.4), pet.params.height*2, (pet.params.x + pet1.params.x)/2, -size.y/2 + pet.params.height + (pet.params.height*2)/2 - pet.params.height / 2));
+                                pet.sendEmptyMessageDelayed(pet.BEFORE_MODE, 5 * SpeedUtils.getCurrentSpeedTime());
+                                pet1.sendEmptyMessageDelayed(pet1.BEFORE_MODE, 5 * SpeedUtils.getCurrentSpeedTime());
                             }
-                            pet.sendEmptyMessageDelayed(pet.BEFORE_MODE, 3800);
-                            pet1.sendEmptyMessageDelayed(pet1.BEFORE_MODE, 3800);
                         }else if(pet.CURRENT_ACTION == Pet.CLIMB_UP&& pet1.CURRENT_ACTION == Pet.CLIMB_DOWN && pet.params.y > pet1.params.y && pet1.params.y >= topY && pet1.params.y < topY + deviation
                                 || pet.CURRENT_ACTION == Pet.CLIMB_DOWN&& pet1.CURRENT_ACTION == Pet.CLIMB_UP && pet.params.y < pet1.params.y && pet1.params.y <= bottomY && pet1.params.y > bottomY - deviation
                                 || pet.CURRENT_ACTION == Pet.CLIMB_UP && pet1.CURRENT_ACTION == Pet.CLIMB_STAND && pet.params.y > pet1.params.y && pet1.params.y >= topY && pet1.params.y < topY + deviation
@@ -184,22 +181,24 @@ public class CollisionHandler extends Handler {
                             }else if(pet.BEFORE_MODE == Pet.TIMER_RIGHT_START){
                                 run(AiXin.RIGHT_STATUS, pet.params.width, createAiXinContainer(pet.params.width*2, (int)(Math.abs(pet.params.y - pet1.params.y)/1.4), size.x/2 - pet.params.width - (pet.params.width*2)/2 + pet.params.width / 2, (pet.params.y + pet1.params.y)/2));
                             }
-                            pet.sendEmptyMessageDelayed(pet.BEFORE_MODE, 3000);
-                            pet1.sendEmptyMessageDelayed(pet1.BEFORE_MODE, 3000);
+                            pet.sendEmptyMessageDelayed(pet.BEFORE_MODE, 5 * SpeedUtils.getCurrentSpeedTime());
+                            pet1.sendEmptyMessageDelayed(pet1.BEFORE_MODE, 5 * SpeedUtils.getCurrentSpeedTime());
                         }
                     }
                 }
-                sendEmptyMessageDelayed(COLLISION, 50);
+                sendEmptyMessageDelayed(COLLISION_HAPPEN, 50);
                 break;
             case HUG:
                 removeMessages(HUG);
-                Message msg1 = msg.getTarget().obtainMessage();
-                Map map = (Map)(msg1.obj);
+                Map map = (Map)(msg.obj);
                 int currentLevel = ((LevelListDrawable)((Pet)map.get("pet")).elfBody.getDrawable()).getLevel();
-                currentLevel = currentLevel == 0 ? -1 : currentLevel;
                 if(currentLevel + 1 < (int)(map.get("maxLevel"))){
-                    ((Pet)map.get("pet")).elfBody.setImageLevel(currentLevel + 1);
-                    sendMessageDelayed(msg1, 500);
+                    if(!(Boolean)(map.get("start")))((Pet)map.get("pet")).elfBody.setImageLevel(currentLevel + 1);
+                    Message msg1 = new Message();
+                    msg1.what = HUG;
+                    map.put("start", false);
+                    msg1.obj = map;
+                    sendMessageDelayed(msg1, SpeedUtils.getCurrentSpeedTime());
                 }else{
                     int petX = (int)map.get("petX");
                     Pet pet = (Pet)map.get("pet");
@@ -207,7 +206,7 @@ public class CollisionHandler extends Handler {
                     Drawable petImage = (Drawable)map.get("petImage");
                     pet1.elfView.setVisibility(VISIBLE);
                     pet.params.x = petX;
-                    pet.elfBody.setImageDrawable(petImage);
+//                    pet.elfBody.setImageDrawable(petImage);
                     MyService.wm.updateViewLayout(pet.elfView, pet.params);
                     pet.sendEmptyMessage(pet.BEFORE_MODE);
                     pet1.sendEmptyMessage(pet1.BEFORE_MODE);
@@ -275,6 +274,7 @@ public class CollisionHandler extends Handler {
             map.put("petX", petX);
             map.put("petImage", petImage);
             map.put("maxLevel", Integer.valueOf(hdInfo[1]));
+            map.put("start", true);
             msg.obj = map;
             msg.what = HUG;
             sendMessage(msg);

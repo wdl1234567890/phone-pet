@@ -12,6 +12,8 @@ import android.view.animation.BounceInterpolator;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import com.fl.phone_pet.R;
+import com.fl.phone_pet.utils.SpeedUtils;
+
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 
@@ -51,9 +53,9 @@ public class PropMsg{
         float downY = -randomY + this.size.y - propParams.height;
         ObjectAnimator downAnimator = ObjectAnimator.ofFloat(this.propView, "translationY", 0, downY);
         ObjectAnimator hideAnimator = ObjectAnimator.ofFloat(this.propView, "alpha", 1, 0);
-        downAnimator.setDuration(4000);
+        downAnimator.setDuration(5 * SpeedUtils.getCurrentSpeedTime());
         downAnimator.setInterpolator(new BounceInterpolator());
-        hideAnimator.setDuration(1300);
+        hideAnimator.setDuration(2 * SpeedUtils.getCurrentSpeedTime());
         AnimatorSet animatorSet = new AnimatorSet();
         animatorSet.play(hideAnimator).after(downAnimator);
         animatorSet.setStartDelay(new Random().nextInt(1200) * 2);

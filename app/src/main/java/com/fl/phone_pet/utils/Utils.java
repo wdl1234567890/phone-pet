@@ -1,4 +1,4 @@
-package com.fl.phone_pet.com.fl.phone_pet.util;
+package com.fl.phone_pet.utils;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;

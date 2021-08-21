@@ -3,6 +3,8 @@ package com.fl.phone_pet;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -10,9 +12,11 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -21,9 +25,13 @@ import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
 
+import com.fl.phone_pet.utils.VersionUpdate;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import org.json.JSONObject;
+
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
@@ -40,8 +48,10 @@ public class MainActivity extends AppCompatActivity {
     public static final int SPEED_CHANGE = 20006;
     public static final int FREQUEST_CHANGE = 20007;
 
+
+    List<Handler> versionTh;
     Map<String, FloatingActionButton> buttons;
-    public static Context ctx;
+    public static Activity ctx;
 
     private ServiceConnection sc = new ServiceConnection(){
 
@@ -68,17 +78,28 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(versionTh != null && !versionTh.isEmpty()){
+            Log.i(")))))))))))))))))",")))))))))");
+            versionTh.get(0).getLooper().quit();
+        }
+    }
+
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        try{
-            getSupportActionBar().hide();
-        }catch (Exception e){
-            e.printStackTrace();
-        }
+//        requestWindowFeature(Window.FEATURE_NO_TITLE);
+//        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+//        try{
+//            getSupportActionBar().hide();
+//        }catch (Exception e){
+//            e.printStackTrace();
+//        }
         setContentView(R.layout.activity_main);
         ctx = this;
+
         SeekBar sizeSetting = findViewById(R.id.selectSize);
         sizeSetting.setEnabled(false);
         TextView sizeShow = findViewById(R.id.sizeShow);
@@ -115,6 +136,7 @@ public class MainActivity extends AppCompatActivity {
                         bindService(myService, sc, Context.BIND_AUTO_CREATE);
                         sizeSetting.setEnabled(true);
                         speedSetting.setEnabled(true);
+                        frequestSetting.setEnabled(true);
                         for(FloatingActionButton button : buttons.values()){
                             button.setEnabled(true);
                         }
@@ -125,6 +147,7 @@ public class MainActivity extends AppCompatActivity {
                         unbindService(sc);
                         sizeSetting.setEnabled(false);
                         speedSetting.setEnabled(false);
+                        frequestSetting.setEnabled(false);
                         for(FloatingActionButton button : buttons.values()){
                             button.setEnabled(false);
                         }
@@ -134,6 +157,27 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        TextView version = findViewById(R.id.version);
+        versionTh = VersionUpdate.checkVersionUpdate(ctx, new VersionUpdate.MyConsumer() {
+            @SuppressLint("ResourceAsColor")
+            @Override
+            public void consume(Boolean isUpdate) {
+                if(isUpdate)version.setTextColor(R.color.purple_200);
+                else  version.setTextColor(R.color.white);
+            }
+        });
+        try{
+            version.setText(getPackageManager().getPackageInfo(getPackageName(), 0).versionName);
+        }catch(Exception e){
+            version.setText("0.0.0");
+            e.printStackTrace();
+        }
+        version.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                VersionUpdate.showDialogUpdate();
+            }
+        });
 
         sizeSetting.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
 

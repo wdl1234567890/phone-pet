@@ -14,6 +14,7 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
 import com.fl.phone_pet.R;
+import com.fl.phone_pet.utils.SpeedUtils;
 
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
@@ -84,10 +85,10 @@ public class AiXin  extends Handler {
         aiXinView.setAlpha(1);
         aiXinView.setX(randomX);
         aiXinView.setY(randomY);
-        flyAnimator.setDuration(300);
+        flyAnimator.setDuration(SpeedUtils.getCurrentSpeedTime());
         hidenAnimator = ObjectAnimator.ofFloat(aiXinView,"alpha", 0);
         hidenAnimator.setInterpolator(new AnticipateInterpolator());
-        hidenAnimator.setDuration(100);
+        hidenAnimator.setDuration((long)(0.4 * SpeedUtils.getCurrentSpeedTime()));
         animatorSet.play(hidenAnimator).after(flyAnimator);
         animatorSet.addListener(new AnimatorListenerAdapter() {
             @Override

@@ -12,6 +12,7 @@ import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
@@ -28,8 +29,6 @@ import androidx.annotation.NonNull;
 //import com.fl.phone_pet.handler.CollisionHandler;
 import com.fl.phone_pet.handler.CollisionHandler;
 import com.fl.phone_pet.pojo.Pet;
-import com.iflytek.cloud.SpeechConstant;
-import com.iflytek.cloud.SpeechUtility;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -43,8 +42,6 @@ import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import pl.droidsonroids.gif.GifDrawable;
 
 public class MyService extends Service {
 
@@ -60,9 +57,6 @@ public class MyService extends Service {
     Point size;
     Map<Integer, MediaPlayer> mp;
     CollisionHandler collisionHandler;
-    View mscView;
-//    public static int oldDeviation = 0;
-    public static int deviation = 0;
     public static int currentSize = 23;
     public static int speed = 9;
     public static int frequest = 3;
@@ -91,7 +85,6 @@ public class MyService extends Service {
                 frequest = msg.arg1;
                 if(activityMessenger == null)activityMessenger = msg.replyTo;
                 updateFrequest();
-
             }
 
         }
@@ -123,10 +116,6 @@ public class MyService extends Service {
                 Map.Entry<String, List<Pet>> entry = it.next();
                 for (Pet pet : entry.getValue()){
                     pet.removeAllMessages();
-                    if(pet.mIat != null){
-                        pet.mIat.cancel();
-                        pet.mIat.destroy();
-                    }
                     if(this.mp != null && this.mp.get(1) != null)this.mp.get(1).release();
                     wm.removeView(pet.elfView);
                     wm.removeView(pet.speechView);
@@ -243,19 +232,19 @@ public class MyService extends Service {
     private void initPets(){
         if(groupPets == null)groupPets = new HashMap<>();
 
-        Pet axPet = new Pet(MainActivity.ctx, AX, currentSize, speed, frequest, size, mp, mscView, this.downContainerView, this.downList);
+        Pet axPet = new Pet(MainActivity.ctx, AX, size, mp, this.downContainerView, this.downList);
         groupPets.put(AX, new LinkedList<>(Arrays.asList(axPet)));
 
-        Pet lwPet = new Pet(MainActivity.ctx, LW, currentSize, speed, frequest, size, mp, mscView, this.downContainerView, this.downList);
+        Pet lwPet = new Pet(MainActivity.ctx, LW, size, mp, this.downContainerView, this.downList);
         groupPets.put(LW, new LinkedList<>(Arrays.asList(lwPet)));
 
-        Pet wzPet = new Pet(MainActivity.ctx, WZ, currentSize, speed, frequest, size, mp, mscView, this.downContainerView, this.downList);
+        Pet wzPet = new Pet(MainActivity.ctx, WZ, size, mp, this.downContainerView, this.downList);
         groupPets.put(WZ, new LinkedList<>(Arrays.asList(wzPet)));
 
     }
 
     private void addPetOneCount(String name){
-        Pet pet = new Pet(MainActivity.ctx, name, currentSize, speed, frequest, size, mp, mscView, this.downContainerView, this.downList);
+        Pet pet = new Pet(MainActivity.ctx, name, size, mp, this.downContainerView, this.downList);
         List<Pet> pets = groupPets.get(name);
         if(pets == null){
             pets = new LinkedList<>();
@@ -309,7 +298,7 @@ public class MyService extends Service {
 
     private void initCollisionHandler(){
         if(collisionHandler == null)collisionHandler = new CollisionHandler(MainActivity.ctx, groupPets, size, mp, downContainerView, downList);
-        collisionHandler.sendEmptyMessage(CollisionHandler.COLLISION);
+        collisionHandler.sendEmptyMessage(CollisionHandler.COLLISION_HAPPEN);
     }
 
     private void updateSize(){
@@ -333,7 +322,7 @@ public class MyService extends Service {
                 pet.params.width =  pet.whRate != 0 && pet.whRate != 1 ? (int)(petW * pet.whRate) : petW;
                 pet.params.height = petW;
                 pet.whDif = pet.params.width - pet.params.height;
-                pet.pngDeviation = 0;
+                pet.isOnceFly = true;
                 pet.speechParams.height = (int) (currentSize * 7.5);
                 pet.speechBody.setTextSize(TypedValue.COMPLEX_UNIT_DIP, currentSize / 2);
                 pet.params.x = 0;
@@ -345,23 +334,31 @@ public class MyService extends Service {
         goPets();
     }
 
-    public void updateSpeed(){
+    private void updateFrequest(){
         Iterator<Map.Entry<String, List<Pet>>> it = groupPets.entrySet().iterator();
         while (it.hasNext()){
             Map.Entry<String, List<Pet>> entry = it.next();
             for (Pet pet : entry.getValue()){
-                pet.updateSpeed(speed);
+                if(pet.BEFORE_MODE != Pet.FLY && pet.CURRENT_ACTION != Pet.HUG && pet.CURRENT_ACTION != Pet.COLLISION && pet.CURRENT_ACTION != Pet.SPEECH_START){
+                    pet.removeMessages(pet.BEFORE_MODE);
+                    pet.sendEmptyMessageDelayed(pet.BEFORE_MODE, frequest);
+                }
             }
         }
     }
 
-    public void updateFrequest(){
+    private void updateSpeed(){
         Iterator<Map.Entry<String, List<Pet>>> it = groupPets.entrySet().iterator();
         while (it.hasNext()){
             Map.Entry<String, List<Pet>> entry = it.next();
             for (Pet pet : entry.getValue()){
-                pet.updateFrequest(frequest);
+                if(pet.CURRENT_ACTION != Pet.COLLISION){
+                    pet.removeMessages(pet.CURRENT_ACTION);
+                    pet.sendEmptyMessageDelayed(pet.CURRENT_ACTION, speed);
+                }
+
             }
         }
     }
+
 }
