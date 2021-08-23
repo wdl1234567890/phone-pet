@@ -85,10 +85,10 @@ public class AiXin  extends Handler {
         aiXinView.setAlpha(1);
         aiXinView.setX(randomX);
         aiXinView.setY(randomY);
-        flyAnimator.setDuration(SpeedUtils.getCurrentSpeedTime());
+        flyAnimator.setDuration((long)(1.3 * SpeedUtils.getCurrentSpeedTime()));
         hidenAnimator = ObjectAnimator.ofFloat(aiXinView,"alpha", 0);
         hidenAnimator.setInterpolator(new AnticipateInterpolator());
-        hidenAnimator.setDuration((long)(0.4 * SpeedUtils.getCurrentSpeedTime()));
+        hidenAnimator.setDuration((long)(0.6 * SpeedUtils.getCurrentSpeedTime()));
         animatorSet.play(hidenAnimator).after(flyAnimator);
         animatorSet.addListener(new AnimatorListenerAdapter() {
             @Override

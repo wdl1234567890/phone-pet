@@ -29,6 +29,7 @@ import androidx.annotation.NonNull;
 //import com.fl.phone_pet.handler.CollisionHandler;
 import com.fl.phone_pet.handler.CollisionHandler;
 import com.fl.phone_pet.pojo.Pet;
+import com.fl.phone_pet.utils.Utils;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -38,6 +39,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -49,7 +51,10 @@ public class MyService extends Service {
     public static final String LW = "lw";
     public static final String WZ = "wz";
     public static final String OSS_BASE = "https://music-fl-wdl.oss-cn-shenzhen.aliyuncs.com/";
-    Map<String, List<Pet>> groupPets;
+    public static Map<String, List<Pet>> groupPets;
+    public static Queue<Pet> pets;
+    public static Pet downPet;
+    public static long currentMaxPetId;
     Messenger serviceMessenger = new Messenger(new ActivityMsgHandler());
     Messenger activityMessenger;
     Handler handler = new Handler();
@@ -60,9 +65,11 @@ public class MyService extends Service {
     public static int currentSize = 23;
     public static int speed = 9;
     public static int frequest = 3;
+    public static int divisionArg = -1;
+    public static int oldStatusBarHeight = 0;
+    public static int statusBarHeight = 0;
 
-
-    public volatile RelativeLayout downContainerView;
+    public static volatile RelativeLayout downContainerView;
     private volatile CopyOnWriteArrayList<CountDownLatch> downList = new CopyOnWriteArrayList<>();
 
 
@@ -85,6 +92,9 @@ public class MyService extends Service {
                 frequest = msg.arg1;
                 if(activityMessenger == null)activityMessenger = msg.replyTo;
                 updateFrequest();
+            }else if(msg.what == MainActivity.STATUS_BAR_CHANGE){
+                if(activityMessenger == null)activityMessenger = msg.replyTo;
+                checkStatusBarChange();
             }
 
         }
@@ -104,10 +114,12 @@ public class MyService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        if(wm == null)return;
         getSharedPreferences("pet_store", Context.MODE_PRIVATE).edit()
                 .putInt("current_size", currentSize)
                 .putInt("speed", speed)
                 .putInt("frequest", frequest)
+                .putBoolean("check_status_bar", statusBarHeight == 0 ? true : false)
                 .commit();
 
         try {
@@ -147,8 +159,16 @@ public class MyService extends Service {
         currentSize = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getInt("current_size", currentSize);
         speed = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getInt("speed", speed);
         frequest = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getInt("frequest", frequest);
-        wm = (WindowManager) MainActivity.ctx.getSystemService(Context.WINDOW_SERVICE);
+        boolean checkStatusBar = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getBoolean("check_status_bar", false);
+        if(checkStatusBar){
+            oldStatusBarHeight = 0;
+            statusBarHeight = 0;
+        }else{
+            oldStatusBarHeight = Utils.getStatusBarHeight(this);
+            statusBarHeight = Utils.getStatusBarHeight(this);
+        }
 
+        wm = (WindowManager)getSystemService(Context.WINDOW_SERVICE);
         if(mp == null)mp = new HashMap<>();
         size = new Point();
         if (Build.VERSION.SDK_INT >= 19){
@@ -157,6 +177,7 @@ public class MyService extends Service {
             wm.getDefaultDisplay().getSize(size);
         }
 
+        divisionArg = Utils.getWindowDivisionArg(size.y);
 
 
         initDownContainer();
@@ -175,6 +196,12 @@ public class MyService extends Service {
             temp = size.x;
             size.x = size.y;
             size.y = temp;
+
+            if(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE){
+                statusBarHeight = 0;
+            }else{
+                statusBarHeight = oldStatusBarHeight;
+            }
 
             initDownContainer();
 
@@ -232,19 +259,20 @@ public class MyService extends Service {
     private void initPets(){
         if(groupPets == null)groupPets = new HashMap<>();
 
-        Pet axPet = new Pet(MainActivity.ctx, AX, size, mp, this.downContainerView, this.downList);
+        Pet axPet = new Pet(this, ++currentMaxPetId, AX, size, mp, this.downContainerView, this.downList);
         groupPets.put(AX, new LinkedList<>(Arrays.asList(axPet)));
 
-        Pet lwPet = new Pet(MainActivity.ctx, LW, size, mp, this.downContainerView, this.downList);
+        Pet lwPet = new Pet(this, ++currentMaxPetId, LW, size, mp, this.downContainerView, this.downList);
         groupPets.put(LW, new LinkedList<>(Arrays.asList(lwPet)));
 
-        Pet wzPet = new Pet(MainActivity.ctx, WZ, size, mp, this.downContainerView, this.downList);
+        Pet wzPet = new Pet(this, ++currentMaxPetId, WZ, size, mp, this.downContainerView, this.downList);
         groupPets.put(WZ, new LinkedList<>(Arrays.asList(wzPet)));
 
     }
 
     private void addPetOneCount(String name){
-        Pet pet = new Pet(MainActivity.ctx, name, size, mp, this.downContainerView, this.downList);
+        if(wm == null || groupPets == null || collisionHandler == null)return;
+        Pet pet = new Pet(this, ++currentMaxPetId, name, size, mp, this.downContainerView, this.downList);
         List<Pet> pets = groupPets.get(name);
         if(pets == null){
             pets = new LinkedList<>();
@@ -256,6 +284,7 @@ public class MyService extends Service {
     }
 
     private void reducePetOneCount(String name){
+        if(wm == null || groupPets == null || collisionHandler == null)return;
         List<Pet> pets = groupPets.get(name);
         if(pets == null || pets.isEmpty())return;
         int random = new Random().nextInt(pets.size());
@@ -287,7 +316,12 @@ public class MyService extends Service {
                 handler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        pet.go();
+                        if(wm != null && groupPets != null && !groupPets.isEmpty()){
+                            List<Pet> myPets = new LinkedList<>();
+                            Iterator<Map.Entry<String, List<Pet>>> it1 = groupPets.entrySet().iterator();
+                            while (it1.hasNext())myPets.addAll(it1.next().getValue());
+                            if(myPets.contains(pet))pet.go();
+                        }
                     }
                 }, i * 400);
                 i++;
@@ -297,7 +331,7 @@ public class MyService extends Service {
     }
 
     private void initCollisionHandler(){
-        if(collisionHandler == null)collisionHandler = new CollisionHandler(MainActivity.ctx, groupPets, size, mp, downContainerView, downList);
+        if(collisionHandler == null)collisionHandler = new CollisionHandler(this, groupPets, size, mp, downContainerView, downList);
         collisionHandler.sendEmptyMessage(CollisionHandler.COLLISION_HAPPEN);
     }
 
@@ -355,6 +389,29 @@ public class MyService extends Service {
                 if(pet.CURRENT_ACTION != Pet.COLLISION){
                     pet.removeMessages(pet.CURRENT_ACTION);
                     pet.sendEmptyMessageDelayed(pet.CURRENT_ACTION, speed);
+                }
+
+            }
+        }
+    }
+
+    private void checkStatusBarChange(){
+        Iterator<Map.Entry<String, List<Pet>>> it = groupPets.entrySet().iterator();
+        while (it.hasNext()){
+            Map.Entry<String, List<Pet>> entry = it.next();
+            for (Pet pet : entry.getValue()){
+                if(pet.BEFORE_MODE == Pet.TIMER_TOP_START){
+                    if(pet.params.y >= -size.y/2 + pet.params.height/2 && statusBarHeight == 0){
+                        pet.removeAllMessages();
+                        pet.params.y = -size.y/2 + pet.params.height/2;
+                        wm.updateViewLayout(pet.elfView, pet.params);
+                        pet.sendEmptyMessage(pet.BEFORE_MODE);
+                    }else  if(pet.params.y <= -size.y/2 + pet.params.height/2 && statusBarHeight != 0){
+                        pet.removeAllMessages();
+                        pet.params.y = -size.y/2 + Utils.getStatusBarHeight(this) + pet.params.height/2;
+                        wm.updateViewLayout(pet.elfView, pet.params);
+                        pet.sendEmptyMessage(pet.BEFORE_MODE);
+                    }
                 }
 
             }

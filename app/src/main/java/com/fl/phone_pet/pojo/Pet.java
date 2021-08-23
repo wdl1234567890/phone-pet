@@ -24,18 +24,22 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.fl.phone_pet.MainActivity;
 import com.fl.phone_pet.MyService;
 import com.fl.phone_pet.R;
 import com.fl.phone_pet.utils.SpeedUtils;
 import com.fl.phone_pet.utils.Utils;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
+import java.util.SortedSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -43,7 +47,9 @@ import java.util.concurrent.TimeUnit;
 
 import static android.view.View.VISIBLE;
 
-public class Pet extends Handler {
+import androidx.recyclerview.widget.SortedList;
+
+public class Pet extends Handler implements Comparable<Pet>{
 
     public static final int SPEECH_START = 10000;
     public static final int TIMER_START = 10004;
@@ -72,6 +78,7 @@ public class Pet extends Handler {
     public int BEFORE_MODE = FLY;
     public int CURRENT_ACTION = FLY;
     public String name;
+    public long id;
     public static final String imageExt = ".png";
     public static final String mscExt = ".mp3";
     public String direction = "left";
@@ -149,7 +156,8 @@ public class Pet extends Handler {
     public double whRate;
     public int whDif;
     public boolean isOnceFly = true;
-    final int distance = 55;
+    public boolean isMoveFly = false;
+    final int distance = 30;
     final int downVy = 7;
 
     public static float g = 9.8f;
@@ -167,8 +175,9 @@ public class Pet extends Handler {
     int stateCount;
 
 
-    public Pet(Context ctx, String name, Point size, Map<Integer, MediaPlayer> mp, RelativeLayout downContainerView, CopyOnWriteArrayList downList) {
+    public Pet(Context ctx, long id, String name, Point size, Map<Integer, MediaPlayer> mp, RelativeLayout downContainerView, CopyOnWriteArrayList downList) {
         super();
+        this.id = id;
         this.name = name;
         this.mp = mp;
         this.ctx = ctx;
@@ -221,7 +230,9 @@ public class Pet extends Handler {
                     | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
                     | WindowManager.LayoutParams.FLAG_FULLSCREEN
                     | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-                    | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR;
+                    | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR
+                    | WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
+                    | WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION;
             speechParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                     | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
                     | WindowManager.LayoutParams.FLAG_FULLSCREEN
@@ -239,8 +250,7 @@ public class Pet extends Handler {
 
             whDif = params.width - params.height;
             params.x = 0;
-            params.y = -size.y / 2 + petW / 2 + 20;
-
+            params.y = -size.y / 2 + petW / 2 + 20 + MyService.statusBarHeight;
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -271,17 +281,14 @@ public class Pet extends Handler {
                         bitmap = ((BitmapDrawable)(elfBody.getDrawable().getCurrent())).getBitmap();
                         eventX = (int)(event.getX());
                         eventY = (int)(event.getY());
-                        Log.i("-----eventX-----", String.valueOf(eventX));
-                        Log.i("-----eventY-----", String.valueOf(eventY));
                         Matrix matrix = new Matrix();
                         matrix.postScale(((float)(elfBody.getWidth()))/bitmap.getWidth(), ((float)(elfBody.getHeight())/bitmap.getHeight()));
                         bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-//                        bitmap.setWidth(elfBody.getWidth());
-//                        bitmap.setHeight(elfBody.getHeight());
-                        Log.i("-----width-----", String.valueOf(bitmap.getWidth()));
-                        Log.i("-----height-----", String.valueOf(bitmap.getHeight()));
-                        if(eventX < 0 || eventY < 0 || eventX >= bitmap.getWidth() || eventY >= bitmap.getHeight() || bitmap.getPixel(eventX, eventY) == 0){
-                            return false;
+                        if(eventX < 0 || eventY < 0 || eventX >= bitmap.getWidth() || eventY >= bitmap.getHeight())return false;
+                        if(bitmap.getPixel(eventX, eventY) == 0){
+                            chooseDownPet(event);
+                            dispatchEvent(event);
+                            return true;
                         }
                         if(CURRENT_ACTION == HUG){
                             voice(MyService.OSS_BASE + "lw/mscs/gunba.mp3");
@@ -298,7 +305,10 @@ public class Pet extends Handler {
                         y0 = lastY;
                         break;
                     case MotionEvent.ACTION_MOVE:
-                        if(!isDown)return false;
+                        if(!isDown){
+                            dispatchEvent(event);
+                            return false;
+                        }
                         moveTime = System.currentTimeMillis();
 
                         tempX = (int) (event.getRawX() < 0 ? 0 : event.getRawX() > size.x ? size.x : event.getRawX());
@@ -335,7 +345,12 @@ public class Pet extends Handler {
                         MyService.wm.updateViewLayout(elfView, params);
                         break;
                     case MotionEvent.ACTION_UP:
-                        if(!isDown)return false;
+                        if(!isDown){
+                            dispatchEvent(event);
+                            if(MyService.pets != null)MyService.pets = null;
+                            if(MyService.downPet != null)MyService.downPet = null;
+                            return false;
+                        }
                         upTime = System.currentTimeMillis();
                         moveX = (long) event.getRawX() - x0;
                         moveY = (long) event.getRawY() - y0;
@@ -353,6 +368,7 @@ public class Pet extends Handler {
                         Map<String, Long> data = new HashMap<>();
                         data.put("moveXDirection", (long)dx);
                         data.put("moveYDirection", (long)dy);
+                        data.put("isMoveFly", 1L);
                         msg.what = Pet.FLY;
                         msg.obj = data;
                         sendMessage(msg);
@@ -544,10 +560,10 @@ public class Pet extends Handler {
                 if (CURRENT_ACTION != CLIMB_UP) CURRENT_ACTION = CLIMB_UP;
                 removeMessages(CLIMB_UP);
                 changeStateLevel();
-                if (params.y - params.height / 2 < -size.y / 2) {
+                if (params.y - params.height / 2 < -size.y / 2 + MyService.statusBarHeight) {
                     removeAllMessages();
-                    if(params.y != -size.y / 2 + params.height / 2){
-                        params.y = -size.y / 2 + params.height / 2;
+                    if(params.y != -size.y / 2 + params.height / 2 + MyService.statusBarHeight){
+                        params.y = -size.y / 2 + params.height / 2 + MyService.statusBarHeight;
                         MyService.wm.updateViewLayout(elfView, params);
                     }
 
@@ -677,7 +693,7 @@ public class Pet extends Handler {
                     sendEmptyMessageDelayed(TIMER_START, SpeedUtils.getCurrentFrequestTime());
                 }else{
                     changeStateLevel();
-                    sendEmptyMessageDelayed(FALL_TO_THE_GROUND, (long)(0.7 * SpeedUtils.getCurrentSpeedTime()));
+                    sendEmptyMessageDelayed(FALL_TO_THE_GROUND, (long)(0.6 * SpeedUtils.getCurrentSpeedTime()));
                 }
 
                 break;
@@ -692,6 +708,8 @@ public class Pet extends Handler {
                     vY0 = 0;
                     long moveXDirection = data.get("moveXDirection");
                     long moveYDirection = data.get("moveYDirection");
+
+                    isMoveFly = data.get("isMoveFly") == null ? false : data.get("isMoveFly") > 0 ? true : false;
 
                     direction = Math.abs(moveXDirection) > moveMin ? moveXDirection > 0 ? "right" : "left" : direction;
 
@@ -709,15 +727,12 @@ public class Pet extends Handler {
                 vY0 = vY0 + g;
                 int flag = -1;
 
-                if(vY0 > downVy * g * 0.7 && !isOnceFly){
-                    flag = 0;
-                }
 
                 if (params.y + params.height / 2 > size.y / 2) {
                     params.y = size.y / 2 - params.height / 2;
                     flag = 0;
-                } else if (params.y - params.height / 2 < -size.y / 2) {
-                    params.y = -size.y / 2 + params.height / 2;
+                } else if (params.y - params.height / 2 < -size.y / 2 + MyService.statusBarHeight) {
+                    params.y = -size.y / 2 + params.height / 2 + MyService.statusBarHeight;
                     if(flag == -1)flag = 1;
                 }
 
@@ -729,10 +744,19 @@ public class Pet extends Handler {
                     if(flag == -1)flag = 3;
                 }
 
+                if(flag == -1 && vY0 > downVy * g * 0.8 && !isOnceFly && !isMoveFly && params.y % MyService.divisionArg == 0){
+                    flag = 0;
+                }
+
+                if(flag == -1 && vY0 >= 0 && isMoveFly && !isOnceFly){
+                    if(params.y % MyService.divisionArg != 0)params.y = (params.y / MyService.divisionArg + 1) * MyService.divisionArg;
+                    flag = 0;
+                }
+
                 params.width = whRate != 0 && whRate != 1 ? (int)(params.height * whRate) : params.height;
                 MyService.wm.updateViewLayout(elfView, params);
                 //sendEmptyMessageDelayed(FLY, 50);
-                sendEmptyMessageDelayed(FLY, (long)(0.2 * SpeedUtils.getCurrentSpeedTime()));
+                sendEmptyMessageDelayed(FLY, (long)(0.18 * SpeedUtils.getCurrentSpeedTime()));
 
                 switch (flag){
                     case 0:
@@ -1279,5 +1303,56 @@ public class Pet extends Handler {
         }
     }
 
+    private void chooseDownPet(MotionEvent event){
+        if(MyService.pets == null){
+            MyService.pets = new LinkedBlockingQueue<>();
+            Iterator<Map.Entry<String, List<Pet>>> it = MyService.groupPets.entrySet().iterator();
+            List<Pet> pets = new LinkedList<>();
+            while (it.hasNext()){
+                Map.Entry<String, List<Pet>> entry = it.next();
+                for (Pet pet : entry.getValue()){
+                    pets.add(pet);
+                }
+            }
+            Collections.sort(pets);
+            MyService.pets.addAll(pets);
+        }else if(MyService.pets.isEmpty()){
+            MyService.downContainerView.callOnClick();
+            MyService.pets = null;
+            MyService.downPet = null;
+            return;
+        }
+
+        int rawX = (int)(event.getRawX());
+        int rawY = (int)(event.getRawY());
+        int deltaX, deltaY;
+
+        Pet currentPet;
+        int count = MyService.pets.size();
+
+        for(int i = 0; i < count; i++){
+            currentPet = MyService.pets.poll();
+            if(currentPet == this)continue;
+            deltaX = rawX - (currentPet.params.x - -size.x/2 - currentPet.params.width/2);
+            deltaY = rawY - (currentPet.params.y - -size.y/2 - currentPet.params.height/2);
+            if(deltaX < 0 || deltaX > currentPet.params.width || deltaY < 0 || deltaY > currentPet.params.height)continue;
+            event.setLocation(deltaX, deltaY);
+            MyService.downPet = currentPet;
+            return;
+        }
+
+        MyService.pets = null;
+        MyService.downPet = null;
+
+    }
+
+    private void dispatchEvent(MotionEvent event){
+        if(MyService.downPet != null)MyService.downPet.elfView.dispatchTouchEvent(event);
+    }
+
+    @Override
+    public int compareTo(Pet pet) {
+        return (int)(pet.id - id);
+    }
 }
 

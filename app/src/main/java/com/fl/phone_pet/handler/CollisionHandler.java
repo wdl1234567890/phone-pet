@@ -157,11 +157,11 @@ public class CollisionHandler extends Handler {
                                 int petX = pet.params.x;
                                 int pet1X = pet1.params.x;
                                 shouHug(pet, pet1, flag);
-                                run(AiXin.BOTTOM_STATUS, pet.params.height, createAiXinContainer((int)(Math.abs(petX- pet1X) * 1.4), pet.params.height*2, (petX + pet1X)/2, size.y/2 - pet.params.height - (pet.params.height*2)/2));
+                                run(AiXin.BOTTOM_STATUS, pet.params.height, createAiXinContainer((int)(Math.abs(petX- pet1X) * 1.4), pet.params.height*2, (petX + pet1X)/2, pet.params.y + pet.params.height/2 - (int)(pet.params.height * 1.5) - (pet.params.height*2)/2));
                             }else if(pet.BEFORE_MODE == Pet.TIMER_TOP_START){
-                                run(AiXin.TOP_STATUS, pet.params.height, createAiXinContainer((int)(Math.abs(pet.params.x - pet1.params.x)/1.4), pet.params.height*2, (pet.params.x + pet1.params.x)/2, -size.y/2 + pet.params.height + (pet.params.height*2)/2 - pet.params.height / 2));
-                                pet.sendEmptyMessageDelayed(pet.BEFORE_MODE, 5 * SpeedUtils.getCurrentSpeedTime());
-                                pet1.sendEmptyMessageDelayed(pet1.BEFORE_MODE, 5 * SpeedUtils.getCurrentSpeedTime());
+                                run(AiXin.TOP_STATUS, pet.params.height, createAiXinContainer((int)(Math.abs(pet.params.x - pet1.params.x)/1.4), pet.params.height*2, (pet.params.x + pet1.params.x)/2, -size.y/2 + (int)(pet.params.height/2) + (pet.params.height*2)/2));
+                                pet.sendEmptyMessageDelayed(pet.BEFORE_MODE, 11 * SpeedUtils.getCurrentSpeedTime());
+                                pet1.sendEmptyMessageDelayed(pet1.BEFORE_MODE, 11 * SpeedUtils.getCurrentSpeedTime());
                             }
                         }else if(pet.CURRENT_ACTION == Pet.CLIMB_UP&& pet1.CURRENT_ACTION == Pet.CLIMB_DOWN && pet.params.y > pet1.params.y && pet1.params.y >= topY && pet1.params.y < topY + deviation
                                 || pet.CURRENT_ACTION == Pet.CLIMB_DOWN&& pet1.CURRENT_ACTION == Pet.CLIMB_UP && pet.params.y < pet1.params.y && pet1.params.y <= bottomY && pet1.params.y > bottomY - deviation
@@ -177,12 +177,12 @@ public class CollisionHandler extends Handler {
                             pet.CURRENT_ACTION = Pet.COLLISION;
                             pet1.CURRENT_ACTION = Pet.COLLISION;
                             if(pet.BEFORE_MODE == Pet.TIMER_LEFT_START){
-                                run(AiXin.LEFT_STATUS, pet.params.width, createAiXinContainer(pet.params.width*2, (int)(Math.abs(pet.params.y - pet1.params.y)/1.4), -size.x/2 + pet.params.width + (pet.params.width*2)/2 - pet.params.width / 2, (pet.params.y + pet1.params.y)/2));
+                                run(AiXin.LEFT_STATUS, pet.params.width, createAiXinContainer(pet.params.width*2, (int)(Math.abs(pet.params.y - pet1.params.y)/1.4), -size.x/2 + (int)(pet.params.width/2.5) + (pet.params.width*2)/2, (int)((pet.params.y + pet1.params.y)/2) - 20));
                             }else if(pet.BEFORE_MODE == Pet.TIMER_RIGHT_START){
-                                run(AiXin.RIGHT_STATUS, pet.params.width, createAiXinContainer(pet.params.width*2, (int)(Math.abs(pet.params.y - pet1.params.y)/1.4), size.x/2 - pet.params.width - (pet.params.width*2)/2 + pet.params.width / 2, (pet.params.y + pet1.params.y)/2));
+                                run(AiXin.RIGHT_STATUS, pet.params.width, createAiXinContainer(pet.params.width*2, (int)(Math.abs(pet.params.y - pet1.params.y)/1.4), size.x/2 - (int)(pet.params.width/2.5) - (pet.params.width*2)/2, (int)((pet.params.y + pet1.params.y)/2) - 20));
                             }
-                            pet.sendEmptyMessageDelayed(pet.BEFORE_MODE, 5 * SpeedUtils.getCurrentSpeedTime());
-                            pet1.sendEmptyMessageDelayed(pet1.BEFORE_MODE, 5 * SpeedUtils.getCurrentSpeedTime());
+                            pet.sendEmptyMessageDelayed(pet.BEFORE_MODE, 11 * SpeedUtils.getCurrentSpeedTime());
+                            pet1.sendEmptyMessageDelayed(pet1.BEFORE_MODE, 11 * SpeedUtils.getCurrentSpeedTime());
                         }
                     }
                 }

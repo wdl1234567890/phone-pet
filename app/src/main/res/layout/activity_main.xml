@@ -144,6 +144,22 @@
     </LinearLayout>
 
     <LinearLayout
+        android:layout_width="320dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:gravity="center|left"
+        android:orientation="horizontal">
+        <CheckBox
+            android:id="@+id/checkStatusBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="开启状态栏透明(非刘海屏无效),这将会导致显示在状态栏的部分不能触摸或点击"
+            android:textColor="#999"
+            android:textSize="10dp"
+            android:checked="false" />
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"

@@ -20,11 +20,13 @@ import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
 
+import com.fl.phone_pet.utils.Utils;
 import com.fl.phone_pet.utils.VersionUpdate;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -47,11 +49,11 @@ public class MainActivity extends AppCompatActivity {
     public static final int DISCONNECTION = 20005;
     public static final int SPEED_CHANGE = 20006;
     public static final int FREQUEST_CHANGE = 20007;
+    public static final int STATUS_BAR_CHANGE = 20008;
 
 
     List<Handler> versionTh;
     Map<String, FloatingActionButton> buttons;
-    public static Activity ctx;
 
     private ServiceConnection sc = new ServiceConnection(){
 
@@ -81,7 +83,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         if(versionTh != null && !versionTh.isEmpty()){
-            Log.i(")))))))))))))))))",")))))))))");
             versionTh.get(0).getLooper().quit();
         }
     }
@@ -98,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
 //            e.printStackTrace();
 //        }
         setContentView(R.layout.activity_main);
-        ctx = this;
+        Context ctx = this;
 
         SeekBar sizeSetting = findViewById(R.id.selectSize);
         sizeSetting.setEnabled(false);
@@ -124,6 +125,12 @@ public class MainActivity extends AppCompatActivity {
         fShow.setText(String.valueOf(frequest));
         frequestSetting.setProgress(frequest);
 
+        CheckBox checkedBox = findViewById(R.id.checkStatusBar);
+        checkedBox.setEnabled(false);
+        boolean checkStatusBar = getSharedPreferences("pet_store",
+                Context.MODE_PRIVATE).getBoolean("check_status_bar", false);
+        checkedBox.setChecked(checkStatusBar);
+
         Switch switch1 = findViewById(R.id.switch1);
         switch1.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
 
@@ -137,9 +144,22 @@ public class MainActivity extends AppCompatActivity {
                         sizeSetting.setEnabled(true);
                         speedSetting.setEnabled(true);
                         frequestSetting.setEnabled(true);
+                        checkedBox.setEnabled(true);
                         for(FloatingActionButton button : buttons.values()){
                             button.setEnabled(true);
                         }
+                        switch1.setEnabled(false);
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    Thread.sleep(800);
+                                    switch1.setEnabled(true);
+                                }catch (Exception e){
+                                    e.printStackTrace();
+                                }
+                            }
+                        }).start();
                     }
 
                 }else{
@@ -148,6 +168,7 @@ public class MainActivity extends AppCompatActivity {
                         sizeSetting.setEnabled(false);
                         speedSetting.setEnabled(false);
                         frequestSetting.setEnabled(false);
+                        checkedBox.setEnabled(false);
                         for(FloatingActionButton button : buttons.values()){
                             button.setEnabled(false);
                         }
@@ -158,7 +179,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         TextView version = findViewById(R.id.version);
-        versionTh = VersionUpdate.checkVersionUpdate(ctx, new VersionUpdate.MyConsumer() {
+        versionTh = VersionUpdate.checkVersionUpdate((Activity)ctx, new VersionUpdate.MyConsumer() {
             @SuppressLint("ResourceAsColor")
             @Override
             public void consume(Boolean isUpdate) {
@@ -263,6 +284,27 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+        checkedBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if(b){
+                    MyService.oldStatusBarHeight = 0;
+                }else{
+                    MyService.oldStatusBarHeight = Utils.getStatusBarHeight(ctx);
+                }
+                MyService.statusBarHeight = MyService.oldStatusBarHeight;
+                if(serviceMessenger != null){
+                    Message msg = new Message();
+                    msg.what = STATUS_BAR_CHANGE;
+                    msg.replyTo = clientMessenger;
+                    try {
+                        serviceMessenger.send(msg);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
         initButtons();
         bindButtonsEvent();
     }
@@ -290,6 +332,7 @@ public class MainActivity extends AppCompatActivity {
     private View.OnClickListener addOrReduceListener = new View.OnClickListener(){
         @Override
         public void onClick(View v) {
+            if(serviceMessenger == null)return;
             String tag = (String)v.getTag();
             String[] datas = tag.split("_");
             Message msg = new Message();
