@@ -55,7 +55,7 @@
             android:layout_width="230dp"
             android:layout_height="wrap_content"
             android:enabled="false"
-            android:max="50"
+            android:max="70"
             android:progress="23"
             android:progressTint="#EC98B5" />
 
@@ -153,7 +153,7 @@
             android:id="@+id/checkStatusBar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="开启状态栏透明(非刘海屏无效),这将会导致显示在状态栏的部分不能触摸或点击"
+            android:text="可爬升到状态栏(非刘海屏无效),这将会导致显示在状态栏的部分不能触摸或点击"
             android:textColor="#999"
             android:textSize="10dp"
             android:checked="false" />
@@ -280,7 +280,7 @@
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="100dp"
+        android:layout_marginTop="50dp"
         android:gravity="center_horizontal"
         android:orientation="vertical">
 
@@ -292,7 +292,11 @@
             android:alpha="0.7"
             android:text="开发者：@FL"
             android:textColor="#fff"
-            android:textSize="14dp" />
+            android:textSize="14dp"
+            android:shadowColor="#666"
+            android:shadowDx="0"
+            android:shadowDy="0"
+            android:shadowRadius="10"/>
 
         <TextView
             android:id="@+id/painter"
@@ -302,7 +306,11 @@
             android:alpha="0.7"
             android:text="绘图：@直升飞机飞呀飞"
             android:textColor="#fff"
-            android:textSize="14dp" />
+            android:textSize="14dp"
+            android:shadowColor="#666"
+            android:shadowDx="0"
+            android:shadowDy="0"
+            android:shadowRadius="10"/>
 
         <TextView
             android:id="@+id/version"
@@ -311,7 +319,11 @@
             android:alpha="0.7"
             android:text="版本：1.0.0"
             android:textColor="#fff"
-            android:textSize="12dp" />
+            android:textSize="12dp"
+            android:shadowColor="#333"
+            android:shadowDx="0"
+            android:shadowDy="0"
+            android:shadowRadius="10"/>
     </LinearLayout>
 
 </LinearLayout>

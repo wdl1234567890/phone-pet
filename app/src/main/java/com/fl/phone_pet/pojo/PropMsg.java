@@ -11,6 +11,8 @@ import android.view.View;
 import android.view.animation.BounceInterpolator;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+
+import com.fl.phone_pet.MyService;
 import com.fl.phone_pet.R;
 import com.fl.phone_pet.utils.SpeedUtils;
 
@@ -20,7 +22,6 @@ import java.util.concurrent.CountDownLatch;
 public class PropMsg{
 
     public RelativeLayout.LayoutParams propParams;
-    Point size;
     public View propView;
     ImageView propImg;
     Integer propContent;
@@ -28,9 +29,8 @@ public class PropMsg{
     CountDownLatch cdl;
     int defindSize = -1;
 
-    public PropMsg(Context ctx, Point size, Integer propContent, CountDownLatch cdl, int defindSize){
+    public PropMsg(Context ctx, Integer propContent, CountDownLatch cdl, int defindSize){
         this.ctx = ctx;
-        this.size = size;
         this.propContent = propContent;
         this.cdl = cdl;
         this.defindSize = defindSize;
@@ -45,12 +45,12 @@ public class PropMsg{
         this.propParams = new RelativeLayout.LayoutParams(randomSize, randomSize);
         int randomRotation = (int) (Math.random() * 110 - 90);
         propView.setRotation(randomRotation);
-        int randomX = (int) (Math.random() * (this.size.x - randomSize));
+        int randomX = (int) (Math.random() * (MyService.size.x - randomSize));
         int randomY = (int) (Math.random() * 70);
         propView.setX(randomX);
         propView.setY(randomY);
         propView.setAlpha(1);
-        float downY = -randomY + this.size.y - propParams.height;
+        float downY = -randomY + MyService.size.y - propParams.height;
         ObjectAnimator downAnimator = ObjectAnimator.ofFloat(this.propView, "translationY", 0, downY);
         ObjectAnimator hideAnimator = ObjectAnimator.ofFloat(this.propView, "alpha", 1, 0);
         downAnimator.setDuration(13 * SpeedUtils.getCurrentSpeedTime());

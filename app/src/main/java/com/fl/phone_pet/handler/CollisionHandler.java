@@ -3,6 +3,7 @@ package com.fl.phone_pet.handler;
 import static android.view.View.VISIBLE;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.graphics.drawable.Drawable;
@@ -11,6 +12,7 @@ import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
@@ -42,27 +44,20 @@ public class CollisionHandler extends Handler {
     List<Pet> pets;
     List<Integer> resIds;
     Context ctx;
-    Point size;
-    public CopyOnWriteArrayList<View> hugViews;
-    Map<Integer, MediaPlayer> mp;
-    RelativeLayout downContainerView;
-    CopyOnWriteArrayList downList;
+    List<CountDownLatch> cdls;
 
-    final int deviation = 60;
+    final int deviation = 20;
     int pngDeviation;
     String imageExt = ".png";
 
     public static final int COLLISION_HAPPEN = 40001;
     public static final int REMOVE_AIXIN_VIEW = 40003;
-    public static final int HIDDEN_CONTAINER = 40004;
+//    public static final int HIDDEN_CONTAINER = 40004;
     public static final int HUG = 40005;
+    public static final int HUG_END = 40006;
 //
-    public CollisionHandler(Context ctx, Map<String, List<Pet>> groupPets, Point size, Map<Integer, MediaPlayer> mp, RelativeLayout downContainerView, CopyOnWriteArrayList downList){
+    public CollisionHandler(Context ctx, Map<String, List<Pet>> groupPets){
         this.ctx = ctx;
-        this.size = size;
-        this.mp = mp;
-        this.downContainerView = downContainerView;
-        this.downList = downList;
         initResIds();
         if(groupPets != null && !groupPets.isEmpty())this.pets = new LinkedList<>();
         Set<String> keys = groupPets.keySet();
@@ -83,7 +78,9 @@ public class CollisionHandler extends Handler {
         RelativeLayout aiXinContainerView = (RelativeLayout)datas.get("view");
         WindowManager.LayoutParams params = (WindowManager.LayoutParams)datas.get("params");
         int count = new Random().nextInt(50) + 100;
+        if(cdls == null)cdls = new LinkedList<>();
         CountDownLatch cdl = new CountDownLatch(count);
+        cdls.add(cdl);
         for(int i = 0; i < count; i++){
             AiXin aixim = new AiXin(ctx, this.resIds.get(new Random().nextInt(this.resIds.size())), status, objSize, params, cdl);
             aiXinContainerView.addView(aixim.aiXinView, aixim.aiXinParams);
@@ -93,6 +90,7 @@ public class CollisionHandler extends Handler {
             public void run() {
                 try {
                     cdl.await(10, TimeUnit.SECONDS);
+                    cdls.remove(cdl);
                     Message msg = new Message();
                     msg.what = REMOVE_AIXIN_VIEW;
                     msg.obj = aiXinContainerView;
@@ -110,10 +108,11 @@ public class CollisionHandler extends Handler {
             case COLLISION_HAPPEN:
                 removeMessages(COLLISION_HAPPEN);
                 if(this.pets == null || this.pets.isEmpty())return;
-                int topY, bottomY, leftX, rightX, tempPngDeviation = 0;
+                int topY, bottomY, leftX, rightX;
                 for (Pet pet : pets){
                     if(pet.CURRENT_ACTION == Pet.COLLISION
                             || pet.CURRENT_ACTION == Pet.HUG
+                            || pet.CURRENT_ACTION == Pet.HUG_END
                             || pet.CURRENT_ACTION == Pet.FLY
                             || pet.CURRENT_ACTION == Pet.MOVE
                             || pet.name.equals(MyService.WZ)
@@ -125,7 +124,8 @@ public class CollisionHandler extends Handler {
                                 || pet1.CURRENT_ACTION == Pet.HUG
                                 || pet.BEFORE_MODE != pet1.BEFORE_MODE
                                 || pet1.CURRENT_ACTION == Pet.FLY
-                                ||pet1.CURRENT_ACTION == Pet.MOVE
+                                || pet1.CURRENT_ACTION == Pet.MOVE
+                                || pet1.CURRENT_ACTION == Pet.HUG_END
                                 || pet1.CURRENT_ACTION == Pet.SPEECH_START)continue;
                         topY = pet.params.y - pet.params.height/2 - pet1.params.height/2;
                         bottomY = pet.params.y + pet.params.height/2 + pet1.params.height/2;
@@ -133,10 +133,9 @@ public class CollisionHandler extends Handler {
                         rightX = pet.params.x + pet.params.width/2 + pet1.params.width/2;
 
                         if(pet.BEFORE_MODE == Pet.TIMER_TOP_START){
-                            tempPngDeviation = pngDeviation;
-                            pngDeviation = (int)Math.round(pet.whDif/1.7 + pet1.whDif/1.7);
+                            pngDeviation = (int)Math.round(pet.whDif/1.7 + pet1.whDif/1.7 + pet.params.width * 0.15);
                         }else if(pet.BEFORE_MODE == Pet.TIMER_START){
-                            pngDeviation = (int)(pet.params.height * 0.4 + pet.whDif/2 +pet1.whDif/2);
+                            pngDeviation = (int)(pet.params.height * 0.53 + pet.whDif/2 +pet1.whDif/2);
                         }
                         if(pet.params.y == pet1.params.y && (pet.CURRENT_ACTION == Pet.RUN_RIGHT && pet1.CURRENT_ACTION == Pet.RUN_LEFT && pet.params.x < pet1.params.x && pet1.params.x <= rightX - pngDeviation && pet1.params.x > rightX - pngDeviation - deviation
                                 || pet.CURRENT_ACTION == Pet.RUN_LEFT && pet1.CURRENT_ACTION == Pet.RUN_RIGHT && pet.params.x > pet1.params.x && pet1.params.x >= leftX + pngDeviation && pet1.params.x < leftX + pngDeviation + deviation
@@ -147,19 +146,21 @@ public class CollisionHandler extends Handler {
                                 || pet.CURRENT_ACTION == Pet.RIGHT_STAND && pet1.CURRENT_ACTION == Pet.LEFT_STAND && pet.params.x < pet1.params.x && pet1.params.x <= rightX - pngDeviation && pet1.params.x > rightX - pngDeviation - deviation
                                 || pet.CURRENT_ACTION == Pet.LEFT_STAND && pet1.CURRENT_ACTION == Pet.RIGHT_STAND && pet.params.x > pet1.params.x && pet1.params.x >= leftX + pngDeviation && pet1.params.x < leftX + pngDeviation + deviation
                         )){
-                            if(pngDeviation == 0)pngDeviation = tempPngDeviation;
+//                            if(pngDeviation == 0)pngDeviation = tempPngDeviation;
                             pet.removeAllMessages();
                             pet1.removeAllMessages();
-                            pet.CURRENT_ACTION = Pet.HUG;
-                            pet1.CURRENT_ACTION = Pet.HUG;
                             if(pet.BEFORE_MODE == Pet.TIMER_START){
+                                pet.CURRENT_ACTION = Pet.HUG;
+                                pet1.CURRENT_ACTION = Pet.HUG;
                                 int flag = pet.params.x < pet1.params.x && pet.name.equals(MyService.LW) || pet1.params.x < pet.params.x && pet1.name.equals(MyService.LW)? 0 : 1;
                                 int petX = pet.params.x;
                                 int pet1X = pet1.params.x;
                                 shouHug(pet, pet1, flag);
-                                run(AiXin.BOTTOM_STATUS, pet.params.height, createAiXinContainer((int)(Math.abs(petX- pet1X) * 1.4), pet.params.height*2, (petX + pet1X)/2, pet.params.y + pet.params.height/2 - (int)(pet.params.height * 1.5) - (pet.params.height*2)/2));
+                                run(AiXin.BOTTOM_STATUS, pet.params.height, createAiXinContainer((int)(Math.abs(petX- pet1X) * 1.4), pet.params.height*2, MyService.orientation == Configuration.ORIENTATION_LANDSCAPE ? (petX + pet1X)/2-(int)(Math.abs(petX- pet1X) * 1.4)/2 : (petX + pet1X)/2, pet.params.y + pet.params.height/2 - (int)(pet.params.height * (MyService.orientation == Configuration.ORIENTATION_LANDSCAPE ? 1.1 : 1.5)) - (pet.params.height*2)/2));
                             }else if(pet.BEFORE_MODE == Pet.TIMER_TOP_START){
-                                run(AiXin.TOP_STATUS, pet.params.height, createAiXinContainer((int)(Math.abs(pet.params.x - pet1.params.x)/1.4), pet.params.height*2, (pet.params.x + pet1.params.x)/2, -size.y/2 + (int)(pet.params.height/2) + (pet.params.height*2)/2));
+                                pet.CURRENT_ACTION = Pet.COLLISION;
+                                pet1.CURRENT_ACTION = Pet.COLLISION;
+                                run(AiXin.TOP_STATUS, pet.params.height, createAiXinContainer((int)(Math.abs(pet.params.x - pet1.params.x)/1.4), pet.params.height*2, MyService.orientation == Configuration.ORIENTATION_LANDSCAPE ? (pet.params.x + pet1.params.x)/2-(int)(Math.abs(pet.params.x- pet1.params.x) * 1.4)/3 : (pet.params.x + pet1.params.x)/2, -MyService.size.y/2 + (int)(pet.params.height * 0.7) + (pet.params.height*2)/2));
                                 pet.sendEmptyMessageDelayed(pet.BEFORE_MODE, 11 * SpeedUtils.getCurrentSpeedTime());
                                 pet1.sendEmptyMessageDelayed(pet1.BEFORE_MODE, 11 * SpeedUtils.getCurrentSpeedTime());
                             }
@@ -172,57 +173,67 @@ public class CollisionHandler extends Handler {
                                 || pet.CURRENT_ACTION == Pet.CLIMB_STAND && pet1.CURRENT_ACTION == Pet.CLIMB_STAND && pet.params.y > pet1.params.y && pet1.params.y >= topY && pet1.params.y < topY + deviation
                                 || pet.CURRENT_ACTION == Pet.CLIMB_STAND && pet1.CURRENT_ACTION == Pet.CLIMB_STAND && pet.params.y < pet1.params.y && pet1.params.y <= bottomY && pet1.params.y > bottomY - deviation
                         ){
-                            pet.removeAllMessages();
-                            pet1.removeAllMessages();
-                            pet.CURRENT_ACTION = Pet.COLLISION;
-                            pet1.CURRENT_ACTION = Pet.COLLISION;
-                            if(pet.BEFORE_MODE == Pet.TIMER_LEFT_START){
-                                run(AiXin.LEFT_STATUS, pet.params.width, createAiXinContainer(pet.params.width*2, (int)(Math.abs(pet.params.y - pet1.params.y)/1.4), -size.x/2 + (int)(pet.params.width/2.5) + (pet.params.width*2)/2, (int)((pet.params.y + pet1.params.y)/2) - 20));
-                            }else if(pet.BEFORE_MODE == Pet.TIMER_RIGHT_START){
-                                run(AiXin.RIGHT_STATUS, pet.params.width, createAiXinContainer(pet.params.width*2, (int)(Math.abs(pet.params.y - pet1.params.y)/1.4), size.x/2 - (int)(pet.params.width/2.5) - (pet.params.width*2)/2, (int)((pet.params.y + pet1.params.y)/2) - 20));
-                            }
-                            pet.sendEmptyMessageDelayed(pet.BEFORE_MODE, 11 * SpeedUtils.getCurrentSpeedTime());
-                            pet1.sendEmptyMessageDelayed(pet1.BEFORE_MODE, 11 * SpeedUtils.getCurrentSpeedTime());
+//                            pet.removeAllMessages();
+//                            pet1.removeAllMessages();
+//                            pet.CURRENT_ACTION = Pet.COLLISION;
+//                            pet1.CURRENT_ACTION = Pet.COLLISION;
+//                            Log.i("----petY-----",String.valueOf(pet.params.y));
+//                            Log.i("----pet1Y-----",String.valueOf(pet1.params.y));
+//                            if(pet.BEFORE_MODE == Pet.TIMER_LEFT_START){
+//                                run(AiXin.LEFT_STATUS, pet.params.width, createAiXinContainer(pet.params.width*2, (int)(Math.abs(pet.params.y - pet1.params.y)/1.4), -size.x/2 + (int)(pet.params.width/2.5) + (pet.params.width*2)/2, (int)((pet.params.y + pet1.params.y)/2) - 20));
+//                            }else if(pet.BEFORE_MODE == Pet.TIMER_RIGHT_START){
+//                                run(AiXin.RIGHT_STATUS, pet.params.width, createAiXinContainer(pet.params.width*2, (int)(Math.abs(pet.params.y - pet1.params.y)/1.4), size.x/2 - (int)(pet.params.width/2.5) - (pet.params.width*2)/2, (int)((pet.params.y + pet1.params.y)/2) - 20));
+//                            }
+//                            pet.sendEmptyMessageDelayed(pet.BEFORE_MODE, 11 * SpeedUtils.getCurrentSpeedTime());
+//                            pet1.sendEmptyMessageDelayed(pet1.BEFORE_MODE, 11 * SpeedUtils.getCurrentSpeedTime());
                         }
                     }
                 }
                 sendEmptyMessageDelayed(COLLISION_HAPPEN, 50);
                 break;
             case HUG:
-                removeMessages(HUG);
+//                removeMessages(HUG);
                 Map map = (Map)(msg.obj);
                 int currentLevel = ((LevelListDrawable)((Pet)map.get("pet")).elfBody.getDrawable()).getLevel();
+                int currentLevel1 = ((LevelListDrawable)((Pet)map.get("pet1")).elfBody.getDrawable()).getLevel();
                 if(currentLevel + 1 < (int)(map.get("maxLevel"))){
-                    if(!(Boolean)(map.get("start")))((Pet)map.get("pet")).elfBody.setImageLevel(currentLevel + 1);
+                    if(!(Boolean)(map.get("start"))){
+                        Pet pet = (Pet)map.get("pet");
+                        Pet pet1 = (Pet)map.get("pet1");
+                        pet.elfBody.setImageLevel(currentLevel + 1);
+                        pet1.elfBody.setImageLevel(currentLevel1 + 1);
+
+                    }
+
                     Message msg1 = new Message();
                     msg1.what = HUG;
                     map.put("start", false);
                     msg1.obj = map;
                     sendMessageDelayed(msg1, SpeedUtils.getCurrentSpeedTime());
                 }else{
-                    int petX = (int)map.get("petX");
-                    Pet pet = (Pet)map.get("pet");
-                    Pet pet1 = (Pet)map.get("pet1");
-                    Drawable petImage = (Drawable)map.get("petImage");
-                    pet1.elfView.setVisibility(VISIBLE);
-                    pet.params.x = petX;
-//                    pet.elfBody.setImageDrawable(petImage);
-                    MyService.wm.updateViewLayout(pet.elfView, pet.params);
-                    pet.sendEmptyMessage(pet.BEFORE_MODE);
-                    pet1.sendEmptyMessage(pet1.BEFORE_MODE);
+                    Pet pet = ((Pet) map.get("pet"));
+                    Pet pet1 = ((Pet) map.get("pet1"));
+                    pet.hugEnd();
+                    pet1.hugEnd();
                 }
+                break;
+            case HUG_END:
+//                removeMessages(COLLISION_HAPPEN);
+//                Map map1 = (Map)(msg.obj);
+//                Pet pet = (Pet)map1.get("pet");
+//                Pet pet1 = (Pet)map1.get("pet1");
                 break;
             case REMOVE_AIXIN_VIEW:
 //                removeMessages(REMOVE_AIXIN_VIEW);
                 if(MyService.wm != null)MyService.wm.removeView((View) msg.obj);
                 break;
-            case HIDDEN_CONTAINER:
-//                removeMessages(HIDDEN_CONTAINER);
-                if(downContainerView.getVisibility() == VISIBLE){
-                    downContainerView.setVisibility(View.GONE);
-                    this.downContainerView.removeAllViews();
-                }
-                break;
+//            case HIDDEN_CONTAINER:
+////                removeMessages(HIDDEN_CONTAINER);
+//                if(downContainerView.getVisibility() == VISIBLE){
+//                    downContainerView.setVisibility(View.GONE);
+//                    this.downContainerView.removeAllViews();
+//                }
+//                break;
         }
 
     }
@@ -240,14 +251,14 @@ public class CollisionHandler extends Handler {
 
     private void shouHug(Pet pet, Pet pet1, int flag){
         LevelListDrawable levelListDrawable = new LevelListDrawable();
+        LevelListDrawable levelListDrawable1 = new LevelListDrawable();
         String[] hdStrs = ctx.getResources().getStringArray(ctx.getResources().getIdentifier("hd", "array", ctx.getPackageName()));
         if(hdStrs == null || hdStrs.length <= 0)return;
         pet.removeAllMessages();
         pet1.removeAllMessages();
-        int petX = pet.params.x;
         int hugX = (pet.params.x + pet1.params.x)/2;
-        Drawable petImage = pet.elfBody.getDrawable();
         pet.params.x = hugX;
+        pet1.params.x= hugX;
         try{
 
             String[] hdInfo = hdStrs[new Random().nextInt(hdStrs.length)].split(":");
@@ -260,19 +271,20 @@ public class CollisionHandler extends Handler {
                     prefix = MyService.AX + MyService.LW;
                 }
                 levelListDrawable.addLevel(uu, uu, Utils.assets2Drawable(ctx, "hd/" + prefix + hdInfo[0] + Integer.valueOf(uu + 1) + imageExt));
+                levelListDrawable1.addLevel(uu, uu, Utils.assets2Drawable(ctx, "hd/" + prefix + hdInfo[0] + Integer.valueOf(uu + 1) + imageExt));
             }
 
 
             pet.elfBody.setImageDrawable(levelListDrawable);
             pet.elfBody.setImageLevel(0);
             MyService.wm.updateViewLayout(pet.elfView, pet.params);
-            pet1.elfView.setVisibility(View.GONE);
+            pet1.elfBody.setImageDrawable(levelListDrawable1);
+            pet1.elfBody.setImageLevel(0);
+            MyService.wm.updateViewLayout(pet1.elfView, pet1.params);
             Message msg = new Message();
             HashMap map = new HashMap<>();
             map.put("pet", pet);
             map.put("pet1", pet1);
-            map.put("petX", petX);
-            map.put("petImage", petImage);
             map.put("maxLevel", Integer.valueOf(hdInfo[1]));
             map.put("start", true);
             msg.obj = map;
@@ -293,7 +305,7 @@ public class CollisionHandler extends Handler {
             aiXinContainerParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
         }
         aiXinContainerParams.format = PixelFormat.RGBA_8888;
-        aiXinContainerParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+        aiXinContainerParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
                 | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
         aiXinContainerParams.width = width;
         aiXinContainerParams.height = height;
@@ -307,61 +319,17 @@ public class CollisionHandler extends Handler {
     }
 
     public void destoryRes(){
-        if(hugViews != null && hugViews.size() > 0){
-            removeMessages(HUG);
-            int hugViewsCount = hugViews.size();
-            for (int k = 0; k < hugViewsCount; k++)MyService.wm.removeView(hugViews.get(k));
-            hugViews.clear();
+        if(cdls != null && cdls.size() > 0){
+            int hugViewsCount = cdls.size();
+            for (int k = 0; k < hugViewsCount; k++){
+                int countSize = (int) cdls.get(k).getCount();
+                for (int count = 0; count < countSize; count++)cdls.get(k).countDown();
+            }
+            cdls.clear();
         }
+        removeMessages(COLLISION_HAPPEN);
+        removeMessages(HUG);
+        removeMessages(HUG_END);
     }
 
-    synchronized private void playVoiceGun() {
-        if (this.mp.get(1) != null) {
-            if (this.mp.get(1).isPlaying()) this.mp.get(1).stop();
-            this.mp.get(1).release();
-        }
-        MediaPlayer mp1 = new MediaPlayer();
-        mp1.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-            @Override
-            public void onPrepared(MediaPlayer mp) {
-                mp.start();
-            }
-        });
-        try {
-            this.mp.put(1, mp1);
-            mp1.setDataSource(MyService.OSS_BASE + "lw/mscs/gunba.mp3");
-            mp1.prepare();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        this.mp.get(1).setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(MediaPlayer mp1) {
-                mp1.stop();
-                mp1.release();
-                mp.put(1, null);
-            }
-        });
-    }
-
-    private void showGun(){
-        if(this.downContainerView.getVisibility() != VISIBLE)this.downContainerView.setVisibility(VISIBLE);
-        CountDownLatch cdl = new CountDownLatch(1);
-        this.downList.add(cdl);
-        PropMsg pm = new PropMsg(ctx, size, R.drawable.gun, cdl, (int)(this.size.x / 1.1));
-        this.downContainerView.addView(pm.propView, pm.propParams);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    cdl.await(10, TimeUnit.SECONDS);
-                    downList.remove(cdl);
-                    if(downList.size() <= 0)sendEmptyMessage(HIDDEN_CONTAINER);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
-    }
 }

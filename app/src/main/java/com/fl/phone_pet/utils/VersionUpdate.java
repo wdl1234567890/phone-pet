@@ -15,6 +15,8 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
+import com.fl.phone_pet.MainActivity;
+import com.fl.phone_pet.MyService;
 import com.fl.phone_pet.R;
 
 import org.json.JSONException;
@@ -192,6 +194,14 @@ public class VersionUpdate {
                                 Uri uri = Uri.parse(ApkUrl);
                                 Intent intent = new Intent(Intent.ACTION_VIEW, uri);
                                 ctx1.startActivity(intent);
+                                ctx1.getSharedPreferences("pet_store", Context.MODE_PRIVATE).edit()
+                                        .putInt("current_size", MyService.currentSize)
+                                        .putInt("speed", MyService.speed)
+                                        .putInt("frequest", MyService.frequest)
+                                        .putBoolean("check_status_bar", MyService.statusBarHeight == 0 ? true : false)
+                                        .commit();
+                                if(((MainActivity)ctx1).serviceMessenger != null)ctx1.unbindService(((MainActivity)ctx1).sc);
+                                ctx1.releaseInstance();
                                 ctx1.finish(); //销毁
                             }
                         }).setNegativeButton("取消", null);

@@ -1,5 +1,7 @@
 package com.fl.phone_pet.pojo;
 
+import android.annotation.SuppressLint;
+import android.app.Instrumentation;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
@@ -12,6 +14,7 @@ import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
+import android.os.SystemClock;
 import android.os.Vibrator;
 import android.util.Log;
 import android.util.TypedValue;
@@ -75,6 +78,7 @@ public class Pet extends Handler implements Comparable<Pet>{
     public static final int MOVE = 10032;
     public static final int HUG = 10033;
     public static final int FALL_TO_GROUND_STAND = 10034;
+    public static final int HUG_END = 10035;
     public int BEFORE_MODE = FLY;
     public int CURRENT_ACTION = FLY;
     public String name;
@@ -82,7 +86,6 @@ public class Pet extends Handler implements Comparable<Pet>{
     public static final String imageExt = ".png";
     public static final String mscExt = ".mp3";
     public String direction = "left";
-    Map<Integer, MediaPlayer> mp;
     private Integer funcPanelLayoutResId;
 
     public static final String WALK_LEFT = "run_left";
@@ -111,9 +114,9 @@ public class Pet extends Handler implements Comparable<Pet>{
     public static final String JUMP_RIGHT = "jump_right";
     public static final String STAND_LEFT = "stand_left";
     public static final String STAND_RIGHT = "stand_right";
+
     public WindowManager.LayoutParams params, speechParams, functionPanelParams;
     public View elfView, speechView, functionPanelView;
-    public RelativeLayout downContainerView;
     public ImageView elfBody;
     public TextView speechBody;
     public ImageView functionPanelCallButton;
@@ -149,9 +152,10 @@ public class Pet extends Handler implements Comparable<Pet>{
     List<Integer> propList;
     Map<String, List<Drawable>> stayAnimations;
     Map<String, List<Drawable>> runAnimations;
+    Map<String, List<Drawable>> hugEndAnimations;
     int sleepSize;
     int runSize;
-    Point size;
+    int hugEndSize;
     List<String> callTexts;
     public double whRate;
     public int whDif;
@@ -167,30 +171,26 @@ public class Pet extends Handler implements Comparable<Pet>{
     private final float v0 = 1.2f;
     private Context ctx;
     private Queue speechStore = new LinkedBlockingQueue(10);
-    private CopyOnWriteArrayList<CountDownLatch> downList;
 
     List<Integer> runStateCounts;
     List<Integer> sleepStateCounts;
+    List<Integer> hugEndStateCounts;
     int stateIndex;
     int stateCount;
 
 
-    public Pet(Context ctx, long id, String name, Point size, Map<Integer, MediaPlayer> mp, RelativeLayout downContainerView, CopyOnWriteArrayList downList) {
+    public Pet(Context ctx, long id, String name) {
         super();
         this.id = id;
         this.name = name;
-        this.mp = mp;
         this.ctx = ctx;
         this.params = new WindowManager.LayoutParams();
         this.speechParams = new WindowManager.LayoutParams();
         this.functionPanelParams = new WindowManager.LayoutParams();
         this.elfView = LayoutInflater.from(ctx).inflate(R.layout.petelf, null);
         this.speechView = LayoutInflater.from(ctx).inflate(R.layout.speech, null);
-        this.downContainerView = downContainerView;
         this.elfBody = elfView.findViewById(R.id.elfbody);
         this.speechBody = speechView.findViewById(R.id.speech);
-        this.size = size;
-        this.downList = downList;
         initStateRes();
         initPropList();
         initVoiceList();
@@ -219,10 +219,9 @@ public class Pet extends Handler implements Comparable<Pet>{
             }
 
 
-            params.format = PixelFormat.TRANSLUCENT;
+            params.format = PixelFormat.RGBA_8888;
             speechParams.format = PixelFormat.RGBA_8888;
             functionPanelParams.format = PixelFormat.RGBA_8888;
-
 
 
             params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
@@ -243,14 +242,17 @@ public class Pet extends Handler implements Comparable<Pet>{
                     | WindowManager.LayoutParams.FLAG_FULLSCREEN
                     | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
                     | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR;
-            int petW = (int) (size.x * (MyService.currentSize / 100.0));
+            int petW = (int) (MyService.size.x * (MyService.currentSize / 100.0));
 
             params.width = whRate != 0 && whRate != 1 ? (int)(petW * whRate) : petW;
             params.height = petW;
+            int currentFlags = (Integer) params.getClass().getField("privateFlags").get(params);
+            params.getClass().getField("privateFlags").set(params, currentFlags|0x00000040);
 
             whDif = params.width - params.height;
+
             params.x = 0;
-            params.y = -size.y / 2 + petW / 2 + 20 + MyService.statusBarHeight;
+            params.y = -MyService.size.y / 2 + petW / 2 + 20 + MyService.statusBarHeight;
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -274,6 +276,7 @@ public class Pet extends Handler implements Comparable<Pet>{
             int eventY = -1;
             long moveX = -1L;
             long moveY = -1L;
+            @SuppressLint("ClickableViewAccessibility")
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
@@ -291,7 +294,7 @@ public class Pet extends Handler implements Comparable<Pet>{
                             return true;
                         }
                         if(CURRENT_ACTION == HUG){
-                            voice(MyService.OSS_BASE + "lw/mscs/gunba.mp3");
+                            Utils.voice(MyService.OSS_BASE + "lw/mscs/gunba.mp3");
                             return false;
                         }
                         CURRENT_ACTION = MOVE;
@@ -311,8 +314,8 @@ public class Pet extends Handler implements Comparable<Pet>{
                         }
                         moveTime = System.currentTimeMillis();
 
-                        tempX = (int) (event.getRawX() < 0 ? 0 : event.getRawX() > size.x ? size.x : event.getRawX());
-                        tempY = (int) (event.getRawY() < 0 ? 0 : event.getRawY() > size.y ? size.y : event.getRawY());
+                        tempX = (int) (event.getRawX() < 0 ? 0 : event.getRawX() > MyService.size.x ? MyService.size.x : event.getRawX());
+                        tempY = (int) (event.getRawY() < 0 ? 0 : event.getRawY() > MyService.size.y ? MyService.size.y : event.getRawY());
                         dx = tempX - lastX;
                         dy = tempY - lastY;
 
@@ -336,7 +339,8 @@ public class Pet extends Handler implements Comparable<Pet>{
                                 elfBody.setImageDrawable(direction.equals("left") ? moveLeftGifDrawable : moveRightGifDrawable);
                             elfBody.setImageLevel(0);
 
-                        } else if (lastX - x0 == 0 && lastY - y0 == 0 && BEFORE_MODE != Pet.FLY && moveTime - downTime > 850) {
+                          }
+                        else if (lastX - x0 == 0 && lastY - y0 == 0 && BEFORE_MODE != Pet.FLY && moveTime - downTime > 850) {
                             Vibrator vibrator = (Vibrator) ctx.getSystemService(ctx.VIBRATOR_SERVICE);
                             vibrator.vibrate(100);
                             showFuncPanel();
@@ -360,7 +364,8 @@ public class Pet extends Handler implements Comparable<Pet>{
                         } else if (moveX == 0 && moveY == 0 && BEFORE_MODE != Pet.FLY && upTime - downTime > 500 && upTime - downTime <= 850) {
                             sendEmptyMessage(BEFORE_MODE);
                             return true;
-                        } else if (moveX == 0 && moveY == 0 && BEFORE_MODE != Pet.FLY && upTime - downTime > 850) {
+                        }
+                        else if (moveX == 0 && moveY == 0 && BEFORE_MODE != Pet.FLY && upTime - downTime > 850) {
                             return true;
                         }
 
@@ -504,11 +509,11 @@ public class Pet extends Handler implements Comparable<Pet>{
                 if (CURRENT_ACTION != RUN_LEFT) CURRENT_ACTION = RUN_LEFT;
                 removeMessages(RUN_LEFT);
                 changeStateLevel();
-                if(params.x - params.width / 2  + whDif / 2< (-size.x / 2)){
+                if(params.x - params.width / 2 + whDif / 2 < (-MyService.size.x / 2)){
                     removeAllMessages();
 
-                    if(params.x != -size.x / 2 + params.width / 2 - whDif / 2){
-                        params.x = -size.x / 2 + params.width / 2 - whDif / 2;
+                    if(params.x != -MyService.size.x / 2 + params.width / 2 - whDif / 2){
+                        params.x = -MyService.size.x / 2 + params.width / 2 - whDif / 2;
                         MyService.wm.updateViewLayout(elfView, params);
                     }
 
@@ -532,11 +537,11 @@ public class Pet extends Handler implements Comparable<Pet>{
                 if (CURRENT_ACTION != RUN_RIGHT) CURRENT_ACTION = RUN_RIGHT;
                 removeMessages(RUN_RIGHT);
                 changeStateLevel();
-                if(params.x + params.width / 2 - whDif / 2 > (size.x / 2)){
+                if(params.x + params.width / 2 - whDif / 2> (MyService.size.x / 2)){
                     removeAllMessages();
 
-                    if(params.x != size.x / 2 - params.width / 2 + whDif / 2){
-                        params.x = size.x / 2 - params.width / 2 + whDif / 2;
+                    if(params.x != MyService.size.x / 2 - params.width / 2 + whDif / 2){
+                        params.x = MyService.size.x / 2 - params.width / 2 + whDif / 2;
                         MyService.wm.updateViewLayout(elfView, params);
                     }
 
@@ -560,10 +565,10 @@ public class Pet extends Handler implements Comparable<Pet>{
                 if (CURRENT_ACTION != CLIMB_UP) CURRENT_ACTION = CLIMB_UP;
                 removeMessages(CLIMB_UP);
                 changeStateLevel();
-                if (params.y - params.height / 2 < -size.y / 2 + MyService.statusBarHeight) {
+                if (params.y - params.height / 2 < -MyService.size.y / 2 + MyService.statusBarHeight) {
                     removeAllMessages();
-                    if(params.y != -size.y / 2 + params.height / 2 + MyService.statusBarHeight){
-                        params.y = -size.y / 2 + params.height / 2 + MyService.statusBarHeight;
+                    if(params.y != -MyService.size.y / 2 + params.height / 2 + MyService.statusBarHeight){
+                        params.y = -MyService.size.y / 2 + params.height / 2 + MyService.statusBarHeight;
                         MyService.wm.updateViewLayout(elfView, params);
                     }
 
@@ -586,10 +591,10 @@ public class Pet extends Handler implements Comparable<Pet>{
                 if (CURRENT_ACTION != CLIMB_DOWN) CURRENT_ACTION = CLIMB_DOWN;
                 removeMessages(CLIMB_DOWN);
                 changeStateLevel();
-                if (params.y + params.height / 2 > size.y / 2) {
+                if (params.y + params.height / 2 > MyService.size.y / 2) {
                     removeAllMessages();
-                    if(params.y != size.y / 2 - params.height / 2){
-                        params.y = size.y / 2 - params.height / 2;
+                    if(params.y != MyService.size.y / 2 - params.height / 2){
+                        params.y = MyService.size.y / 2 - params.height / 2;
                         MyService.wm.updateViewLayout(elfView, params);
                     }
 
@@ -642,12 +647,12 @@ public class Pet extends Handler implements Comparable<Pet>{
                         speechBody.setBackgroundResource(R.drawable.speech_top);
                         break;
                     case TIMER_LEFT_START:
-                        speechParams.x = (int)(params.x + params.width / 2 + speechParams.width / 2 - params.width * 0.4 - this.whDif/2);
+                        speechParams.x = (int)(params.x + params.width / 2 + speechParams.width / 2 - params.width * 0.4);
                         speechParams.y = params.y;
                         speechBody.setBackgroundResource(R.drawable.speech_left);
                         break;
                     case TIMER_RIGHT_START:
-                        speechParams.x = (int)(params.x - params.width / 2 - speechParams.width / 2 + params.width * 0.4 + this.whDif/2);
+                        speechParams.x = (int)(params.x - params.width / 2 - speechParams.width / 2 + params.width * 0.4);
                         speechParams.y = params.y;
                         speechBody.setBackgroundResource(R.drawable.speech_right);
                         break;
@@ -667,6 +672,47 @@ public class Pet extends Handler implements Comparable<Pet>{
                 if (CURRENT_ACTION != SLEEP) CURRENT_ACTION = SLEEP;
                 changeStateLevel();
                 sendEmptyMessageDelayed(SLEEP, SpeedUtils.getCurrentSpeedTime());
+                break;
+            case HUG:
+                removeMessages(HUG);
+
+                break;
+            case HUG_END:
+                removeMessages(HUG_END);
+                if(CURRENT_ACTION != HUG_END)CURRENT_ACTION = HUG_END;
+                if(stateIndex + 1 > stateCount){
+                    sendEmptyMessage(TIMER_START);
+                    return;
+                }else{
+                    changeStateLevel();
+                    params.x = direction.equals("left") ? params.x - distance : params.x + distance;
+                    MyService.wm.updateViewLayout(elfView, params);
+                    sendEmptyMessageDelayed(HUG_END, SpeedUtils.getCurrentSpeedTime());
+                }
+
+                if(direction.equals("right") && params.x + params.width / 2 - whDif / 2 > (MyService.size.x / 2)){
+                    removeAllMessages();
+
+                    if(params.x != MyService.size.x / 2 - params.width / 2 + whDif / 2){
+                        params.x = MyService.size.x / 2 - params.width / 2 + whDif / 2;
+                        MyService.wm.updateViewLayout(elfView, params);
+                    }
+
+                    if (BEFORE_MODE != TIMER_RIGHT_START) BEFORE_MODE = TIMER_RIGHT_START;
+                    climbToUp();
+                    sendEmptyMessageDelayed(TIMER_RIGHT_START, SpeedUtils.getCurrentFrequestTime());
+                }else if(direction.equals("left") && params.x - params.width / 2 + whDif / 2< (-MyService.size.x / 2)){
+                    removeAllMessages();
+
+                    if(params.x != -MyService.size.x / 2 + params.width / 2 - whDif / 2){
+                        params.x = -MyService.size.x / 2 + params.width / 2 - whDif / 2;
+                        MyService.wm.updateViewLayout(elfView, params);
+                    }
+
+                    if (BEFORE_MODE != TIMER_LEFT_START) BEFORE_MODE = TIMER_LEFT_START;
+                    climbToUp();
+                    sendEmptyMessageDelayed(TIMER_LEFT_START, SpeedUtils.getCurrentFrequestTime());
+                }
                 break;
             case CALL:
                 removeMessages(CALL);
@@ -728,19 +774,19 @@ public class Pet extends Handler implements Comparable<Pet>{
                 int flag = -1;
 
 
-                if (params.y + params.height / 2 > size.y / 2) {
-                    params.y = size.y / 2 - params.height / 2;
+                if (params.y + params.height / 2 > MyService.size.y / 2) {
+                    params.y = MyService.size.y / 2 - params.height / 2;
                     flag = 0;
-                } else if (params.y - params.height / 2 < -size.y / 2 + MyService.statusBarHeight) {
-                    params.y = -size.y / 2 + params.height / 2 + MyService.statusBarHeight;
+                } else if (params.y - params.height / 2 < -MyService.size.y / 2 + MyService.statusBarHeight) {
+                    params.y = -MyService.size.y / 2 + params.height / 2 + MyService.statusBarHeight;
                     if(flag == -1)flag = 1;
                 }
 
-                if (params.x - params.width / 2 < -size.x / 2) {
-                    params.x = -size.x / 2 + params.width / 2 - whDif / 2;
+                if (params.x - params.width / 2 + whDif / 2 < -MyService.size.x / 2) {
+                    params.x = -MyService.size.x / 2 + params.width / 2 - whDif / 2;
                     if(flag == -1)flag = 2;
-                } else if (params.x + params.width / 2> size.x / 2) {
-                    params.x = size.x / 2 - params.width / 2 + whDif / 2;
+                } else if (params.x + params.width / 2 - whDif / 2>MyService.size.x / 2) {
+                    params.x = MyService.size.x / 2 - params.width / 2 + whDif / 2;
                     if(flag == -1)flag = 3;
                 }
 
@@ -750,12 +796,13 @@ public class Pet extends Handler implements Comparable<Pet>{
 
                 if(flag == -1 && vY0 >= 0 && isMoveFly && !isOnceFly){
                     if(params.y % MyService.divisionArg != 0)params.y = (params.y / MyService.divisionArg + 1) * MyService.divisionArg;
+                    params.y = params.y > MyService.size.y/2 - params.height/2 ? MyService.size.y/2 - params.height/2 : params.y;
                     flag = 0;
                 }
 
-                params.width = whRate != 0 && whRate != 1 ? (int)(params.height * whRate) : params.height;
                 MyService.wm.updateViewLayout(elfView, params);
-                //sendEmptyMessageDelayed(FLY, 50);
+
+
                 sendEmptyMessageDelayed(FLY, (long)(0.18 * SpeedUtils.getCurrentSpeedTime()));
 
                 switch (flag){
@@ -774,9 +821,9 @@ public class Pet extends Handler implements Comparable<Pet>{
                 break;
             case HIDDEN_CONTAINER:
                 removeMessages(HIDDEN_CONTAINER);
-                if(downContainerView.getVisibility() == VISIBLE){
-                    downContainerView.setVisibility(View.GONE);
-                    this.downContainerView.removeAllViews();
+                if(MyService.downContainerView.getVisibility() == VISIBLE){
+                    MyService.downContainerView.setVisibility(View.GONE);
+                    MyService.downContainerView.removeAllViews();
                 }
                 break;
         }
@@ -784,6 +831,7 @@ public class Pet extends Handler implements Comparable<Pet>{
 
     public void removeAllMessages() {
         if(elfView.getVisibility() != VISIBLE)elfView.setVisibility(VISIBLE);
+        removeMessages(FALL_TO_THE_GROUND);
         removeMessages(TIMER_START);
         removeMessages(TIMER_LEFT_START);
         removeMessages(TIMER_RIGHT_START);
@@ -796,10 +844,10 @@ public class Pet extends Handler implements Comparable<Pet>{
         removeMessages(SLEEP);
         removeMessages(SPEECH_START);
 //        removeMessages(SPEECH_STOP);
-        removeMessages(FALL_TO_THE_GROUND);
         removeMessages(FALL_TO_GROUND_STAND);
         removeMessages(LEFT_STAND);
         removeMessages(RIGHT_STAND);
+        removeMessages(HUG_END);
         speechView.setVisibility(View.GONE);
     }
 
@@ -810,6 +858,17 @@ public class Pet extends Handler implements Comparable<Pet>{
         elfBody.setImageDrawable(this.stayAnimations.get(direction).get(random));
         elfBody.setImageLevel(0);
         sendEmptyMessage(SLEEP);
+    }
+
+    public void hugEnd(){
+        if(BEFORE_MODE != TIMER_START)BEFORE_MODE = TIMER_START;
+        direction = direction.equals("left") ? "right" : "left";
+        int random = new Random().nextInt(hugEndSize);
+        stateCount = this.hugEndStateCounts.get(random);
+        stateIndex = 0;
+        elfBody.setImageDrawable(this.hugEndAnimations.get(direction).get(random));
+        elfBody.setImageLevel(0);
+        sendEmptyMessageDelayed(HUG_END, SpeedUtils.getCurrentSpeedTime());
     }
 
     private void fly() {
@@ -914,16 +973,16 @@ public class Pet extends Handler implements Comparable<Pet>{
 
     public void callFunction() {
 
-        if(this.downContainerView.getVisibility() != VISIBLE)this.downContainerView.setVisibility(VISIBLE);
+        if(MyService.downContainerView.getVisibility() != VISIBLE)MyService.downContainerView.setVisibility(VISIBLE);
         int randomCount = new Random().nextInt(50) + 180;
         int randomIndex;
         int i = 0;
         CountDownLatch cdl = new CountDownLatch(randomCount);
-        this.downList.add(cdl);
+        MyService.downList.add(cdl);
         while (i < randomCount) {
             randomIndex = new Random().nextInt(this.callTexts.size());
-            CallMsg cm = new CallMsg(ctx, size, this.callTexts.get(randomIndex), cdl, name);
-            this.downContainerView.addView(cm.callView, cm.callParams);
+            CallMsg cm = new CallMsg(ctx, this.callTexts.get(randomIndex), cdl, name);
+            MyService.downContainerView.addView(cm.callView, cm.callParams);
             i++;
         }
         new Thread(new Runnable() {
@@ -931,8 +990,8 @@ public class Pet extends Handler implements Comparable<Pet>{
             public void run() {
                 try {
                     cdl.await(10, TimeUnit.SECONDS);
-                    downList.remove(cdl);
-                    if(downList.size() <= 0)sendEmptyMessage(HIDDEN_CONTAINER);
+                    MyService.downList.remove(cdl);
+                    if(MyService.downList.size() <= 0)sendEmptyMessage(HIDDEN_CONTAINER);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -942,16 +1001,16 @@ public class Pet extends Handler implements Comparable<Pet>{
 
     public void propFunction() {
 
-        if(this.downContainerView.getVisibility() != VISIBLE)this.downContainerView.setVisibility(VISIBLE);
+        if(MyService.downContainerView.getVisibility() != VISIBLE)MyService.downContainerView.setVisibility(VISIBLE);
         int randomCount = new Random().nextInt(50) + 180;
         int randomIndex;
         int i = 0;
         CountDownLatch cdl = new CountDownLatch(randomCount);
-        this.downList.add(cdl);
+        MyService.downList.add(cdl);
         while (i < randomCount) {
             randomIndex = new Random().nextInt(this.propList.size());
-            PropMsg pm = new PropMsg(ctx, size, this.propList.get(randomIndex), cdl, -1);
-            this.downContainerView.addView(pm.propView, pm.propParams);
+            PropMsg pm = new PropMsg(ctx, this.propList.get(randomIndex), cdl, -1);
+            MyService.downContainerView.addView(pm.propView, pm.propParams);
             i++;
         }
         new Thread(new Runnable() {
@@ -959,8 +1018,8 @@ public class Pet extends Handler implements Comparable<Pet>{
             public void run() {
                 try {
                     cdl.await(10, TimeUnit.SECONDS);
-                    downList.remove(cdl);
-                    if(downList.size() <= 0)sendEmptyMessage(HIDDEN_CONTAINER);
+                    MyService.downList.remove(cdl);
+                    if(MyService.downList.size() <= 0)sendEmptyMessage(HIDDEN_CONTAINER);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -975,38 +1034,10 @@ public class Pet extends Handler implements Comparable<Pet>{
     }
 
     private void playVoice(String resId){
-        voice(MyService.OSS_BASE + name + "/" + resId + mscExt);
+        Utils.voice(MyService.OSS_BASE + name + "/" + resId + mscExt);
     }
 
-    synchronized private void voice(String resId) {
-        if (this.mp.get(1) != null) {
-            if (this.mp.get(1).isPlaying()) this.mp.get(1).stop();
-            this.mp.get(1).release();
-        }
-        MediaPlayer mp1 = new MediaPlayer();
-        mp1.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-            @Override
-            public void onPrepared(MediaPlayer mp) {
-                mp.start();
-            }
-        });
-        try {
-            this.mp.put(1, mp1);
-            mp1.setDataSource(resId);
-            mp1.prepare();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
-        this.mp.get(1).setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(MediaPlayer mp1) {
-                mp1.stop();
-                mp1.release();
-                mp.put(1, null);
-            }
-        });
-    }
 
     private void showFuncPanel() {
         if(this.functionPanelView != null)return;
@@ -1121,6 +1152,7 @@ public class Pet extends Handler implements Comparable<Pet>{
     private void initStateRes(){
         if(sleepStateCounts == null)this.sleepStateCounts = new LinkedList<>();
         if(runStateCounts == null)this.runStateCounts = new LinkedList<>();
+        if(hugEndStateCounts == null)this.hugEndStateCounts = new LinkedList<>();
 
         LevelListDrawable levelListDrawable = null;
 
@@ -1263,6 +1295,7 @@ public class Pet extends Handler implements Comparable<Pet>{
         this.runAnimations.put("left", leftRuns);
         this.runAnimations.put("right", rightRuns);
 
+
         int resId = ctx.getResources().getIdentifier(name + "_sleeps", "array", ctx.getPackageName());
         List<Drawable> leftSleeps = new LinkedList<>();
         List<Drawable> rightSleeps = new LinkedList<>();
@@ -1288,11 +1321,38 @@ public class Pet extends Handler implements Comparable<Pet>{
         this.stayAnimations.put("left", leftSleeps);
         this.stayAnimations.put("right", rightSleeps);
 
+
+        if (this.hugEndAnimations == null) this.hugEndAnimations = new HashMap<>();
+        int resId3 = ctx.getResources().getIdentifier(name + "_hug_ends", "array", ctx.getPackageName());
+        if (resId3 != 0) {
+            List<Drawable> leftHugEnds = new LinkedList<>();
+            List<Drawable> rightHugEnds = new LinkedList<>();
+            String[] hugEndGifDrawableStrs = ctx.getResources().getStringArray(resId3);
+            hugEndSize = hugEndGifDrawableStrs.length;
+            String[] hugEndGifDrawableStrInfo;
+            for (int k = 0; k < hugEndSize; k++) {
+                hugEndGifDrawableStrInfo = hugEndGifDrawableStrs[k].split(":");
+                levelListDrawable = new LevelListDrawable();
+                for(int y = 0; y < Integer.valueOf(hugEndGifDrawableStrInfo[1]); y++)
+                    levelListDrawable.addLevel(y, y, Utils.assets2Drawable(ctx, name + "/" + hugEndGifDrawableStrInfo[0] + "_left" + Integer.valueOf(y+1) + imageExt));
+                leftHugEnds.add(levelListDrawable);
+                levelListDrawable = new LevelListDrawable();
+                for(int y = 0; y < Integer.valueOf(hugEndGifDrawableStrInfo[1]); y++)
+                    levelListDrawable.addLevel(y, y, Utils.assets2Drawable(ctx, name + "/" + hugEndGifDrawableStrInfo[0] + "_right" + Integer.valueOf(y+1) + imageExt));
+                rightHugEnds.add(levelListDrawable);
+                hugEndStateCounts.add(Integer.valueOf(hugEndGifDrawableStrInfo[1]));
+            }
+            this.hugEndAnimations.put("left", leftHugEnds);
+            this.hugEndAnimations.put("right", rightHugEnds);
+        }
+
+
     }
 
     private void changeStateLevel(){
         if(stateIndex + 1 > stateCount)stateIndex = 0;
         elfBody.setImageLevel(stateIndex++);
+
     }
 
 
@@ -1317,7 +1377,6 @@ public class Pet extends Handler implements Comparable<Pet>{
             Collections.sort(pets);
             MyService.pets.addAll(pets);
         }else if(MyService.pets.isEmpty()){
-            MyService.downContainerView.callOnClick();
             MyService.pets = null;
             MyService.downPet = null;
             return;
@@ -1332,9 +1391,11 @@ public class Pet extends Handler implements Comparable<Pet>{
 
         for(int i = 0; i < count; i++){
             currentPet = MyService.pets.poll();
-            if(currentPet == this)continue;
-            deltaX = rawX - (currentPet.params.x - -size.x/2 - currentPet.params.width/2);
-            deltaY = rawY - (currentPet.params.y - -size.y/2 - currentPet.params.height/2);
+            if(currentPet == this){
+                continue;
+            }
+            deltaX = rawX - (currentPet.params.x - -MyService.size.x/2 - currentPet.params.width/2);
+            deltaY = rawY - (currentPet.params.y - -MyService.size.y/2 - currentPet.params.height/2);
             if(deltaX < 0 || deltaX > currentPet.params.width || deltaY < 0 || deltaY > currentPet.params.height)continue;
             event.setLocation(deltaX, deltaY);
             MyService.downPet = currentPet;
@@ -1349,6 +1410,7 @@ public class Pet extends Handler implements Comparable<Pet>{
     private void dispatchEvent(MotionEvent event){
         if(MyService.downPet != null)MyService.downPet.elfView.dispatchTouchEvent(event);
     }
+
 
     @Override
     public int compareTo(Pet pet) {

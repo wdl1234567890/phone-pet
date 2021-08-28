@@ -109,12 +109,20 @@
         <item>cheyifu:2</item>
         <item>chidongxi:3</item>
     </string-array>
-    <string-array name="ax_runs">
-        <item>haixiu:3</item>
-    </string-array>
+<!--    <string-array name="ax_runs">-->
+<!--        <item>haixiu:3</item>-->
+<!--    </string-array>-->
     <string-array name="lw_runs">
-        <item>haixiu:3</item>
+<!--        <item>haixiu:3</item>-->
         <item>yiwen:2</item>
+    </string-array>
+
+    <!--hug_ends-->
+    <string-array name="ax_hug_ends">
+        <item>haixiu:9</item>
+    </string-array>
+    <string-array name="lw_hug_ends">
+        <item>haixiu:9</item>
     </string-array>
 
     <!--prop-->
@@ -323,7 +331,7 @@
     <!--wh_rate-->
     <string name="wz_wh_rate">1.417</string>
     <string name="ax_wh_rate">1.246</string>
-    <string name="lw_wh_rate">1.084</string>
+    <string name="lw_wh_rate">1.088</string>
 
     <!--hd-->
     <string-array name="hd">

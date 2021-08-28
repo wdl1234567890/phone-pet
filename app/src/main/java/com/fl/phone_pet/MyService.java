@@ -54,15 +54,16 @@ public class MyService extends Service {
     public static Map<String, List<Pet>> groupPets;
     public static Queue<Pet> pets;
     public static Pet downPet;
+    public static int orientation;
     public static long currentMaxPetId;
     Messenger serviceMessenger = new Messenger(new ActivityMsgHandler());
     Messenger activityMessenger;
     Handler handler = new Handler();
     public static WindowManager wm;
-    Point size;
-    Map<Integer, MediaPlayer> mp;
+    public static Point size;
+    public static Map<Integer, MediaPlayer> mp;
     CollisionHandler collisionHandler;
-    public static int currentSize = 23;
+    public static int currentSize = 26;
     public static int speed = 9;
     public static int frequest = 3;
     public static int divisionArg = -1;
@@ -70,7 +71,7 @@ public class MyService extends Service {
     public static int statusBarHeight = 0;
 
     public static volatile RelativeLayout downContainerView;
-    private volatile CopyOnWriteArrayList<CountDownLatch> downList = new CopyOnWriteArrayList<>();
+    public static volatile CopyOnWriteArrayList<CountDownLatch> downList = new CopyOnWriteArrayList<>();
 
 
     private class ActivityMsgHandler extends Handler{
@@ -123,6 +124,9 @@ public class MyService extends Service {
                 .commit();
 
         try {
+
+            collisionHandler.destoryRes();
+
             Iterator<Map.Entry<String, List<Pet>>> it = groupPets.entrySet().iterator();
             while (it.hasNext()){
                 Map.Entry<String, List<Pet>> entry = it.next();
@@ -142,7 +146,6 @@ public class MyService extends Service {
                 wm.removeView(downContainerView);
             }
 
-            collisionHandler.destoryRes();
 
             wm = null;
             Message msg = new Message();
@@ -191,6 +194,7 @@ public class MyService extends Service {
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+        orientation = newConfig.orientation;
         if(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE || newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
             int temp;
             temp = size.x;
@@ -203,6 +207,8 @@ public class MyService extends Service {
                 statusBarHeight = oldStatusBarHeight;
             }
 
+            collisionHandler.destoryRes();
+
             initDownContainer();
 
             Iterator<Map.Entry<String, List<Pet>>> it = groupPets.entrySet().iterator();
@@ -214,7 +220,7 @@ public class MyService extends Service {
                     pet.speechView.setVisibility(View.GONE);
                     if(pet.functionPanelView != null)pet.hideFuncPanel();
                     pet.params.x = 0;
-                    pet.params.y = -size.y/2 + pet.params.height/2 + 5;
+                    pet.params.y = -size.y/2 + pet.params.height/2 + 5 + MyService.statusBarHeight;
                     wm.updateViewLayout(pet.elfView, pet.params);
                 }
             }
@@ -224,7 +230,7 @@ public class MyService extends Service {
                     for (int count = 0; count < countSize; count++)cdl.countDown();
                 }
             }
-            collisionHandler.destoryRes();
+
             goPets();
 
         }
@@ -259,20 +265,20 @@ public class MyService extends Service {
     private void initPets(){
         if(groupPets == null)groupPets = new HashMap<>();
 
-        Pet axPet = new Pet(this, ++currentMaxPetId, AX, size, mp, this.downContainerView, this.downList);
+        Pet axPet = new Pet(this, ++currentMaxPetId, AX);
         groupPets.put(AX, new LinkedList<>(Arrays.asList(axPet)));
 
-        Pet lwPet = new Pet(this, ++currentMaxPetId, LW, size, mp, this.downContainerView, this.downList);
+        Pet lwPet = new Pet(this, ++currentMaxPetId, LW);
         groupPets.put(LW, new LinkedList<>(Arrays.asList(lwPet)));
 
-        Pet wzPet = new Pet(this, ++currentMaxPetId, WZ, size, mp, this.downContainerView, this.downList);
+        Pet wzPet = new Pet(this, ++currentMaxPetId, WZ);
         groupPets.put(WZ, new LinkedList<>(Arrays.asList(wzPet)));
 
     }
 
     private void addPetOneCount(String name){
         if(wm == null || groupPets == null || collisionHandler == null)return;
-        Pet pet = new Pet(this, ++currentMaxPetId, name, size, mp, this.downContainerView, this.downList);
+        Pet pet = new Pet(this, ++currentMaxPetId, name);
         List<Pet> pets = groupPets.get(name);
         if(pets == null){
             pets = new LinkedList<>();
@@ -331,7 +337,7 @@ public class MyService extends Service {
     }
 
     private void initCollisionHandler(){
-        if(collisionHandler == null)collisionHandler = new CollisionHandler(this, groupPets, size, mp, downContainerView, downList);
+        if(collisionHandler == null)collisionHandler = new CollisionHandler(this, groupPets);
         collisionHandler.sendEmptyMessage(CollisionHandler.COLLISION_HAPPEN);
     }
 
@@ -360,7 +366,7 @@ public class MyService extends Service {
                 pet.speechParams.height = (int) (currentSize * 7.5);
                 pet.speechBody.setTextSize(TypedValue.COMPLEX_UNIT_DIP, currentSize / 2);
                 pet.params.x = 0;
-                pet.params.y = -size.y/2 + petW/2 + 20;
+                pet.params.y = -size.y/2 + petW/2 + 20 + MyService.statusBarHeight;
                 wm.updateViewLayout(pet.elfView, pet.params);
                 wm.updateViewLayout(pet.speechView, pet.speechParams);
             }

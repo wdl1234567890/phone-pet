@@ -9,6 +9,8 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -40,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
 
     private Messenger clientMessenger = new Messenger(new ServiceMsgHandler());
     private Intent myService;
-    private Messenger serviceMessenger;
+    public Messenger serviceMessenger;
 
     public static final int ADD_PET = 20001;
     public static final int REDUCE_PET = 20002;
@@ -50,12 +52,13 @@ public class MainActivity extends AppCompatActivity {
     public static final int SPEED_CHANGE = 20006;
     public static final int FREQUEST_CHANGE = 20007;
     public static final int STATUS_BAR_CHANGE = 20008;
+    public static final int SWITCH_ENABLE = 20009;
 
 
     List<Handler> versionTh;
     Map<String, FloatingActionButton> buttons;
 
-    private ServiceConnection sc = new ServiceConnection(){
+    public ServiceConnection sc = new ServiceConnection(){
 
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -76,6 +79,10 @@ public class MainActivity extends AppCompatActivity {
             if(msg.what == BUTTON_DISENABLED){
                 buttons.get("reduce_" + msg.obj).setEnabled(false);
             }
+            if(msg.what == SWITCH_ENABLE){
+                Switch switch1 = (Switch)msg.obj;
+                switch1.setEnabled(true);
+            }
         }
     }
 
@@ -88,9 +95,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    @SuppressLint("ResourceAsColor")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if((getIntent().getFlags() & Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT) != 0){
+            finish();
+            return;
+        }
+
 //        requestWindowFeature(Window.FEATURE_NO_TITLE);
 //        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 //        try{
@@ -154,7 +167,10 @@ public class MainActivity extends AppCompatActivity {
                             public void run() {
                                 try {
                                     Thread.sleep(800);
-                                    switch1.setEnabled(true);
+                                    Message message = new Message();
+                                    message.what = SWITCH_ENABLE;
+                                    message.obj = switch1;
+                                    clientMessenger.send(message);
                                 }catch (Exception e){
                                     e.printStackTrace();
                                 }
@@ -180,11 +196,20 @@ public class MainActivity extends AppCompatActivity {
 
         TextView version = findViewById(R.id.version);
         versionTh = VersionUpdate.checkVersionUpdate((Activity)ctx, new VersionUpdate.MyConsumer() {
-            @SuppressLint("ResourceAsColor")
+            @SuppressLint({"ResourceAsColor", "ResourceType"})
             @Override
             public void consume(Boolean isUpdate) {
-                if(isUpdate)version.setTextColor(R.color.purple_200);
-                else  version.setTextColor(R.color.white);
+                try{
+                    if(isUpdate){
+                        version.setTextColor(Color.rgb(116,0,0));
+                    }
+                    else{
+                        version.setTextColor(Color.rgb(255,255,255));
+                    }
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+
             }
         });
         try{

@@ -6,6 +6,7 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.graphics.Point;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,7 +24,7 @@ import java.util.concurrent.CountDownLatch;
 public class CallMsg{
 
     public RelativeLayout.LayoutParams callParams;
-    Point size;
+//    Point size;
     public View callView;
     TextView callText;
     String callContent;
@@ -31,9 +32,8 @@ public class CallMsg{
     CountDownLatch cdl;
     String name;
 
-    public CallMsg(Context ctx, Point size, String callContent, CountDownLatch cdl, String name){
+    public CallMsg(Context ctx, String callContent, CountDownLatch cdl, String name){
         this.ctx = ctx;
-        this.size = size;
         this.callContent = callContent;
         this.cdl = cdl;
         this.callView = LayoutInflater.from(ctx).inflate(R.layout.call_msg, null);
@@ -65,12 +65,12 @@ public class CallMsg{
         callText.setTextColor(ctx.getResources().getColor(resId));
         int textWidth = (int) (callText.getPaint().measureText(callText.getText().toString()));
         this.callParams = new RelativeLayout.LayoutParams(textWidth, randomSize * 10);
-        int randomX = (int) (Math.random() * (this.size.x - textWidth));
+        int randomX = (int) (Math.random() * (MyService.size.x - textWidth));
         int randomY = (int) (Math.random() * 70);
         callView.setAlpha(1);
         this.callView.setX(randomX);
         this.callView.setY(randomY);
-        float downY = -randomY + this.size.y - callParams.height;
+        float downY = -randomY + MyService.size.y - callParams.height;
 
         ObjectAnimator downAnimator = ObjectAnimator.ofFloat(this.callView, "translationY", 0, downY);
         ObjectAnimator hideAnimator = ObjectAnimator.ofFloat(this.callView, "alpha", 1, 0);
