@@ -231,6 +231,7 @@ public class MyService extends Service {
                 }
             }
 
+            collisionHandler.start();
             goPets();
 
         }
@@ -338,7 +339,7 @@ public class MyService extends Service {
 
     private void initCollisionHandler(){
         if(collisionHandler == null)collisionHandler = new CollisionHandler(this, groupPets);
-        collisionHandler.sendEmptyMessage(CollisionHandler.COLLISION_HAPPEN);
+        collisionHandler.start();
     }
 
     private void updateSize(){
@@ -371,6 +372,7 @@ public class MyService extends Service {
                 wm.updateViewLayout(pet.speechView, pet.speechParams);
             }
         }
+        collisionHandler.start();
         goPets();
     }
 

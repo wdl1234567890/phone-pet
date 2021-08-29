@@ -4,8 +4,11 @@ import static android.view.View.VISIBLE;
 
 import android.content.Context;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LevelListDrawable;
 import android.media.MediaPlayer;
@@ -47,15 +50,14 @@ public class CollisionHandler extends Handler {
     List<CountDownLatch> cdls;
 
     final int deviation = 20;
-    int pngDeviation;
+    int pngDeviation = 0;
     String imageExt = ".png";
 
     public static final int COLLISION_HAPPEN = 40001;
     public static final int REMOVE_AIXIN_VIEW = 40003;
-//    public static final int HIDDEN_CONTAINER = 40004;
     public static final int HUG = 40005;
     public static final int HUG_END = 40006;
-//
+
     public CollisionHandler(Context ctx, Map<String, List<Pet>> groupPets){
         this.ctx = ctx;
         initResIds();
@@ -132,21 +134,21 @@ public class CollisionHandler extends Handler {
                         leftX = pet.params.x - pet.params.width/2 - pet1.params.width/2;
                         rightX = pet.params.x + pet.params.width/2 + pet1.params.width/2;
 
-                        if(pet.BEFORE_MODE == Pet.TIMER_TOP_START){
-                            pngDeviation = (int)Math.round(pet.whDif/1.7 + pet1.whDif/1.7 + pet.params.width * 0.15);
-                        }else if(pet.BEFORE_MODE == Pet.TIMER_START){
-                            pngDeviation = (int)(pet.params.height * 0.53 + pet.whDif/2 +pet1.whDif/2);
-                        }
-                        if(pet.params.y == pet1.params.y && (pet.CURRENT_ACTION == Pet.RUN_RIGHT && pet1.CURRENT_ACTION == Pet.RUN_LEFT && pet.params.x < pet1.params.x && pet1.params.x <= rightX - pngDeviation && pet1.params.x > rightX - pngDeviation - deviation
-                                || pet.CURRENT_ACTION == Pet.RUN_LEFT && pet1.CURRENT_ACTION == Pet.RUN_RIGHT && pet.params.x > pet1.params.x && pet1.params.x >= leftX + pngDeviation && pet1.params.x < leftX + pngDeviation + deviation
-                                || pet.CURRENT_ACTION == Pet.RUN_RIGHT && pet1.CURRENT_ACTION == Pet.LEFT_STAND && pet.params.x < pet1.params.x && pet1.params.x <= rightX - pngDeviation && pet1.params.x > rightX - pngDeviation - deviation
-                                || pet.CURRENT_ACTION == Pet.RUN_LEFT && pet1.CURRENT_ACTION == Pet.RIGHT_STAND && pet.params.x > pet1.params.x && pet1.params.x >= leftX + pngDeviation && pet1.params.x < leftX + pngDeviation + deviation
-                                || pet.CURRENT_ACTION == Pet.LEFT_STAND && pet1.CURRENT_ACTION == Pet.RUN_RIGHT && pet.params.x > pet1.params.x && pet1.params.x >= leftX + pngDeviation && pet1.params.x < leftX + pngDeviation + deviation
-                                || pet.CURRENT_ACTION == Pet.RIGHT_STAND && pet1.CURRENT_ACTION == Pet.RUN_LEFT && pet.params.x < pet1.params.x && pet1.params.x <= rightX - pngDeviation && pet1.params.x > rightX - pngDeviation - deviation
-                                || pet.CURRENT_ACTION == Pet.RIGHT_STAND && pet1.CURRENT_ACTION == Pet.LEFT_STAND && pet.params.x < pet1.params.x && pet1.params.x <= rightX - pngDeviation && pet1.params.x > rightX - pngDeviation - deviation
-                                || pet.CURRENT_ACTION == Pet.LEFT_STAND && pet1.CURRENT_ACTION == Pet.RIGHT_STAND && pet.params.x > pet1.params.x && pet1.params.x >= leftX + pngDeviation && pet1.params.x < leftX + pngDeviation + deviation
+//                        if(pedestoryRest.BEFORE_MODE == Pet.TIMER_TOP_START){
+//                            pngDeviation = (int)(pet.params.width * 0.15);
+//                        }else if(pet.BEFORE_MODE == Pet.TIMER_START){
+//                            pngDeviation = (int)(pet.params.width * 0.2 + pet.params.width * 0.2);
+//                        }
+
+                        if(pet.params.y == pet1.params.y && (pet.CURRENT_ACTION == Pet.RUN_RIGHT && pet1.CURRENT_ACTION == Pet.RUN_LEFT && pet.params.x < pet1.params.x && pet1.params.x <= rightX - pngDeviation && isCollision(pet, pet1)
+                                || pet.CURRENT_ACTION == Pet.RUN_LEFT && pet1.CURRENT_ACTION == Pet.RUN_RIGHT && pet.params.x > pet1.params.x && pet1.params.x >= leftX + pngDeviation && isCollision(pet1, pet)
+                                || pet.CURRENT_ACTION == Pet.RUN_RIGHT && pet1.CURRENT_ACTION == Pet.LEFT_STAND && pet.params.x < pet1.params.x && pet1.params.x <= rightX - pngDeviation && isCollision(pet, pet1)
+                                || pet.CURRENT_ACTION == Pet.RUN_LEFT && pet1.CURRENT_ACTION == Pet.RIGHT_STAND && pet.params.x > pet1.params.x && pet1.params.x >= leftX + pngDeviation && isCollision(pet1, pet)
+                                || pet.CURRENT_ACTION == Pet.LEFT_STAND && pet1.CURRENT_ACTION == Pet.RUN_RIGHT && pet.params.x > pet1.params.x && pet1.params.x >= leftX + pngDeviation && isCollision(pet1, pet)
+                                || pet.CURRENT_ACTION == Pet.RIGHT_STAND && pet1.CURRENT_ACTION == Pet.RUN_LEFT && pet.params.x < pet1.params.x && pet1.params.x <= rightX - pngDeviation && isCollision(pet, pet1)
+                                || pet.CURRENT_ACTION == Pet.RIGHT_STAND && pet1.CURRENT_ACTION == Pet.LEFT_STAND && pet.params.x < pet1.params.x && pet1.params.x <= rightX - pngDeviation && isCollision(pet, pet1)
+                                || pet.CURRENT_ACTION == Pet.LEFT_STAND && pet1.CURRENT_ACTION == Pet.RIGHT_STAND && pet.params.x > pet1.params.x && pet1.params.x >= leftX + pngDeviation && isCollision(pet1, pet)
                         )){
-//                            if(pngDeviation == 0)pngDeviation = tempPngDeviation;
                             pet.removeAllMessages();
                             pet1.removeAllMessages();
                             if(pet.BEFORE_MODE == Pet.TIMER_START){
@@ -217,23 +219,9 @@ public class CollisionHandler extends Handler {
                     pet1.hugEnd();
                 }
                 break;
-            case HUG_END:
-//                removeMessages(COLLISION_HAPPEN);
-//                Map map1 = (Map)(msg.obj);
-//                Pet pet = (Pet)map1.get("pet");
-//                Pet pet1 = (Pet)map1.get("pet1");
-                break;
             case REMOVE_AIXIN_VIEW:
-//                removeMessages(REMOVE_AIXIN_VIEW);
                 if(MyService.wm != null)MyService.wm.removeView((View) msg.obj);
                 break;
-//            case HIDDEN_CONTAINER:
-////                removeMessages(HIDDEN_CONTAINER);
-//                if(downContainerView.getVisibility() == VISIBLE){
-//                    downContainerView.setVisibility(View.GONE);
-//                    this.downContainerView.removeAllViews();
-//                }
-//                break;
         }
 
     }
@@ -330,6 +318,37 @@ public class CollisionHandler extends Handler {
         removeMessages(COLLISION_HAPPEN);
         removeMessages(HUG);
         removeMessages(HUG_END);
+    }
+
+    public void start(){
+        sendEmptyMessage(COLLISION_HAPPEN);
+    }
+
+    private boolean isCollision(Pet pet, Pet pet1){
+        int height = pet.params.height;
+        int centerPointX = (pet.params.x + pet1.params.x) / 2;
+
+        Bitmap bitmap = ((BitmapDrawable)(pet.elfBody.getDrawable().getCurrent())).getBitmap();
+        Matrix matrix = new Matrix();
+        float scale = (float)((pet.elfBody.getHeight() * 1.0)/bitmap.getHeight());
+        matrix.postScale(scale, scale);
+        bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+
+        Bitmap bitmap1 = ((BitmapDrawable)(pet1.elfBody.getDrawable().getCurrent())).getBitmap();
+        Matrix matrix1 = new Matrix();
+        float scale1 = (float)((pet1.elfBody.getHeight() * 1.0)/bitmap1.getHeight());
+        matrix1.postScale(scale1, scale1);
+        bitmap1 = Bitmap.createBitmap(bitmap1, 0, 0, bitmap1.getWidth(), bitmap1.getHeight(), matrix1, true);
+
+        int petPointX = bitmap.getWidth()/2 + (centerPointX - pet.params.x);
+        int pet1PointX = centerPointX - (pet1.params.x - bitmap1.getWidth()/2);
+        int count = 0;
+        for(int i = 0; i < height; i++){
+            if(petPointX < 0 || i < 0 || petPointX >= bitmap.getWidth() || i >= bitmap.getHeight() || pet1PointX < 0 || pet1PointX >= bitmap.getWidth())continue;
+            if(bitmap.getPixel(petPointX, i) != 0 && bitmap1.getPixel(pet1PointX, i) != 0)count++;
+        }
+        if(count <= 5 || count >= 130)return false;
+        return true;
     }
 
 }

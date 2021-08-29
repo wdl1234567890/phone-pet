@@ -24,7 +24,6 @@ import java.util.concurrent.CountDownLatch;
 public class CallMsg{
 
     public RelativeLayout.LayoutParams callParams;
-//    Point size;
     public View callView;
     TextView callText;
     String callContent;
