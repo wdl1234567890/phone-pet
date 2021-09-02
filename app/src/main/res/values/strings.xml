@@ -136,12 +136,10 @@
         <item>huaban7</item>
         <item>taohua</item>
         <item>ax_baiyijian</item>
-        <item>ax_jiuhu</item>
         <item>ax_zanzi</item>
-        <item>ax_fasheng</item>
         <item>ax_qianbao</item>
-        <item>ax_jiuhu2</item>
         <item>ax_qigai</item>
+        <item>ax_baiyijianwan</item>
     </string-array>
     <string-array name="lw_props">
         <item>huaban1</item>
@@ -155,10 +153,6 @@
         <item>lw_jiuhu</item>
         <item>lw_liulijiaguajian</item>
         <item>lw_shanzi</item>
-        <item>lw_shanzi2</item>
-        <item>lw_shanzi3</item>
-        <item>lw_shanzi4</item>
-        <item>lw_shanzi5</item>
         <item>lw_xiao</item>
     </string-array>
     <string-array name="wz_props">
@@ -170,14 +164,12 @@
         <item>huaban6</item>
         <item>huaban7</item>
         <item>taohua</item>
-        <item>wz_dacall</item>
         <item>wz_shanheling</item>
     </string-array>
 
     <!--voices-->
     <string-array name="lw_voices">
         <item>axu</item>
-        <item>axu~</item>
         <item>axuhebao</item>
         <item>axurenzaima</item>
         <item>axuyouhejiua</item>
@@ -330,8 +322,10 @@
 
     <!--wh_rate-->
     <string name="wz_wh_rate">1.417</string>
-    <string name="ax_wh_rate">1.246</string>
-    <string name="lw_wh_rate">1.088</string>
+<!--    <string name="ax_wh_rate">1.246</string>-->
+<!--    <string name="lw_wh_rate">1.088</string>-->
+    <string name="ax_wh_rate">1.470</string>
+    <string name="lw_wh_rate">1.470</string>
 
     <!--hd-->
     <string-array name="hd">

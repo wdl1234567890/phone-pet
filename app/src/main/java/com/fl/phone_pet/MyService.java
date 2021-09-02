@@ -54,6 +54,7 @@ public class MyService extends Service {
     public static Map<String, List<Pet>> groupPets;
     public static Queue<Pet> pets;
     public static Pet downPet;
+    public static List<Pet> choosedPets;
     public static int orientation;
     public static long currentMaxPetId;
     Messenger serviceMessenger = new Messenger(new ActivityMsgHandler());
@@ -69,6 +70,9 @@ public class MyService extends Service {
     public static int divisionArg = -1;
     public static int oldStatusBarHeight = 0;
     public static int statusBarHeight = 0;
+    public static boolean isEnableTouch = true;
+    public static boolean isKeyboardShow = false;
+    public static boolean isVibrator = true;
 
     public static volatile RelativeLayout downContainerView;
     public static volatile CopyOnWriteArrayList<CountDownLatch> downList = new CopyOnWriteArrayList<>();
@@ -96,6 +100,12 @@ public class MyService extends Service {
             }else if(msg.what == MainActivity.STATUS_BAR_CHANGE){
                 if(activityMessenger == null)activityMessenger = msg.replyTo;
                 checkStatusBarChange();
+            }else if(msg.what == MainActivity.TOUCH_CHANGE){
+                if(activityMessenger == null)activityMessenger = msg.replyTo;
+                changeIsEnableTouch();
+            }else if(msg.what == MainActivity.KETBOARD_CHANGE){
+                if(activityMessenger == null)activityMessenger = msg.replyTo;
+                changeIsEnableKeyboardShow();
             }
 
         }
@@ -121,6 +131,9 @@ public class MyService extends Service {
                 .putInt("speed", speed)
                 .putInt("frequest", frequest)
                 .putBoolean("check_status_bar", statusBarHeight == 0 ? true : false)
+                .putBoolean("is_enable_touch", isEnableTouch)
+                .putBoolean("is_show_keyboard", isKeyboardShow)
+                .putBoolean("is_vibrator", isVibrator)
                 .commit();
 
         try {
@@ -132,7 +145,11 @@ public class MyService extends Service {
                 Map.Entry<String, List<Pet>> entry = it.next();
                 for (Pet pet : entry.getValue()){
                     pet.removeAllMessages();
-                    if(this.mp != null && this.mp.get(1) != null)this.mp.get(1).release();
+                    if(this.mp != null && this.mp.get(1) != null){
+                        this.mp.get(1).stop();
+                        this.mp.get(1).release();
+                        mp.put(1, null);
+                    }
                     wm.removeView(pet.elfView);
                     wm.removeView(pet.speechView);
                     if(pet.functionPanelView != null)pet.hideFuncPanel();
@@ -163,6 +180,9 @@ public class MyService extends Service {
         speed = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getInt("speed", speed);
         frequest = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getInt("frequest", frequest);
         boolean checkStatusBar = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getBoolean("check_status_bar", false);
+        isKeyboardShow = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getBoolean("is_show_keyboard", isKeyboardShow);
+        isEnableTouch = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getBoolean("is_enable_touch", isEnableTouch);
+        isVibrator = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getBoolean("is_vibrator", isVibrator);
         if(checkStatusBar){
             oldStatusBarHeight = 0;
             statusBarHeight = 0;
@@ -171,7 +191,9 @@ public class MyService extends Service {
             statusBarHeight = Utils.getStatusBarHeight(this);
         }
 
+
         wm = (WindowManager)getSystemService(Context.WINDOW_SERVICE);
+
         if(mp == null)mp = new HashMap<>();
         size = new Point();
         if (Build.VERSION.SDK_INT >= 19){
@@ -215,6 +237,7 @@ public class MyService extends Service {
             while (it.hasNext()){
                 Map.Entry<String, List<Pet>> entry = it.next();
                 for (Pet pet : entry.getValue()){
+                    pet.removeAllMessages();
                     pet.isOnceFly = true;
                     pet.elfView.setVisibility(View.GONE);
                     pet.speechView.setVisibility(View.GONE);
@@ -249,7 +272,7 @@ public class MyService extends Service {
         }
         downContainerParams.format = PixelFormat.RGBA_8888;
         downContainerParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-                | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+                | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
         downContainerParams.width = this.size.x;
         downContainerParams.height = this.size.y;
         downContainerParams.x = 0;
@@ -357,6 +380,7 @@ public class MyService extends Service {
         while (it.hasNext()){
             Map.Entry<String, List<Pet>> entry = it.next();
             for (Pet pet : entry.getValue()){
+                pet.removeAllMessages();
                 pet.elfView.setVisibility(View.GONE);
                 pet.speechView.setVisibility(View.GONE);
                 if(pet.functionPanelView != null)pet.hideFuncPanel();
@@ -421,6 +445,38 @@ public class MyService extends Service {
                         pet.sendEmptyMessage(pet.BEFORE_MODE);
                     }
                 }
+
+            }
+        }
+    }
+
+    private void changeIsEnableTouch(){
+        Iterator<Map.Entry<String, List<Pet>>> it = groupPets.entrySet().iterator();
+        while (it.hasNext()){
+            Map.Entry<String, List<Pet>> entry = it.next();
+            for (Pet pet : entry.getValue()){
+                if(MyService.isEnableTouch){
+                    pet.params.flags = Utils.getNormalFlags();
+                }else{
+                    pet.params.flags = Utils.getNormalFlags() | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
+                }
+                MyService.wm.updateViewLayout(pet.elfView, pet.params);
+
+            }
+        }
+    }
+
+    private void changeIsEnableKeyboardShow(){
+        Iterator<Map.Entry<String, List<Pet>>> it = groupPets.entrySet().iterator();
+        while (it.hasNext()){
+            Map.Entry<String, List<Pet>> entry = it.next();
+            for (Pet pet : entry.getValue()){
+                if(!MyService.isKeyboardShow){
+                    pet.params.flags = Utils.getNormalFlags();
+                }else{
+                    pet.params.flags = Utils.getNormalFlags() | WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM;
+                }
+                MyService.wm.updateViewLayout(pet.elfView, pet.params);
 
             }
         }

@@ -76,9 +76,15 @@ public class CollisionHandler extends Handler {
         }
     }
 
-    private void run(int status, int objSize, Map<String, Object> datas){
+    private void run(int status, int objSize, Map<String, Object> datas, Pet pet, Pet pet1){
         RelativeLayout aiXinContainerView = (RelativeLayout)datas.get("view");
         WindowManager.LayoutParams params = (WindowManager.LayoutParams)datas.get("params");
+        if(pet != null && pet1 != null){
+            pet.aiXinContainer = aiXinContainerView;
+            pet.aiXinContainerParams = params;
+            pet1.aiXinContainer = aiXinContainerView;
+            pet1.aiXinContainerParams = params;
+        }
         int count = new Random().nextInt(50) + 100;
         if(cdls == null)cdls = new LinkedList<>();
         CountDownLatch cdl = new CountDownLatch(count);
@@ -93,6 +99,12 @@ public class CollisionHandler extends Handler {
                 try {
                     cdl.await(10, TimeUnit.SECONDS);
                     cdls.remove(cdl);
+                    if(pet != null && pet1 != null){
+                        pet.aiXinContainer = null;
+                        pet.aiXinContainerParams = null;
+                        pet1.aiXinContainer = null;
+                        pet1.aiXinContainerParams = null;
+                    }
                     Message msg = new Message();
                     msg.what = REMOVE_AIXIN_VIEW;
                     msg.obj = aiXinContainerView;
@@ -158,11 +170,11 @@ public class CollisionHandler extends Handler {
                                 int petX = pet.params.x;
                                 int pet1X = pet1.params.x;
                                 shouHug(pet, pet1, flag);
-                                run(AiXin.BOTTOM_STATUS, pet.params.height, createAiXinContainer((int)(Math.abs(petX- pet1X) * 1.4), pet.params.height*2, MyService.orientation == Configuration.ORIENTATION_LANDSCAPE ? (petX + pet1X)/2-(int)(Math.abs(petX- pet1X) * 1.4)/2 : (petX + pet1X)/2, pet.params.y + pet.params.height/2 - (int)(pet.params.height * (MyService.orientation == Configuration.ORIENTATION_LANDSCAPE ? 1.1 : 1.5)) - (pet.params.height*2)/2));
+                                run(AiXin.BOTTOM_STATUS, pet.params.height, createAiXinContainer((int)(Math.abs(petX- pet1X) * 1.4), pet.params.height*2, MyService.orientation == Configuration.ORIENTATION_LANDSCAPE ? (petX + pet1X)/2-(int)(Math.abs(petX- pet1X) * 1)/2 : (petX + pet1X)/2, pet.params.y + pet.params.height/2 - (int)(pet.params.height * (MyService.orientation == Configuration.ORIENTATION_LANDSCAPE ? 1.1 : 1.5)) - (pet.params.height*2)/2), pet, pet1);
                             }else if(pet.BEFORE_MODE == Pet.TIMER_TOP_START){
                                 pet.CURRENT_ACTION = Pet.COLLISION;
                                 pet1.CURRENT_ACTION = Pet.COLLISION;
-                                run(AiXin.TOP_STATUS, pet.params.height, createAiXinContainer((int)(Math.abs(pet.params.x - pet1.params.x)/1.4), pet.params.height*2, MyService.orientation == Configuration.ORIENTATION_LANDSCAPE ? (pet.params.x + pet1.params.x)/2-(int)(Math.abs(pet.params.x- pet1.params.x) * 1.4)/3 : (pet.params.x + pet1.params.x)/2, -MyService.size.y/2 + (int)(pet.params.height * 0.7) + (pet.params.height*2)/2));
+                                run(AiXin.TOP_STATUS, pet.params.height, createAiXinContainer((int)(Math.abs(pet.params.x - pet1.params.x)/1.4), pet.params.height*2, MyService.orientation == Configuration.ORIENTATION_LANDSCAPE ? (pet.params.x + pet1.params.x)/2-(int)(Math.abs(pet.params.x- pet1.params.x) * 1)/3 : (pet.params.x + pet1.params.x)/2, -MyService.size.y/2 + (int)(pet.params.height * 0.7) + (pet.params.height*2)/2), null, null);
                                 pet.sendEmptyMessageDelayed(pet.BEFORE_MODE, 11 * SpeedUtils.getCurrentSpeedTime());
                                 pet1.sendEmptyMessageDelayed(pet1.BEFORE_MODE, 11 * SpeedUtils.getCurrentSpeedTime());
                             }
@@ -196,14 +208,14 @@ public class CollisionHandler extends Handler {
             case HUG:
 //                removeMessages(HUG);
                 Map map = (Map)(msg.obj);
-                int currentLevel = ((LevelListDrawable)((Pet)map.get("pet")).elfBody.getDrawable()).getLevel();
-                int currentLevel1 = ((LevelListDrawable)((Pet)map.get("pet1")).elfBody.getDrawable()).getLevel();
+                int currentLevel = ((LevelListDrawable)((Pet)map.get("petLeft")).elfBody.getDrawable()).getLevel();
+                //int currentLevel1 = ((LevelListDrawable)((Pet)map.get("pet1")).elfBody.getDrawable()).getLevel();
                 if(currentLevel + 1 < (int)(map.get("maxLevel"))){
                     if(!(Boolean)(map.get("start"))){
-                        Pet pet = (Pet)map.get("pet");
-                        Pet pet1 = (Pet)map.get("pet1");
-                        pet.elfBody.setImageLevel(currentLevel + 1);
-                        pet1.elfBody.setImageLevel(currentLevel1 + 1);
+                        Pet petLeft = (Pet)map.get("petLeft");
+                        //Pet petRight = (Pet)map.get("petRight");
+                        petLeft.elfBody.setImageLevel(currentLevel + 1);
+                        //petRight.elfBody.setImageLevel(currentLevel1 + 1);
 
                     }
 
@@ -213,10 +225,10 @@ public class CollisionHandler extends Handler {
                     msg1.obj = map;
                     sendMessageDelayed(msg1, SpeedUtils.getCurrentSpeedTime());
                 }else{
-                    Pet pet = ((Pet) map.get("pet"));
-                    Pet pet1 = ((Pet) map.get("pet1"));
-                    pet.hugEnd();
-                    pet1.hugEnd();
+                    Pet petLeft = ((Pet) map.get("petLeft"));
+                    Pet petRight = ((Pet) map.get("petRight"));
+                    petLeft.hugEnd();
+                    petRight.hugEnd();
                 }
                 break;
             case REMOVE_AIXIN_VIEW:
@@ -239,14 +251,16 @@ public class CollisionHandler extends Handler {
 
     private void shouHug(Pet pet, Pet pet1, int flag){
         LevelListDrawable levelListDrawable = new LevelListDrawable();
-        LevelListDrawable levelListDrawable1 = new LevelListDrawable();
+        //LevelListDrawable levelListDrawable1 = new LevelListDrawable();
         String[] hdStrs = ctx.getResources().getStringArray(ctx.getResources().getIdentifier("hd", "array", ctx.getPackageName()));
         if(hdStrs == null || hdStrs.length <= 0)return;
         pet.removeAllMessages();
         pet1.removeAllMessages();
-        int hugX = (pet.params.x + pet1.params.x)/2;
-        pet.params.x = hugX;
-        pet1.params.x= hugX;
+        //int hugX = (pet.params.x + pet1.params.x)/2;
+        //pet.params.x = hugX;
+        //pet1.params.x= hugX;
+        //MyService.wm.updateViewLayout(pet.elfView, pet.params);
+        //MyService.wm.updateViewLayout(pet1.elfView, pet1.params);
         try{
 
             String[] hdInfo = hdStrs[new Random().nextInt(hdStrs.length)].split(":");
@@ -259,20 +273,32 @@ public class CollisionHandler extends Handler {
                     prefix = MyService.AX + MyService.LW;
                 }
                 levelListDrawable.addLevel(uu, uu, Utils.assets2Drawable(ctx, "hd/" + prefix + hdInfo[0] + Integer.valueOf(uu + 1) + imageExt));
-                levelListDrawable1.addLevel(uu, uu, Utils.assets2Drawable(ctx, "hd/" + prefix + hdInfo[0] + Integer.valueOf(uu + 1) + imageExt));
+                //levelListDrawable1.addLevel(uu, uu, Utils.assets2Drawable(ctx, "hd/" + prefix + hdInfo[0] + Integer.valueOf(uu + 1) + imageExt));
             }
 
+            Pet petLeft;
+            Pet petRight;
 
-            pet.elfBody.setImageDrawable(levelListDrawable);
-            pet.elfBody.setImageLevel(0);
-            MyService.wm.updateViewLayout(pet.elfView, pet.params);
-            pet1.elfBody.setImageDrawable(levelListDrawable1);
-            pet1.elfBody.setImageLevel(0);
-            MyService.wm.updateViewLayout(pet1.elfView, pet1.params);
+            if(pet.params.x < pet1.params.x){
+                petLeft = pet;
+                petRight = pet1;
+            }else{
+                petLeft = pet1;
+                petRight = pet;
+            }
+
+            petLeft.elfBody.setImageDrawable(levelListDrawable);
+            petLeft.elfBody.setImageLevel(0);
+//            pet1.elfBody.setImageDrawable(levelListDrawable1);
+//            pet1.elfBody.setImageLevel(0);
+            petRight.elfView.setVisibility(View.GONE);
+
+            pet.hugPet = pet1;
+            pet1.hugPet = pet;
             Message msg = new Message();
             HashMap map = new HashMap<>();
-            map.put("pet", pet);
-            map.put("pet1", pet1);
+            map.put("petLeft", petLeft);
+            map.put("petRight", petRight);
             map.put("maxLevel", Integer.valueOf(hdInfo[1]));
             map.put("start", true);
             msg.obj = map;
@@ -294,7 +320,9 @@ public class CollisionHandler extends Handler {
         }
         aiXinContainerParams.format = PixelFormat.RGBA_8888;
         aiXinContainerParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-                | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+                | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+                | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED;
         aiXinContainerParams.width = width;
         aiXinContainerParams.height = height;
         aiXinContainerParams.x = x;
@@ -347,7 +375,9 @@ public class CollisionHandler extends Handler {
             if(petPointX < 0 || i < 0 || petPointX >= bitmap.getWidth() || i >= bitmap.getHeight() || pet1PointX < 0 || pet1PointX >= bitmap.getWidth())continue;
             if(bitmap.getPixel(petPointX, i) != 0 && bitmap1.getPixel(pet1PointX, i) != 0)count++;
         }
-        if(count <= 5 || count >= 130)return false;
+        Log.i("-----------", String.valueOf(count));
+        if(count <= 10 || count >= MyService.currentSize * 5)return false;
+//        if(count <= 89 || count >= 100)return false;
         return true;
     }
 

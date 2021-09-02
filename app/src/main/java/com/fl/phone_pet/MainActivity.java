@@ -53,6 +53,8 @@ public class MainActivity extends AppCompatActivity {
     public static final int FREQUEST_CHANGE = 20007;
     public static final int STATUS_BAR_CHANGE = 20008;
     public static final int SWITCH_ENABLE = 20009;
+    public static final int TOUCH_CHANGE = 20010;
+    public static final int KETBOARD_CHANGE = 20011;
 
 
     List<Handler> versionTh;
@@ -91,8 +93,58 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         if(versionTh != null && !versionTh.isEmpty()){
             versionTh.get(0).getLooper().quit();
+            versionTh.clear();
         }
     }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if(versionTh != null && !versionTh.isEmpty()){
+            versionTh.get(0).getLooper().quit();
+            versionTh.clear();
+            Log.i("------stop-----","stop");
+        }
+        Log.i("------stop1-----","stop1");
+
+    }
+
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        TextView version = findViewById(R.id.version);
+        versionTh = VersionUpdate.checkVersionUpdate(this, new VersionUpdate.MyConsumer() {
+            @SuppressLint({"ResourceAsColor", "ResourceType"})
+            @Override
+            public void consume(Boolean isUpdate) {
+                try{
+                    if(isUpdate){
+                        version.setTextColor(Color.rgb(116,0,0));
+                    }
+                    else{
+                        version.setTextColor(Color.rgb(255,255,255));
+                    }
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+
+            }
+        });
+        try{
+            version.setText(getPackageManager().getPackageInfo(getPackageName(), 0).versionName);
+        }catch(Exception e){
+            version.setText("0.0.0");
+            e.printStackTrace();
+        }
+        version.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                VersionUpdate.showDialogUpdate();
+            }
+        });
+    }
+
 
 
     @SuppressLint("ResourceAsColor")
@@ -138,11 +190,29 @@ public class MainActivity extends AppCompatActivity {
         fShow.setText(String.valueOf(frequest));
         frequestSetting.setProgress(frequest);
 
-        CheckBox checkedBox = findViewById(R.id.checkStatusBar);
-        checkedBox.setEnabled(false);
-        boolean checkStatusBar = getSharedPreferences("pet_store",
+        CheckBox checkedStatusBar = findViewById(R.id.checkStatusBar);
+        checkedStatusBar.setEnabled(false);
+        boolean isCheckStatusBar = getSharedPreferences("pet_store",
                 Context.MODE_PRIVATE).getBoolean("check_status_bar", false);
-        checkedBox.setChecked(checkStatusBar);
+        checkedStatusBar.setChecked(isCheckStatusBar);
+
+        CheckBox checkedNotTouch = findViewById(R.id.checkNotTouch);
+        checkedNotTouch.setEnabled(false);
+        boolean isCheckNotTouch = !getSharedPreferences("pet_store",
+                Context.MODE_PRIVATE).getBoolean("is_enable_touch", MyService.isEnableTouch);
+        checkedNotTouch.setChecked(isCheckNotTouch);
+
+        CheckBox checkedKeyboard = findViewById(R.id.checkKeyboard);
+        checkedKeyboard.setEnabled(false);
+        boolean isCheckKeyboard = getSharedPreferences("pet_store",
+                Context.MODE_PRIVATE).getBoolean("is_show_keyboard", MyService.isKeyboardShow);
+        checkedKeyboard.setChecked(isCheckKeyboard);
+
+        CheckBox checkedVibrator = findViewById(R.id.closeVibrator);
+        checkedVibrator.setEnabled(false);
+        boolean isCheckVibrator = !getSharedPreferences("pet_store",
+                Context.MODE_PRIVATE).getBoolean("is_vibrator", MyService.isVibrator);
+        checkedVibrator.setChecked(isCheckVibrator);
 
         Switch switch1 = findViewById(R.id.switch1);
         switch1.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
@@ -157,7 +227,10 @@ public class MainActivity extends AppCompatActivity {
                         sizeSetting.setEnabled(true);
                         speedSetting.setEnabled(true);
                         frequestSetting.setEnabled(true);
-                        checkedBox.setEnabled(true);
+                        checkedStatusBar.setEnabled(true);
+                        checkedNotTouch.setEnabled(true);
+                        checkedKeyboard.setEnabled(true);
+                        checkedVibrator.setEnabled(true);
                         for(FloatingActionButton button : buttons.values()){
                             button.setEnabled(true);
                         }
@@ -184,7 +257,10 @@ public class MainActivity extends AppCompatActivity {
                         sizeSetting.setEnabled(false);
                         speedSetting.setEnabled(false);
                         frequestSetting.setEnabled(false);
-                        checkedBox.setEnabled(false);
+                        checkedStatusBar.setEnabled(false);
+                        checkedNotTouch.setEnabled(false);
+                        checkedKeyboard.setEnabled(false);
+                        checkedVibrator.setEnabled(false);
                         for(FloatingActionButton button : buttons.values()){
                             button.setEnabled(false);
                         }
@@ -194,36 +270,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        TextView version = findViewById(R.id.version);
-        versionTh = VersionUpdate.checkVersionUpdate((Activity)ctx, new VersionUpdate.MyConsumer() {
-            @SuppressLint({"ResourceAsColor", "ResourceType"})
-            @Override
-            public void consume(Boolean isUpdate) {
-                try{
-                    if(isUpdate){
-                        version.setTextColor(Color.rgb(116,0,0));
-                    }
-                    else{
-                        version.setTextColor(Color.rgb(255,255,255));
-                    }
-                }catch (Exception e){
-                    e.printStackTrace();
-                }
-
-            }
-        });
-        try{
-            version.setText(getPackageManager().getPackageInfo(getPackageName(), 0).versionName);
-        }catch(Exception e){
-            version.setText("0.0.0");
-            e.printStackTrace();
-        }
-        version.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                VersionUpdate.showDialogUpdate();
-            }
-        });
 
         sizeSetting.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
 
@@ -309,7 +355,7 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-        checkedBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        checkedStatusBar.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                 if(b){
@@ -328,6 +374,47 @@ public class MainActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
                 }
+            }
+        });
+        checkedNotTouch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                MyService.isEnableTouch = !b;
+                checkedKeyboard.setEnabled(!b);
+                if(serviceMessenger != null){
+                    Message msg = new Message();
+                    msg.what = TOUCH_CHANGE;
+                    msg.replyTo = clientMessenger;
+                    try {
+                        serviceMessenger.send(msg);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+            }
+        });
+        checkedKeyboard.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                MyService.isKeyboardShow = b;
+                checkedNotTouch.setEnabled(!b);
+                if(serviceMessenger != null){
+                    Message msg = new Message();
+                    msg.what = KETBOARD_CHANGE;
+                    msg.replyTo = clientMessenger;
+                    try {
+                        serviceMessenger.send(msg);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+        checkedVibrator.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                MyService.isVibrator = !b;
             }
         });
         initButtons();

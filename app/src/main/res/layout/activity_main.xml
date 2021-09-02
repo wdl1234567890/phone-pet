@@ -149,13 +149,47 @@
         android:layout_marginTop="20dp"
         android:gravity="center|left"
         android:orientation="horizontal">
+
         <CheckBox
             android:id="@+id/checkStatusBar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:checked="false"
+            android:minHeight="0dp"
             android:text="可爬升到状态栏(非刘海屏无效),这将会导致显示在状态栏的部分不能触摸或点击"
             android:textColor="#999"
+            android:textSize="10dp" />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <CheckBox
+            android:id="@+id/checkNotTouch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="false"
+            android:minHeight="0dp"
+            android:text="不可互动模式"
+            android:textColor="#999"
+            android:textSize="10dp" />
+        <CheckBox
+            android:id="@+id/checkKeyboard"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="不遮挡键盘"
+            android:minHeight="0dp"
+            android:textColor="#999"
             android:textSize="10dp"
+            android:checked="false" />
+        <CheckBox
+            android:id="@+id/closeVibrator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="关闭点击时震动效果"
+            android:textColor="#999"
+            android:textSize="10dp"
+            android:minHeight="0dp"
             android:checked="false" />
     </LinearLayout>
 
@@ -279,9 +313,9 @@
 
     <LinearLayout
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="50dp"
-        android:gravity="center_horizontal"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center_horizontal|center_vertical"
         android:orientation="vertical">
 
         <TextView
@@ -290,13 +324,13 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="5dp"
             android:alpha="0.7"
-            android:text="开发者：@FL"
-            android:textColor="#fff"
-            android:textSize="14dp"
             android:shadowColor="#666"
             android:shadowDx="0"
             android:shadowDy="0"
-            android:shadowRadius="10"/>
+            android:shadowRadius="10"
+            android:text="开发者：@FL"
+            android:textColor="#fff"
+            android:textSize="14dp" />
 
         <TextView
             android:id="@+id/painter"
@@ -304,26 +338,26 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="15dp"
             android:alpha="0.7"
-            android:text="绘图：@直升飞机飞呀飞"
-            android:textColor="#fff"
-            android:textSize="14dp"
             android:shadowColor="#666"
             android:shadowDx="0"
             android:shadowDy="0"
-            android:shadowRadius="10"/>
+            android:shadowRadius="10"
+            android:text="绘图：@直升飞机飞呀飞"
+            android:textColor="#fff"
+            android:textSize="14dp" />
 
         <TextView
             android:id="@+id/version"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:alpha="0.7"
-            android:text="版本：1.0.0"
-            android:textColor="#fff"
-            android:textSize="12dp"
             android:shadowColor="#333"
             android:shadowDx="0"
             android:shadowDy="0"
-            android:shadowRadius="10"/>
+            android:shadowRadius="10"
+            android:text="版本：1.0.0"
+            android:textColor="#fff"
+            android:textSize="12dp" />
     </LinearLayout>
 
 </LinearLayout>

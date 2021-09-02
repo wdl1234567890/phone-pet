@@ -1,12 +1,14 @@
 package com.fl.phone_pet.pojo;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.Instrumentation;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LevelListDrawable;
@@ -22,6 +24,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -161,6 +164,7 @@ public class Pet extends Handler implements Comparable<Pet>{
     public int whDif;
     public boolean isOnceFly = true;
     public boolean isMoveFly = false;
+    public int pngDev;
     final int distance = 30;
     final int downVy = 7;
 
@@ -171,12 +175,16 @@ public class Pet extends Handler implements Comparable<Pet>{
     private final float v0 = 1.2f;
     private Context ctx;
     private Queue speechStore = new LinkedBlockingQueue(10);
+    public Pet hugPet;
+    public RelativeLayout aiXinContainer;
+    public WindowManager.LayoutParams aiXinContainerParams;
 
     List<Integer> runStateCounts;
     List<Integer> sleepStateCounts;
     List<Integer> hugEndStateCounts;
     int stateIndex;
     int stateCount;
+    long lastClickTime;
 
 
     public Pet(Context ctx, long id, String name) {
@@ -224,14 +232,9 @@ public class Pet extends Handler implements Comparable<Pet>{
             functionPanelParams.format = PixelFormat.RGBA_8888;
 
 
-            params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                    | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
-                    | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
-                    | WindowManager.LayoutParams.FLAG_FULLSCREEN
-                    | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-                    | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR
-                    | WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
-                    | WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION;
+            params.flags = Utils.getNormalFlags();
+            if(!MyService.isEnableTouch)params.flags = Utils.getNormalFlags() | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
+
             speechParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                     | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
                     | WindowManager.LayoutParams.FLAG_FULLSCREEN
@@ -246,12 +249,11 @@ public class Pet extends Handler implements Comparable<Pet>{
 
             params.width = whRate != 0 && whRate != 1 ? (int)(petW * whRate) : petW;
             //params.width = 0;
+            pngDev = (int)(0.12 * params.width);
             params.height = petW;
-            int currentFlags = (Integer) params.getClass().getField("privateFlags").get(params);
-            params.getClass().getField("privateFlags").set(params, currentFlags|0x00000040);
 
-            whDif = params.width - params.height;
-            whDif = 0;
+            whDif = params.width - params.height + 2;
+//            whDif = 0;
 
             params.x = 0;
             params.y = -MyService.size.y / 2 + petW / 2 + 20 + MyService.statusBarHeight;
@@ -296,11 +298,11 @@ public class Pet extends Handler implements Comparable<Pet>{
                             dispatchEvent(event);
                             return true;
                         }
-                        if(CURRENT_ACTION == HUG){
-                            Utils.voice(MyService.OSS_BASE + "lw/mscs/gunba.mp3");
-                            return false;
-                        }
-                        CURRENT_ACTION = MOVE;
+                        //if(CURRENT_ACTION == HUG){
+                            //Utils.voice(MyService.OSS_BASE + "lw/mscs/gunba.mp3");
+                            //return false;
+                        //}
+                        if(CURRENT_ACTION != HUG)CURRENT_ACTION = MOVE;
                         if(isOnceFly)isOnceFly = false;
                         isDown = true;
                         downTime = System.currentTimeMillis();
@@ -309,6 +311,16 @@ public class Pet extends Handler implements Comparable<Pet>{
                         lastY = (int) event.getRawY();
                         x0 = lastX;
                         y0 = lastY;
+                        if(downTime - lastClickTime < 300 && CURRENT_ACTION != HUG){
+                            removeMessages(SPEECH_START);
+                            speechView.setVisibility(View.GONE);
+                            if(MyService.isVibrator){
+                                Vibrator vibrator = (Vibrator) ctx.getSystemService(ctx.VIBRATOR_SERVICE);
+                                vibrator.vibrate(100);
+                            }
+                            showFuncPanel();
+                        }
+                        lastClickTime = downTime;
                         break;
                     case MotionEvent.ACTION_MOVE:
                         if(!isDown){
@@ -324,10 +336,19 @@ public class Pet extends Handler implements Comparable<Pet>{
 
                         params.x = params.x + dx;
                         params.y = params.y + dy;
+                        if(CURRENT_ACTION == HUG && hugPet != null){
+                            hugPet.params.x = hugPet.params.x + dx;
+                            hugPet.params.y = hugPet.params.y + dy;
+                            if(aiXinContainer != null){
+                                aiXinContainerParams.x = aiXinContainerParams.x + dx;
+                                aiXinContainerParams.y = aiXinContainerParams.y + dy;
+                            }
+                        }
+
                         lastX = tempX;
                         lastY = tempY;
 
-                        if (dx != 0 || dy != 0) {
+                        if (CURRENT_ACTION != HUG && (dx != 0 || dy != 0)) {
                             if (dx > 0 && dx < 2)
                                 elfBody.setImageDrawable(moveRightLightGifDrawable);
                             else if (dx >= 2 && dx < 5)
@@ -341,38 +362,57 @@ public class Pet extends Handler implements Comparable<Pet>{
                             else
                                 elfBody.setImageDrawable(direction.equals("left") ? moveLeftGifDrawable : moveRightGifDrawable);
                             elfBody.setImageLevel(0);
-                            getMaxWidth();
+//                            getMaxWidth();
 
                           }
-                        else if (lastX - x0 == 0 && lastY - y0 == 0 && BEFORE_MODE != Pet.FLY && moveTime - downTime > 850) {
-                            Vibrator vibrator = (Vibrator) ctx.getSystemService(ctx.VIBRATOR_SERVICE);
-                            vibrator.vibrate(100);
+                        else if (CURRENT_ACTION != HUG && lastX - x0 == 0 && lastY - y0 == 0 && BEFORE_MODE != Pet.FLY && moveTime - downTime > 850) {
+                            if(MyService.isVibrator){
+                                Vibrator vibrator = (Vibrator) ctx.getSystemService(ctx.VIBRATOR_SERVICE);
+                                vibrator.vibrate(100);
+                            }
                             showFuncPanel();
                             return true;
                         }
                         MyService.wm.updateViewLayout(elfView, params);
+                        if(CURRENT_ACTION == HUG && hugPet != null){
+                            MyService.wm.updateViewLayout(hugPet.elfView, hugPet.params);
+                            if(aiXinContainer != null)MyService.wm.updateViewLayout(aiXinContainer, aiXinContainerParams);
+                        }
                         break;
                     case MotionEvent.ACTION_UP:
                         if(!isDown){
                             dispatchEvent(event);
                             if(MyService.pets != null)MyService.pets = null;
                             if(MyService.downPet != null)MyService.downPet = null;
+                            if(MyService.choosedPets != null && !MyService.choosedPets.isEmpty()){
+                                List<Pet> choosedPets = MyService.choosedPets;
+                                postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        if(MyService.wm == null || !MyService.isEnableTouch)return;
+                                            for(Pet pet : choosedPets){
+                                                pet.params.flags = Utils.getNormalFlags();
+                                                MyService.wm.updateViewLayout(pet.elfView, pet.params);
+                                            }
+                                    }
+                                }, 300);
+                                MyService.choosedPets = null;
+                            }
                             return false;
                         }
                         upTime = System.currentTimeMillis();
                         moveX = (long) event.getRawX() - x0;
                         moveY = (long) event.getRawY() - y0;
-                        if (moveX == 0 && moveY == 0 && BEFORE_MODE != Pet.FLY && upTime - downTime <= 500) {
-                            sendEmptyMessage(Pet.SPEECH_START);
+                        if (CURRENT_ACTION != HUG && functionPanelView == null && moveX == 0 && moveY == 0 && BEFORE_MODE != FLY && upTime - downTime <= 500) {
+                            sendEmptyMessageDelayed(SPEECH_START, 50);
                             return true;
-                        } else if (moveX == 0 && moveY == 0 && BEFORE_MODE != Pet.FLY && upTime - downTime > 500 && upTime - downTime <= 850) {
+                        } else if (CURRENT_ACTION != HUG && moveX == 0 && moveY == 0 && BEFORE_MODE != FLY && upTime - downTime > 500 && upTime - downTime <= 850) {
                             sendEmptyMessage(BEFORE_MODE);
                             return true;
                         }
-                        else if (moveX == 0 && moveY == 0 && BEFORE_MODE != Pet.FLY && upTime - downTime > 850) {
+                        else if (CURRENT_ACTION == HUG || (moveX == 0 && moveY == 0 && BEFORE_MODE != FLY && upTime - downTime > 850)) {
                             return true;
                         }
-
                         Message msg = new Message();
                         Map<String, Long> data = new HashMap<>();
                         data.put("moveXDirection", (long)dx);
@@ -386,6 +426,20 @@ public class Pet extends Handler implements Comparable<Pet>{
                         break;
                 }
                 return true;
+            }
+        });
+        elfBody.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                long currentTime = System.currentTimeMillis();
+                if(currentTime - lastClickTime < 1000){
+                    if(MyService.isVibrator){
+                        Vibrator vibrator = (Vibrator) ctx.getSystemService(ctx.VIBRATOR_SERVICE);
+                        vibrator.vibrate(100);
+                    }
+                    showFuncPanel();
+                }
+                lastClickTime = currentTime;
             }
         });
 
@@ -519,13 +573,13 @@ public class Pet extends Handler implements Comparable<Pet>{
                 if (CURRENT_ACTION != RUN_LEFT) CURRENT_ACTION = RUN_LEFT;
                 removeMessages(RUN_LEFT);
                 changeStateLevel();
-                if(params.x - params.width / 2 + whDif / 2 < (-MyService.size.x / 2)){
+                if(params.x - params.width / 2 + whDif / 2 + pngDev < (-MyService.size.x / 2)){
                     removeAllMessages();
 
-//                    if(params.x != -MyService.size.x / 2 + params.width / 2 - whDif / 2){
-//                        params.x = -MyService.size.x / 2 + params.width / 2 - whDif / 2;
-//                        MyService.wm.updateViewLayout(elfView, params);
-//                    }
+                    if(params.x != -MyService.size.x / 2 + params.width / 2 - whDif / 2){
+                        params.x = -MyService.size.x / 2 + params.width / 2 - whDif / 2;
+                        MyService.wm.updateViewLayout(elfView, params);
+                    }
 
                     if(BEFORE_MODE == TIMER_TOP_START){
                         if (BEFORE_MODE != TIMER_LEFT_START) BEFORE_MODE = TIMER_LEFT_START;
@@ -547,13 +601,13 @@ public class Pet extends Handler implements Comparable<Pet>{
                 if (CURRENT_ACTION != RUN_RIGHT) CURRENT_ACTION = RUN_RIGHT;
                 removeMessages(RUN_RIGHT);
                 changeStateLevel();
-                if(params.x + params.width / 2 - whDif / 2> (MyService.size.x / 2)){
+                if(params.x + params.width / 2 - whDif / 2 - pngDev> (MyService.size.x / 2)){
                     removeAllMessages();
 
-//                    if(params.x != MyService.size.x / 2 - params.width / 2 + whDif / 2){
-//                        params.x = MyService.size.x / 2 - params.width / 2 + whDif / 2;
-//                        MyService.wm.updateViewLayout(elfView, params);
-//                    }
+                    if(params.x != MyService.size.x / 2 - params.width / 2 + whDif / 2){
+                        params.x = MyService.size.x / 2 - params.width / 2 + whDif / 2;
+                        MyService.wm.updateViewLayout(elfView, params);
+                    }
 
                     if (BEFORE_MODE == TIMER_TOP_START){
                         if (BEFORE_MODE != TIMER_RIGHT_START) BEFORE_MODE = TIMER_RIGHT_START;
@@ -584,6 +638,8 @@ public class Pet extends Handler implements Comparable<Pet>{
 
                     if (BEFORE_MODE == TIMER_LEFT_START) {
                         if (BEFORE_MODE != TIMER_TOP_START) BEFORE_MODE = TIMER_TOP_START;
+                        params.x = -MyService.size.x / 2 + params.width / 2 - whDif / 2;
+                        MyService.wm.updateViewLayout(elfView, params);
                         walkToRight();
 //                        int currentWidth = getMaxWidth();
 //                        if(params.x != -MyService.size.x / 2 + currentWidth / 2){
@@ -593,6 +649,8 @@ public class Pet extends Handler implements Comparable<Pet>{
                         sendEmptyMessageDelayed(TIMER_TOP_START, SpeedUtils.getCurrentFrequestTime());
                     } else {
                         if (BEFORE_MODE != TIMER_TOP_START) BEFORE_MODE = TIMER_TOP_START;
+                        params.x = MyService.size.x / 2 - params.width / 2 + whDif / 2;
+                        MyService.wm.updateViewLayout(elfView, params);
                         walkToLeft();
 //                        int currentWidth = getMaxWidth();
 //                        if(params.x != MyService.size.x / 2 - currentWidth / 2){
@@ -626,9 +684,13 @@ public class Pet extends Handler implements Comparable<Pet>{
 //                            params.x = -MyService.size.x / 2 + currentWidth / 2;
 //                            MyService.wm.updateViewLayout(elfView, params);
 //                        }
+                        params.x = -MyService.size.x / 2 + params.width / 2 - whDif / 2 - pngDev;
+                        MyService.wm.updateViewLayout(elfView, params);
                         sendEmptyMessageDelayed(TIMER_START, SpeedUtils.getCurrentFrequestTime());
                     } else {
                         if (BEFORE_MODE != TIMER_START) BEFORE_MODE = TIMER_START;
+                        params.x = MyService.size.x / 2 - params.width / 2 + whDif / 2 + pngDev;
+                        MyService.wm.updateViewLayout(elfView, params);
                         walkToLeft();
 //                        int currentWidth = getMaxWidth();
 //                        if(params.x != MyService.size.x / 2 - currentWidth / 2){
@@ -639,6 +701,7 @@ public class Pet extends Handler implements Comparable<Pet>{
                     }
                 } else {
                     params.y = params.y + distance;
+//                    if(params.y + params.height / 2 > MyService.size.y / 2)getMaxWidth();
                     MyService.wm.updateViewLayout(elfView, params);
                     sendEmptyMessageDelayed(CLIMB_DOWN, SpeedUtils.getCurrentSpeedTime());
                 }
@@ -651,8 +714,10 @@ public class Pet extends Handler implements Comparable<Pet>{
                 break;
             case SPEECH_START:
                 removeAllMessages();
-                Vibrator vibrator = (Vibrator) ctx.getSystemService(ctx.VIBRATOR_SERVICE);
-                vibrator.vibrate(100);
+                if(MyService.isVibrator){
+                    Vibrator vibrator = (Vibrator) ctx.getSystemService(ctx.VIBRATOR_SERVICE);
+                    vibrator.vibrate(100);
+                }
                 String text = null;
                 if (!speechStore.isEmpty()) text = (String) speechStore.poll();
                 else {
@@ -720,7 +785,7 @@ public class Pet extends Handler implements Comparable<Pet>{
                     sendEmptyMessageDelayed(HUG_END, SpeedUtils.getCurrentSpeedTime());
                 }
 
-                if(direction.equals("right") && params.x + params.width / 2 - whDif / 2 > (MyService.size.x / 2)){
+                if(direction.equals("right") && params.x + params.width / 2 - whDif / 2 - pngDev> (MyService.size.x / 2)){
                     removeAllMessages();
 
                     if(params.x != MyService.size.x / 2 - params.width / 2 + whDif / 2){
@@ -731,7 +796,7 @@ public class Pet extends Handler implements Comparable<Pet>{
                     if (BEFORE_MODE != TIMER_RIGHT_START) BEFORE_MODE = TIMER_RIGHT_START;
                     climbToUp();
                     sendEmptyMessageDelayed(TIMER_RIGHT_START, SpeedUtils.getCurrentFrequestTime());
-                }else if(direction.equals("left") && params.x - params.width / 2 + whDif / 2< (-MyService.size.x / 2)){
+                }else if(direction.equals("left") && params.x - params.width / 2 + whDif / 2 + pngDev< (-MyService.size.x / 2)){
                     removeAllMessages();
 
                     if(params.x != -MyService.size.x / 2 + params.width / 2 - whDif / 2){
@@ -887,16 +952,20 @@ public class Pet extends Handler implements Comparable<Pet>{
         stateIndex = 0;
         elfBody.setImageDrawable(this.stayAnimations.get(direction).get(random));
         elfBody.setImageLevel(0);
-        getMaxWidth();
+//        getMaxWidth();
         sendEmptyMessage(SLEEP);
     }
 
     public void hugEnd(){
         if(BEFORE_MODE != TIMER_START)BEFORE_MODE = TIMER_START;
         direction = direction.equals("left") ? "right" : "left";
+        hugPet = null;
+        aiXinContainer = null;
+        aiXinContainerParams = null;
         int random = new Random().nextInt(hugEndSize);
         stateCount = this.hugEndStateCounts.get(random);
         stateIndex = 0;
+        if(elfView.getVisibility() != VISIBLE)elfView.setVisibility(VISIBLE);
         elfBody.setImageDrawable(this.hugEndAnimations.get(direction).get(random));
         elfBody.setImageLevel(0);
 //        int currentWidth = getCurrentWidth();
@@ -908,13 +977,13 @@ public class Pet extends Handler implements Comparable<Pet>{
     private void fly() {
         elfBody.setImageDrawable(direction.equals("left") ? flyLeftGifDrawable : flyRightGifDrawable);
         elfBody.setImageLevel(0);
-        getMaxWidth();
+//        getMaxWidth();
     }
 
     private void jump() {
         elfBody.setImageDrawable(direction.equals("left") ? jumpLeftGifDrawable : jumpRightGifDrawable);
         elfBody.setImageLevel(0);
-        getCurrentWidth();
+        //getCurrentWidth();
     }
 
     private void walkToLeft() {
@@ -931,7 +1000,7 @@ public class Pet extends Handler implements Comparable<Pet>{
             elfBody.setImageDrawable(climbTopLeftGifDrawable);
         }
         elfBody.setImageLevel(0);
-        getMaxWidth();
+//        getMaxWidth();
         sendEmptyMessage(RUN_LEFT);
 
     }
@@ -949,7 +1018,7 @@ public class Pet extends Handler implements Comparable<Pet>{
             elfBody.setImageDrawable(climbTopRightGifDrawable);
         }
         elfBody.setImageLevel(0);
-        getMaxWidth();
+//        getMaxWidth();
         sendEmptyMessage(RUN_RIGHT);
     }
 
@@ -969,12 +1038,12 @@ public class Pet extends Handler implements Comparable<Pet>{
 
     private void standLeft() {
         groundStandLeft();
-        getMaxWidth();
+//        getMaxWidth();
     }
 
     private void standRight() {
         groundStandRight();
-        getMaxWidth();
+//        getMaxWidth();
     }
 
     private void climbToUp() {
@@ -984,14 +1053,14 @@ public class Pet extends Handler implements Comparable<Pet>{
                 climbRightGifDrawable);
         elfBody.setImageLevel(0);
 
-        int currentWidth = getCurrentWidth();
-        if(BEFORE_MODE == TIMER_LEFT_START && params.x != -MyService.size.x / 2 + currentWidth / 2){
-            params.x = -MyService.size.x / 2 + currentWidth / 2;
-            MyService.wm.updateViewLayout(elfView, params);
-        }else if(BEFORE_MODE == TIMER_RIGHT_START && params.x != MyService.size.x / 2 - currentWidth / 2){
-            params.x = MyService.size.x / 2 - currentWidth / 2;
-            MyService.wm.updateViewLayout(elfView, params);
-        }
+//        int currentWidth = getCurrentWidth();
+//        if(BEFORE_MODE == TIMER_LEFT_START && params.x != -MyService.size.x / 2 + currentWidth / 2){
+//            params.x = -MyService.size.x / 2 + currentWidth / 2;
+//            MyService.wm.updateViewLayout(elfView, params);
+//        }else if(BEFORE_MODE == TIMER_RIGHT_START && params.x != MyService.size.x / 2 - currentWidth / 2){
+//            params.x = MyService.size.x / 2 - currentWidth / 2;
+//            MyService.wm.updateViewLayout(elfView, params);
+//        }
 
         sendEmptyMessage(CLIMB_UP);
 
@@ -1005,14 +1074,14 @@ public class Pet extends Handler implements Comparable<Pet>{
                 climbRightGifDrawable);
         elfBody.setImageLevel(0);
 
-        int currentWidth = getCurrentWidth();
-        if(BEFORE_MODE == TIMER_LEFT_START && params.x != -MyService.size.x / 2 + currentWidth / 2){
-            params.x = -MyService.size.x / 2 + currentWidth / 2;
-            MyService.wm.updateViewLayout(elfView, params);
-        }else if(BEFORE_MODE == TIMER_RIGHT_START && params.x != MyService.size.x / 2 - currentWidth / 2){
-            params.x = MyService.size.x / 2 - currentWidth / 2;
-            MyService.wm.updateViewLayout(elfView, params);
-        }
+//        int currentWidth = getCurrentWidth();
+//        if(BEFORE_MODE == TIMER_LEFT_START && params.x != -MyService.size.x / 2 + currentWidth / 2){
+//            params.x = -MyService.size.x / 2 + currentWidth / 2;
+//            MyService.wm.updateViewLayout(elfView, params);
+//        }else if(BEFORE_MODE == TIMER_RIGHT_START && params.x != MyService.size.x / 2 - currentWidth / 2){
+//            params.x = MyService.size.x / 2 - currentWidth / 2;
+//            MyService.wm.updateViewLayout(elfView, params);
+//        }
 
         sendEmptyMessage(CLIMB_DOWN);
     }
@@ -1021,14 +1090,14 @@ public class Pet extends Handler implements Comparable<Pet>{
         if (CURRENT_ACTION != CLIMB_STAND) CURRENT_ACTION = CLIMB_STAND;
         elfBody.setImageDrawable(BEFORE_MODE == TIMER_LEFT_START ? climbLeftStandGifDrawable : climbRightStandGifDrawable);
         elfBody.setImageLevel(0);
-        int currentWidth = getCurrentWidth();
-        if(BEFORE_MODE == TIMER_LEFT_START && params.x != -MyService.size.x / 2 + currentWidth / 2){
-            params.x = -MyService.size.x / 2 + currentWidth / 2;
-            MyService.wm.updateViewLayout(elfView, params);
-        }else if(BEFORE_MODE == TIMER_RIGHT_START && params.x != MyService.size.x / 2 - currentWidth / 2){
-            params.x = MyService.size.x / 2 - currentWidth / 2;
-            MyService.wm.updateViewLayout(elfView, params);
-        }
+//        int currentWidth = getCurrentWidth();
+//        if(BEFORE_MODE == TIMER_LEFT_START && params.x != -MyService.size.x / 2 + currentWidth / 2){
+//            params.x = -MyService.size.x / 2 + currentWidth / 2;
+//            MyService.wm.updateViewLayout(elfView, params);
+//        }else if(BEFORE_MODE == TIMER_RIGHT_START && params.x != MyService.size.x / 2 - currentWidth / 2){
+//            params.x = MyService.size.x / 2 - currentWidth / 2;
+//            MyService.wm.updateViewLayout(elfView, params);
+//        }
     }
 
     public void go() {
@@ -1106,14 +1175,9 @@ public class Pet extends Handler implements Comparable<Pet>{
 
     public void voiceFunction() {
         if (this.voiceIds == null || voiceIds.isEmpty()) return;
-        playVoice("voices/" + this.voiceIds.get(new Random().nextInt(this.voiceIds.size())));
+        int count = 0;
+        while(count++ < 10 && !Utils.voice(ctx, name + "/voice/" + this.voiceIds.get(new Random().nextInt(this.voiceIds.size())) + mscExt));
     }
-
-    private void playVoice(String resId){
-        Utils.voice(MyService.OSS_BASE + name + "/" + resId + mscExt);
-    }
-
-
 
     private void showFuncPanel() {
         if(this.functionPanelView != null)return;
@@ -1160,6 +1224,7 @@ public class Pet extends Handler implements Comparable<Pet>{
         functionPanelParams.height = (int)(200 * ctx.getResources().getDisplayMetrics().density + 0.5f);
         switch (BEFORE_MODE) {
             case TIMER_START:
+            case FLY:
                 functionPanelParams.x = params.x;
                 functionPanelParams.y = params.y - params.height / 2 - functionPanelParams.height / 2;
                 break;
@@ -1233,119 +1298,119 @@ public class Pet extends Handler implements Comparable<Pet>{
         LevelListDrawable levelListDrawable = null;
 
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + MOVE_LEFT + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + MOVE_LEFT + imageExt));
         this.moveLeftGifDrawable = levelListDrawable;
 
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx,name + "/" + MOVE_RIGHT + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx,name + "/action/" + MOVE_RIGHT + imageExt));
         this.moveRightGifDrawable = levelListDrawable;
 
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + MOVE_LEFT_LIGHT + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + MOVE_LEFT_LIGHT + imageExt));
         this.moveLeftLightGifDrawable = levelListDrawable;
 
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + MOVE_RIGHT_LIGHT + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + MOVE_RIGHT_LIGHT + imageExt));
         this.moveRightLightGifDrawable = levelListDrawable;
 
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + MOVE_LEFT_MIDDLE + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + MOVE_LEFT_MIDDLE + imageExt));
         this.moveLeftMiddleGifDrawable = levelListDrawable;
 
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + MOVE_RIGHT_MIDDLE + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + MOVE_RIGHT_MIDDLE + imageExt));
         this.moveRightMiddleGifDrawable = levelListDrawable;
 
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + MOVE_LEFT_WEIGHT + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + MOVE_LEFT_WEIGHT + imageExt));
         this.moveLeftWeightGifDrawable = levelListDrawable;
 
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + MOVE_RIGHT_WEIGHT + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + MOVE_RIGHT_WEIGHT + imageExt));
         this.moveRightWeightGifDrawable = levelListDrawable;
 
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + LEFT_CLIMB + "1" + imageExt));
-        levelListDrawable.addLevel(1, 1, Utils.assets2Drawable(ctx, name + "/" + LEFT_CLIMB + "2" + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + LEFT_CLIMB + "1" + imageExt));
+        levelListDrawable.addLevel(1, 1, Utils.assets2Drawable(ctx, name + "/action/" + LEFT_CLIMB + "2" + imageExt));
         this.climbLeftGifDrawable = levelListDrawable;
 
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + RIGHT_CLIMB + "1" + imageExt));
-        levelListDrawable.addLevel(1, 1, Utils.assets2Drawable(ctx, name + "/" + RIGHT_CLIMB + "2" + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + RIGHT_CLIMB + "1" + imageExt));
+        levelListDrawable.addLevel(1, 1, Utils.assets2Drawable(ctx, name + "/action/" + RIGHT_CLIMB + "2" + imageExt));
         this.climbRightGifDrawable = levelListDrawable;
 
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + TOP_LEFT_CLIMB + "1" + imageExt));
-        levelListDrawable.addLevel(1, 1, Utils.assets2Drawable(ctx, name + "/" + TOP_LEFT_CLIMB + "2" + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + TOP_LEFT_CLIMB + "1" + imageExt));
+        levelListDrawable.addLevel(1, 1, Utils.assets2Drawable(ctx, name + "/action/" + TOP_LEFT_CLIMB + "2" + imageExt));
         this.climbTopLeftGifDrawable = levelListDrawable;
 
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + TOP_RIGHT_CLIMB + "1" + imageExt));
-        levelListDrawable.addLevel(1, 1, Utils.assets2Drawable(ctx, name + "/" + TOP_RIGHT_CLIMB + "2" + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + TOP_RIGHT_CLIMB + "1" + imageExt));
+        levelListDrawable.addLevel(1, 1, Utils.assets2Drawable(ctx, name + "/action/" + TOP_RIGHT_CLIMB + "2" + imageExt));
         this.climbTopRightGifDrawable = levelListDrawable;
 
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + CLIMB_LEFT_STAND + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + CLIMB_LEFT_STAND + imageExt));
         this.climbLeftStandGifDrawable = levelListDrawable;
 
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + CLIMB_RIGHT_STAND + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + CLIMB_RIGHT_STAND + imageExt));
         this.climbRightStandGifDrawable = levelListDrawable;
 
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + CLIMB_TOP_LEFT_STAND + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + CLIMB_TOP_LEFT_STAND + imageExt));
         this.climbTopLeftStandGifDrawable = levelListDrawable;
 
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + CLIMB_TOP_RIGHT_STAND + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + CLIMB_TOP_RIGHT_STAND + imageExt));
         this.climbTopRightStandGifDrawable = levelListDrawable;
 
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + FLY_LEFT + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + FLY_LEFT + imageExt));
         this.flyLeftGifDrawable = levelListDrawable;
 
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + FLY_RIGHT + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + FLY_RIGHT + imageExt));
         this.flyRightGifDrawable = levelListDrawable;
 
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + JUMP_LEFT + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + JUMP_LEFT + imageExt));
         this.jumpLeftGifDrawable = levelListDrawable;
 
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + JUMP_RIGHT + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + JUMP_RIGHT + imageExt));
         this.jumpRightGifDrawable = levelListDrawable;
 
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + STAND_LEFT + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + STAND_LEFT + imageExt));
         this.standLeftGifDrawable = levelListDrawable;
 
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + STAND_RIGHT + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + STAND_RIGHT + imageExt));
         this.standRightGifDrawable = levelListDrawable;
 
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + FALL_TO_GROUND_LEFT + "1" + imageExt));
-        levelListDrawable.addLevel(1, 1, Utils.assets2Drawable(ctx, name + "/" + FALL_TO_GROUND_LEFT + "2" + imageExt));
-        levelListDrawable.addLevel(2, 2, Utils.assets2Drawable(ctx, name + "/" + FALL_TO_GROUND_LEFT + "3" + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + FALL_TO_GROUND_LEFT + "1" + imageExt));
+        levelListDrawable.addLevel(1, 1, Utils.assets2Drawable(ctx, name + "/action/" + FALL_TO_GROUND_LEFT + "2" + imageExt));
+        levelListDrawable.addLevel(2, 2, Utils.assets2Drawable(ctx, name + "/action/" + FALL_TO_GROUND_LEFT + "3" + imageExt));
         this.fallToGroundLeftGifDrawable = levelListDrawable;
 
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + FALL_TO_GROUND_RIGHT + "1" + imageExt));
-        levelListDrawable.addLevel(1, 1, Utils.assets2Drawable(ctx, name + "/" + FALL_TO_GROUND_RIGHT + "2" + imageExt));
-        levelListDrawable.addLevel(2, 2, Utils.assets2Drawable(ctx, name + "/" + FALL_TO_GROUND_RIGHT + "3" + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + FALL_TO_GROUND_RIGHT + "1" + imageExt));
+        levelListDrawable.addLevel(1, 1, Utils.assets2Drawable(ctx, name + "/action/" + FALL_TO_GROUND_RIGHT + "2" + imageExt));
+        levelListDrawable.addLevel(2, 2, Utils.assets2Drawable(ctx, name + "/action/" + FALL_TO_GROUND_RIGHT + "3" + imageExt));
         this.fallToGroundRightGifDrawable = levelListDrawable;
 
         if (this.runAnimations == null) this.runAnimations = new HashMap<>();
         List<Drawable> leftRuns = new LinkedList<>();
         List<Drawable> rightRuns = new LinkedList<>();
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + WALK_LEFT+ "1" + imageExt));
-        levelListDrawable.addLevel(1, 1, Utils.assets2Drawable(ctx, name + "/" + WALK_LEFT + "2" + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + WALK_LEFT+ "1" + imageExt));
+        levelListDrawable.addLevel(1, 1, Utils.assets2Drawable(ctx, name + "/action/" + WALK_LEFT + "2" + imageExt));
         leftRuns.add(levelListDrawable);
         levelListDrawable = new LevelListDrawable();
-        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/" + WALK_RIGHT+ "1" + imageExt));
-        levelListDrawable.addLevel(1, 1, Utils.assets2Drawable(ctx, name + "/" + WALK_RIGHT + "2" + imageExt));
+        levelListDrawable.addLevel(0, 0, Utils.assets2Drawable(ctx, name + "/action/" + WALK_RIGHT+ "1" + imageExt));
+        levelListDrawable.addLevel(1, 1, Utils.assets2Drawable(ctx, name + "/action/" + WALK_RIGHT + "2" + imageExt));
         rightRuns.add(levelListDrawable);
         runStateCounts.add(2);
         runSize = 1;
@@ -1358,11 +1423,11 @@ public class Pet extends Handler implements Comparable<Pet>{
                 runGifDrawableStrInfo = runGifDrawableStrs[k].split(":");
                 levelListDrawable = new LevelListDrawable();
                 for(int y = 0; y < Integer.valueOf(runGifDrawableStrInfo[1]); y++)
-                    levelListDrawable.addLevel(y, y, Utils.assets2Drawable(ctx, name + "/" + runGifDrawableStrInfo[0] + "_left" + Integer.valueOf(y+1) + imageExt));
+                    levelListDrawable.addLevel(y, y, Utils.assets2Drawable(ctx, name + "/action/" + runGifDrawableStrInfo[0] + "_left" + Integer.valueOf(y+1) + imageExt));
                 leftRuns.add(levelListDrawable);
                 levelListDrawable = new LevelListDrawable();
                 for(int y = 0; y < Integer.valueOf(runGifDrawableStrInfo[1]); y++)
-                    levelListDrawable.addLevel(y, y, Utils.assets2Drawable(ctx, name + "/" + runGifDrawableStrInfo[0] + "_right" + Integer.valueOf(y+1) + imageExt));
+                    levelListDrawable.addLevel(y, y, Utils.assets2Drawable(ctx, name + "/action/" + runGifDrawableStrInfo[0] + "_right" + Integer.valueOf(y+1) + imageExt));
                 rightRuns.add(levelListDrawable);
                 runStateCounts.add(Integer.valueOf(runGifDrawableStrInfo[1]));
             }
@@ -1384,11 +1449,11 @@ public class Pet extends Handler implements Comparable<Pet>{
                 sleepGifDrawableStrInfo = sleepGifDrawableStrs[k].split(":");
                 levelListDrawable = new LevelListDrawable();
                 for(int y = 0; y < Integer.valueOf(sleepGifDrawableStrInfo[1]); y++)
-                    levelListDrawable.addLevel(y, y, Utils.assets2Drawable(ctx, name + "/" + sleepGifDrawableStrInfo[0] + "_left" + Integer.valueOf(y+1) + imageExt));
+                    levelListDrawable.addLevel(y, y, Utils.assets2Drawable(ctx, name + "/action/" + sleepGifDrawableStrInfo[0] + "_left" + Integer.valueOf(y+1) + imageExt));
                 leftSleeps.add(levelListDrawable);
                 levelListDrawable = new LevelListDrawable();
                 for(int y = 0; y < Integer.valueOf(sleepGifDrawableStrInfo[1]); y++)
-                    levelListDrawable.addLevel(y, y, Utils.assets2Drawable(ctx, name + "/" + sleepGifDrawableStrInfo[0] + "_right" + Integer.valueOf(y+1) + imageExt));
+                    levelListDrawable.addLevel(y, y, Utils.assets2Drawable(ctx, name + "/action/" + sleepGifDrawableStrInfo[0] + "_right" + Integer.valueOf(y+1) + imageExt));
                 rightSleeps.add(levelListDrawable);
                 this.sleepStateCounts.add(Integer.valueOf(sleepGifDrawableStrInfo[1]));
             }
@@ -1410,11 +1475,11 @@ public class Pet extends Handler implements Comparable<Pet>{
                 hugEndGifDrawableStrInfo = hugEndGifDrawableStrs[k].split(":");
                 levelListDrawable = new LevelListDrawable();
                 for(int y = 0; y < Integer.valueOf(hugEndGifDrawableStrInfo[1]); y++)
-                    levelListDrawable.addLevel(y, y, Utils.assets2Drawable(ctx, name + "/" + hugEndGifDrawableStrInfo[0] + "_left" + Integer.valueOf(y+1) + imageExt));
+                    levelListDrawable.addLevel(y, y, Utils.assets2Drawable(ctx, name + "/action/" + hugEndGifDrawableStrInfo[0] + "_left" + Integer.valueOf(y+1) + imageExt));
                 leftHugEnds.add(levelListDrawable);
                 levelListDrawable = new LevelListDrawable();
                 for(int y = 0; y < Integer.valueOf(hugEndGifDrawableStrInfo[1]); y++)
-                    levelListDrawable.addLevel(y, y, Utils.assets2Drawable(ctx, name + "/" + hugEndGifDrawableStrInfo[0] + "_right" + Integer.valueOf(y+1) + imageExt));
+                    levelListDrawable.addLevel(y, y, Utils.assets2Drawable(ctx, name + "/action/" + hugEndGifDrawableStrInfo[0] + "_right" + Integer.valueOf(y+1) + imageExt));
                 rightHugEnds.add(levelListDrawable);
                 hugEndStateCounts.add(Integer.valueOf(hugEndGifDrawableStrInfo[1]));
             }
@@ -1455,6 +1520,12 @@ public class Pet extends Handler implements Comparable<Pet>{
         }else if(MyService.pets.isEmpty()){
             MyService.pets = null;
             MyService.downPet = null;
+            if(MyService.choosedPets != null && !MyService.choosedPets.isEmpty()){
+                for(Pet pet : MyService.choosedPets){
+                    pet.params.flags = Utils.getNormalFlags() | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
+                    MyService.wm.updateViewLayout(pet.elfView, pet.params);
+                }
+            }
             return;
         }
 
@@ -1468,6 +1539,8 @@ public class Pet extends Handler implements Comparable<Pet>{
         for(int i = 0; i < count; i++){
             currentPet = MyService.pets.poll();
             if(currentPet == this){
+                if(MyService.choosedPets == null)MyService.choosedPets = new LinkedList<>();
+                MyService.choosedPets.add(currentPet);
                 continue;
             }
             deltaX = rawX - (currentPet.params.x - -MyService.size.x/2 - currentPet.params.width/2);
@@ -1475,11 +1548,19 @@ public class Pet extends Handler implements Comparable<Pet>{
             if(deltaX < 0 || deltaX > currentPet.params.width || deltaY < 0 || deltaY > currentPet.params.height)continue;
             event.setLocation(deltaX, deltaY);
             MyService.downPet = currentPet;
+            if(MyService.choosedPets == null)MyService.choosedPets = new LinkedList<>();
+            MyService.choosedPets.add(currentPet);
             return;
         }
 
         MyService.pets = null;
         MyService.downPet = null;
+        if(MyService.choosedPets != null && !MyService.choosedPets.isEmpty()){
+            for(Pet pet : MyService.choosedPets){
+                pet.params.flags = Utils.getNormalFlags() | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
+                MyService.wm.updateViewLayout(pet.elfView, pet.params);
+            }
+        }
 
     }
 

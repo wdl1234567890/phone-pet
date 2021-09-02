@@ -44,7 +44,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 public class VersionUpdate {
-    public static String versionUrlBase = "https://app-version-fl-wdl.oss-cn-shenzhen.aliyuncs.com/";
+    public static String versionUrlBase = "https://s-gz-2816-phonepet.oss.dogecdn.com/";
     public static JSONObject versinJson;
     public static Activity ctx1;
     public static MyConsumer consumer1;
@@ -78,6 +78,10 @@ public class VersionUpdate {
             super.handleMessage(msg);
             try{
                 GetServerJson();
+                if(versinJson == null){
+                    sendEmptyMessageDelayed(1, 1000);
+                    return;
+                }
                 int versionCode = 0;
                 try {
                     versionCode = versinJson.getInt("versionCode");
@@ -109,6 +113,7 @@ public class VersionUpdate {
             infoUrl = new URL(versionUrlBase + "version.json");
             URLConnection connection = infoUrl.openConnection();
             HttpURLConnection httpConnection = (HttpURLConnection) connection;
+            httpConnection.setConnectTimeout(5000);
             int responseCode = httpConnection.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 inStream = httpConnection.getInputStream();
@@ -168,7 +173,10 @@ public class VersionUpdate {
 
     public static void showDialogUpdate() {
 
-        if(versinJson == null)return;
+        if(versinJson == null){
+            Toast.makeText(ctx1, "当前已是最新版本", Toast.LENGTH_SHORT).show();
+            return;
+        }
         int versionCode = 0;
         String versionName = "";
         String[] updateLog = null;
@@ -186,7 +194,7 @@ public class VersionUpdate {
                 for (int newFunc = 0; newFunc < updateLog.length; newFunc++)message += ("\n" + updateLog[newFunc]);
                 AlertDialog.Builder builder = new AlertDialog.Builder(ctx1);
                 final String ApkUrl = Url;
-                builder.setTitle("是否升级到"+versionName+"版本？").setIcon(R.mipmap.ic_launcher_round).setMessage(message)
+                builder.setTitle("是否升级到"+versionName+"版本？").setIcon(R.mipmap.ic_launcher).setMessage(message)
                         .setPositiveButton("更新", new DialogInterface.OnClickListener() {
 
                             @Override
