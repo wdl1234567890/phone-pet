@@ -1,363 +1,391 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<ScrollView xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/tm"
-    android:gravity="center_horizontal"
-    android:orientation="vertical"
-    android:padding="20dp"
-    tools:context=".MainActivity">
-
-    <Switch
-        android:id="@+id/switch1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="right"
-        android:backgroundTint="#46BCF1"
-        android:checked="false"
-        android:scaleX="1"
-        android:showText="false"
-        android:splitTrack="false"
-        android:textColor="#390202"
-        android:textColorHighlight="#EC92B0"
-        android:textColorHint="#73B7ED"
-        android:textColorLink="#FFFFFF"
-        android:textOff="off"
-        android:textOn="on"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:thumbTint="@color/switch_thumb_color"
-        android:trackTint="@color/switch_track_color" />
-
+    android:scrollbars="vertical"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <LinearLayout
-        android:layout_width="320dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginTop="20dp"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="20dp"
+        tools:context=".MainActivity">
+
+        <Switch
+            android:id="@+id/switch1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:backgroundTint="#46BCF1"
+            android:checked="false"
+            android:scaleX="1"
+            android:showText="false"
+            android:splitTrack="false"
+            android:textColor="#390202"
+            android:textColorHighlight="#EC92B0"
+            android:textColorHint="#73B7ED"
+            android:textColorLink="#FFFFFF"
+            android:textOff="off"
+            android:textOn="on"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:thumbTint="@color/switch_thumb_color"
+            android:trackTint="@color/switch_track_color" />
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="20dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/sizeTipText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="宠物大小"
+                android:textColor="#666"
+                android:textSize="16dp" />
+
+            <SeekBar
+                android:id="@+id/selectSize"
+                style="@style/Widget.AppCompat.SeekBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:enabled="false"
+                android:max="70"
+                android:progress="23"
+                android:progressTint="#EC98B5" />
+
+            <TextView
+                android:id="@+id/sizeShow"
+                android:layout_width="30dp"
+                android:layout_height="wrap_content"
+                android:gravity="right"
+                android:textColor="#666"
+                android:textSize="16dp"
+                tools:text="20" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/vTipText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="速度大小"
+                android:textColor="#666"
+                android:textSize="16dp" />
+
+            <SeekBar
+                android:id="@+id/selectSpeed"
+                style="@style/Widget.AppCompat.SeekBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:enabled="false"
+                android:max="25"
+                android:min="1"
+                android:progress="5"
+                android:progressTint="#EC98B5" />
+
+            <TextView
+                android:id="@+id/vShow"
+                android:layout_width="30dp"
+                android:layout_height="wrap_content"
+                android:gravity="right"
+                android:textColor="#666"
+                android:textSize="16dp"
+                tools:text="5" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/fTipText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="变换时间"
+                android:textColor="#666"
+                android:textSize="16dp" />
+
+            <SeekBar
+                android:id="@+id/selectFrequest"
+                style="@style/Widget.AppCompat.SeekBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:enabled="false"
+                android:max="10"
+                android:min="1"
+                android:progress="3"
+                android:progressTint="#EC98B5" />
+
+            <TextView
+                android:id="@+id/fShow"
+                android:layout_width="30dp"
+                android:layout_height="wrap_content"
+                android:gravity="right"
+                android:textColor="#666"
+                android:textSize="16dp"
+                tools:text="5" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:gravity="left"
+            android:orientation="horizontal">
+
+            <CheckBox
+                android:id="@+id/checkStatusBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="false"
+                android:gravity="left"
+                android:minHeight="0dp"
+                android:text="可爬升到状态栏(非刘海屏无效),这将会导致显示在状态栏的部分不能触摸或点击"
+                android:textColor="#999"
+                android:textSize="10dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:orientation="horizontal">
+
+            <CheckBox
+                android:id="@+id/checkNotTouch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="false"
+                android:minHeight="0dp"
+                android:text="不可互动模式"
+                android:textColor="#999"
+                android:textSize="10dp" />
+
+            <CheckBox
+                android:id="@+id/checkKeyboard"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="false"
+                android:minHeight="0dp"
+                android:text="不遮挡键盘"
+                android:textColor="#999"
+                android:textSize="10dp" />
+
+            <CheckBox
+                android:id="@+id/closeVibrator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="false"
+                android:minHeight="0dp"
+                android:text="关闭点击时震动效果"
+                android:textColor="#999"
+                android:textSize="10dp" />
+
+        </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:gravity="left"
         android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/sizeTipText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="宠物大小"
-            android:textColor="#666"
-            android:textSize="16dp" />
-
-        <SeekBar
-            android:id="@+id/selectSize"
-            style="@style/Widget.AppCompat.SeekBar"
-            android:layout_width="230dp"
-            android:layout_height="wrap_content"
-            android:enabled="false"
-            android:max="70"
-            android:progress="23"
-            android:progressTint="#EC98B5" />
-
-        <TextView
-            android:id="@+id/sizeShow"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignLeft="@id/selectSize"
-            android:textColor="#666"
-            android:textSize="16dp"
-            tools:text="20" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="320dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:gravity="center|left"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/vTipText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="速度大小"
-            android:textColor="#666"
-            android:textSize="16dp" />
-
-        <SeekBar
-            android:id="@+id/selectSpeed"
-            style="@style/Widget.AppCompat.SeekBar"
-            android:layout_width="230dp"
-            android:layout_height="wrap_content"
-            android:enabled="false"
-            android:max="25"
-            android:min="1"
-            android:progress="5"
-            android:progressTint="#EC98B5" />
-
-        <TextView
-            android:id="@+id/vShow"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignLeft="@id/selectSpeed"
-            android:textColor="#666"
-            android:textSize="16dp"
-            tools:text="5" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="320dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:gravity="center|left"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/fTipText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="变换时间"
-            android:textColor="#666"
-            android:textSize="16dp" />
-
-        <SeekBar
-            android:id="@+id/selectFrequest"
-            style="@style/Widget.AppCompat.SeekBar"
-            android:layout_width="230dp"
-            android:layout_height="wrap_content"
-            android:enabled="false"
-            android:max="10"
-            android:min="1"
-            android:progress="3"
-            android:progressTint="#EC98B5" />
-
-        <TextView
-            android:id="@+id/fShow"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignLeft="@id/selectFrequest"
-            android:textColor="#666"
-            android:textSize="16dp"
-            tools:text="5" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="320dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:gravity="center|left"
-        android:orientation="horizontal">
-
         <CheckBox
-            android:id="@+id/checkStatusBar"
+            android:id="@+id/checkGSensor"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:checked="false"
             android:minHeight="0dp"
-            android:text="可爬升到状态栏(非刘海屏无效),这将会导致显示在状态栏的部分不能触摸或点击"
+            android:text="开启方向传感模式"
             android:textColor="#999"
             android:textSize="10dp" />
     </LinearLayout>
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-        <CheckBox
-            android:id="@+id/checkNotTouch"
+
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:checked="false"
-            android:minHeight="0dp"
-            android:text="不可互动模式"
-            android:textColor="#999"
-            android:textSize="10dp" />
-        <CheckBox
-            android:id="@+id/checkKeyboard"
+            android:layout_gravity="center"
+            android:layout_marginTop="28dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/reduce_lw"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="25dp"
+                android:layout_weight="1"
+                android:backgroundTint="#EA7A7A"
+                android:clickable="true"
+                android:tag="reduce_lw"
+                app:backgroundTint="#FFFFFF"
+                app:rippleColor="#EA7A7A"
+                app:srcCompat="@android:drawable/dialog_holo_light_frame" />
+
+            <ImageView
+                android:id="@+id/lw_image"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:src="@drawable/lw" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/add_lw"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="25dp"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:tag="add_lw"
+                app:backgroundTint="#82CCEC"
+                app:srcCompat="@android:drawable/ic_input_add" />
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="不遮挡键盘"
-            android:minHeight="0dp"
-            android:textColor="#999"
-            android:textSize="10dp"
-            android:checked="false" />
-        <CheckBox
-            android:id="@+id/closeVibrator"
+            android:layout_gravity="center"
+            android:layout_marginTop="20dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/reduce_ax"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="25dp"
+                android:layout_weight="1"
+                android:backgroundTint="#EA7A7A"
+                android:clickable="true"
+                android:src="@android:drawable/dialog_holo_light_frame"
+                android:tag="reduce_ax"
+                app:backgroundTint="#FFFFFF"
+                app:rippleColor="#EA7A7A" />
+
+            <ImageView
+                android:id="@+id/ax_image"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:src="@drawable/ax" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/add_ax"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="25dp"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:src="@android:drawable/ic_input_add"
+                android:tag="add_ax"
+                app:backgroundTint="#82CCEC" />
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="关闭点击时震动效果"
-            android:textColor="#999"
-            android:textSize="10dp"
-            android:minHeight="0dp"
-            android:checked="false" />
+            android:layout_gravity="center"
+            android:layout_marginTop="20dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/reduce_wz"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="25dp"
+                android:layout_weight="1"
+                android:backgroundTint="#EA7A7A"
+                android:clickable="true"
+                android:tag="reduce_wz"
+                app:backgroundTint="#FFFFFF"
+                app:rippleColor="#EA7A7A"
+                app:srcCompat="@android:drawable/dialog_holo_light_frame"
+                tools:ignore="SpeakableTextPresentCheck" />
+
+            <ImageView
+                android:id="@+id/wz_image"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:src="@drawable/wz" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/add_wz"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="25dp"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:tag="add_wz"
+                app:backgroundTint="#82CCEC"
+                app:srcCompat="@android:drawable/ic_input_add" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="30dp"
+            android:gravity="center_horizontal|center_vertical"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/developer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="5dp"
+                android:alpha="0.5"
+                android:shadowColor="#fff"
+                android:shadowDx="0"
+                android:shadowDy="0"
+                android:shadowRadius="10"
+                android:text="开发者：@FL"
+                android:textColor="#666"
+                android:textSize="14dp" />
+
+            <TextView
+                android:id="@+id/painter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="15dp"
+                android:alpha="0.5"
+                android:shadowColor="#fff"
+                android:shadowDx="0"
+                android:shadowDy="0"
+                android:shadowRadius="10"
+                android:text="绘图：@直升飞机飞呀飞"
+                android:textColor="#666"
+                android:textSize="14dp" />
+
+            <TextView
+                android:id="@+id/version"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:alpha="0.5"
+                android:shadowColor="#fff"
+                android:shadowDx="0"
+                android:shadowDy="0"
+                android:shadowRadius="10"
+                android:text="1.0.0"
+                android:textColor="#666"
+                android:textSize="12dp" />
+        </LinearLayout>
+
     </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginTop="28dp"
-        android:gravity="center"
-        android:orientation="horizontal">
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/reduce_lw"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginRight="25dp"
-            android:layout_weight="1"
-            android:backgroundTint="#EA7A7A"
-            android:clickable="true"
-            android:tag="reduce_lw"
-            app:backgroundTint="#FFFFFF"
-            app:rippleColor="#EA7A7A"
-            app:srcCompat="@android:drawable/dialog_holo_light_frame" />
-
-        <ImageView
-            android:id="@+id/lw_image"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:src="@drawable/lw" />
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/add_lw"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="25dp"
-            android:layout_weight="1"
-            android:clickable="true"
-            android:tag="add_lw"
-            app:backgroundTint="#82CCEC"
-            app:srcCompat="@android:drawable/ic_input_add" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginTop="20dp"
-        android:gravity="center"
-        android:orientation="horizontal">
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/reduce_ax"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginRight="25dp"
-            android:layout_weight="1"
-            android:backgroundTint="#EA7A7A"
-            android:clickable="true"
-            android:src="@android:drawable/dialog_holo_light_frame"
-            android:tag="reduce_ax"
-            app:backgroundTint="#FFFFFF"
-            app:rippleColor="#EA7A7A" />
-
-        <ImageView
-            android:id="@+id/ax_image"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:src="@drawable/ax" />
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/add_ax"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="25dp"
-            android:layout_weight="1"
-            android:clickable="true"
-            android:src="@android:drawable/ic_input_add"
-            android:tag="add_ax"
-            app:backgroundTint="#82CCEC" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginTop="20dp"
-        android:gravity="center"
-        android:orientation="horizontal">
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/reduce_wz"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginRight="25dp"
-            android:layout_weight="1"
-            android:backgroundTint="#EA7A7A"
-            android:clickable="true"
-            android:tag="reduce_wz"
-            app:backgroundTint="#FFFFFF"
-            app:rippleColor="#EA7A7A"
-            app:srcCompat="@android:drawable/dialog_holo_light_frame"
-            tools:ignore="SpeakableTextPresentCheck" />
-
-        <ImageView
-            android:id="@+id/wz_image"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:src="@drawable/wz" />
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/add_wz"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="25dp"
-            android:layout_weight="1"
-            android:clickable="true"
-            android:tag="add_wz"
-            app:backgroundTint="#82CCEC"
-            app:srcCompat="@android:drawable/ic_input_add" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:gravity="center_horizontal|center_vertical"
-        android:orientation="vertical">
-
-        <TextView
-            android:id="@+id/developer"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="5dp"
-            android:alpha="0.7"
-            android:shadowColor="#666"
-            android:shadowDx="0"
-            android:shadowDy="0"
-            android:shadowRadius="10"
-            android:text="开发者：@FL"
-            android:textColor="#fff"
-            android:textSize="14dp" />
-
-        <TextView
-            android:id="@+id/painter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="15dp"
-            android:alpha="0.7"
-            android:shadowColor="#666"
-            android:shadowDx="0"
-            android:shadowDy="0"
-            android:shadowRadius="10"
-            android:text="绘图：@直升飞机飞呀飞"
-            android:textColor="#fff"
-            android:textSize="14dp" />
-
-        <TextView
-            android:id="@+id/version"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:alpha="0.7"
-            android:shadowColor="#333"
-            android:shadowDx="0"
-            android:shadowDy="0"
-            android:shadowRadius="10"
-            android:text="版本：1.0.0"
-            android:textColor="#fff"
-            android:textSize="12dp" />
-    </LinearLayout>
-
-</LinearLayout>
+</ScrollView>

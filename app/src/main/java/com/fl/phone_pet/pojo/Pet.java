@@ -82,6 +82,9 @@ public class Pet extends Handler implements Comparable<Pet>{
     public static final int HUG = 10033;
     public static final int FALL_TO_GROUND_STAND = 10034;
     public static final int HUG_END = 10035;
+    public static final int G_SENSOR_X = 10036;
+    public static final int G_SENSOR_XY = 10037;
+    public static final int L_SENSOR = 10038;
     public int BEFORE_MODE = FLY;
     public int CURRENT_ACTION = FLY;
     public String name;
@@ -136,14 +139,14 @@ public class Pet extends Handler implements Comparable<Pet>{
     Drawable climbTopRightGifDrawable;
     Drawable climbTopLeftStandGifDrawable;
     Drawable climbTopRightStandGifDrawable;
-    Drawable moveLeftGifDrawable;
-    Drawable moveRightGifDrawable;
-    Drawable moveRightLightGifDrawable;
-    Drawable moveLeftLightGifDrawable;
-    Drawable moveRightWeightGifDrawable;
-    Drawable moveLeftWeightGifDrawable;
-    Drawable moveRightMiddleGifDrawable;
-    Drawable moveLeftMiddleGifDrawable;
+    public Drawable moveLeftGifDrawable;
+    public Drawable moveRightGifDrawable;
+    public Drawable moveRightLightGifDrawable;
+    public Drawable moveLeftLightGifDrawable;
+    public Drawable moveRightWeightGifDrawable;
+    public Drawable moveLeftWeightGifDrawable;
+    public Drawable moveRightMiddleGifDrawable;
+    public Drawable moveLeftMiddleGifDrawable;
     Drawable fallToGroundLeftGifDrawable;
     Drawable fallToGroundRightGifDrawable;
     Drawable jumpLeftGifDrawable;
@@ -165,12 +168,14 @@ public class Pet extends Handler implements Comparable<Pet>{
     public boolean isOnceFly = true;
     public boolean isMoveFly = false;
     public int pngDev;
+    public CountDownLatch lSensorCdl;
     final int distance = 30;
     final int downVy = 7;
 
     public static float g = 9.8f;
     public static float fs = 2f;
     private float vX0, vY0;
+    private long lheight;
     private final long moveMin = 10;
     private final float v0 = 1.2f;
     private Context ctx;
@@ -216,7 +221,7 @@ public class Pet extends Handler implements Comparable<Pet>{
         try {
             speechParams.height = (int) (MyService.currentSize * 7.5);
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {//6.0
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {//6.0
                 params.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
                 speechParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
                 functionPanelParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
@@ -249,7 +254,7 @@ public class Pet extends Handler implements Comparable<Pet>{
 
             params.width = whRate != 0 && whRate != 1 ? (int)(petW * whRate) : petW;
             //params.width = 0;
-            pngDev = (int)(0.12 * params.width);
+            pngDev = (int)(0.08 * params.width);
             params.height = petW;
 
             whDif = params.width - params.height + 2;
@@ -302,7 +307,16 @@ public class Pet extends Handler implements Comparable<Pet>{
                             //Utils.voice(MyService.OSS_BASE + "lw/mscs/gunba.mp3");
                             //return false;
                         //}
-                        if(CURRENT_ACTION != HUG)CURRENT_ACTION = MOVE;
+                        if(CURRENT_ACTION != HUG){
+                            CURRENT_ACTION = MOVE;
+                            if(MyService.isLSensor && hugPet != null){
+                                hugPet.hugPet = null;
+                                hugPet = null;
+                                lSensorCdl.countDown();
+                                lSensorCdl.countDown();
+                            }
+                        }
+
                         if(isOnceFly)isOnceFly = false;
                         isDown = true;
                         downTime = System.currentTimeMillis();
@@ -389,11 +403,11 @@ public class Pet extends Handler implements Comparable<Pet>{
                                 postDelayed(new Runnable() {
                                     @Override
                                     public void run() {
-                                        if(MyService.wm == null || !MyService.isEnableTouch)return;
-                                            for(Pet pet : choosedPets){
-                                                pet.params.flags = Utils.getNormalFlags();
-                                                MyService.wm.updateViewLayout(pet.elfView, pet.params);
-                                            }
+                                        if(MyService.wm == null || !MyService.isEnableTouch || Utils.isGroupPetsEmpty())return;
+                                        for(Pet pet : choosedPets){
+                                           pet.params.flags = Utils.getNormalFlags();
+                                           MyService.wm.updateViewLayout(pet.elfView, pet.params);
+                                        }
                                     }
                                 }, 300);
                                 MyService.choosedPets = null;
@@ -775,6 +789,7 @@ public class Pet extends Handler implements Comparable<Pet>{
             case HUG_END:
                 removeMessages(HUG_END);
                 if(CURRENT_ACTION != HUG_END)CURRENT_ACTION = HUG_END;
+                if(hugPet != null)hugPet = null;
                 if(stateIndex + 1 > stateCount){
                     sendEmptyMessage(TIMER_START);
                     return;
@@ -830,8 +845,15 @@ public class Pet extends Handler implements Comparable<Pet>{
                 }
 
                 if(stateIndex + 1 > 3){
-                    sendEmptyMessage(FALL_TO_GROUND_STAND);
-                    sendEmptyMessageDelayed(TIMER_START, SpeedUtils.getCurrentFrequestTime());
+                    if(CURRENT_ACTION == L_SENSOR){
+                        if (BEFORE_MODE != TIMER_START) BEFORE_MODE = TIMER_START;
+                        if(direction.equals("left"))walkToLeft();
+                        else walkToRight();
+                    }
+                    else{
+                        sendEmptyMessage(FALL_TO_GROUND_STAND);
+                        sendEmptyMessageDelayed(TIMER_START, SpeedUtils.getCurrentFrequestTime());
+                    }
                 }else{
                     changeStateLevel();
                     sendEmptyMessageDelayed(FALL_TO_THE_GROUND, (long)(0.6 * SpeedUtils.getCurrentSpeedTime()));
@@ -840,7 +862,7 @@ public class Pet extends Handler implements Comparable<Pet>{
                 break;
             case FLY:
                 if (BEFORE_MODE != FLY) BEFORE_MODE = FLY;
-                if (CURRENT_ACTION != FLY) CURRENT_ACTION = FLY;
+                if (CURRENT_ACTION != FLY && CURRENT_ACTION != G_SENSOR_XY) CURRENT_ACTION = FLY;
                 removeAllMessages();
                 Map<String, Long> data = (Map<String, Long>) msg.obj;
                 if (data != null) {
@@ -885,19 +907,21 @@ public class Pet extends Handler implements Comparable<Pet>{
                     if(flag == -1)flag = 3;
                 }
 
-                int random = new Random().nextInt(20);
-                if(random > 6 && flag == -1 && vY0 > downVy * g * 0.8 && !isOnceFly && !isMoveFly && params.y % MyService.divisionArg == 0){
-                    flag = 0;
+                if(!MyService.isGSensorEnabled){
+                    int random = new Random().nextInt(20);
+                    if(random > 6 && flag == -1 && vY0 > downVy * g * 0.8 && !isOnceFly && !isMoveFly && params.y % MyService.divisionArg == 0){
+                        flag = 0;
+                    }
+
+                    if((flag == -1 && vY0 >= 0 && isMoveFly && !isOnceFly) || (random <= 6 && flag == -1 && vY0 > downVy * g * 0.8 && !isOnceFly && !isMoveFly)){
+                        if(params.y % MyService.divisionArg != 0)params.y = (params.y / MyService.divisionArg + 1) * MyService.divisionArg;
+                        params.y = params.y > MyService.size.y/2 - params.height/2 ? MyService.size.y/2 - params.height/2 : params.y;
+                        flag = 0;
+                    }
                 }
 
-                if((flag == -1 && vY0 >= 0 && isMoveFly && !isOnceFly) || (random <= 6 && flag == -1 && vY0 > downVy * g * 0.8 && !isOnceFly && !isMoveFly)){
-                    if(params.y % MyService.divisionArg != 0)params.y = (params.y / MyService.divisionArg + 1) * MyService.divisionArg;
-                    params.y = params.y > MyService.size.y/2 - params.height/2 ? MyService.size.y/2 - params.height/2 : params.y;
-                    flag = 0;
-                }
 
                 MyService.wm.updateViewLayout(elfView, params);
-
 
                 sendEmptyMessageDelayed(FLY, (long)(0.18 * SpeedUtils.getCurrentSpeedTime()));
 
@@ -914,6 +938,43 @@ public class Pet extends Handler implements Comparable<Pet>{
                         break;
                 }
 
+                break;
+            case L_SENSOR:
+                if (BEFORE_MODE != FLY) BEFORE_MODE = FLY;
+                if (CURRENT_ACTION != L_SENSOR) CURRENT_ACTION = L_SENSOR;
+                removeAllMessages();
+                Map<String, Long> data1 = (Map<String, Long>) msg.obj;
+                if (data1 != null) {
+                    vX0 = 0;
+                    vY0 = 0;
+                    long moveXDirection = data1.get("moveXDirection");
+                    long moveYDirection = data1.get("moveYDirection");
+                    lheight = data1.get("lheight");
+                    //isMoveFly = data.get("isMoveFly") == null ? false : data.get("isMoveFly") > 0 ? true : false;
+
+                    direction = moveXDirection > 0 ? "right" : "left";
+
+                    fly();
+
+                    if(Math.abs(moveXDirection) > moveMin)vX0 = moveXDirection * v0;
+                    if(Math.abs(moveYDirection) > moveMin)vY0 = moveYDirection * v0;
+
+                }
+                params.y = (int) (params.y + vY0 + (1 / 2) * g);
+                fs = vX0 == 0 ? 0 : vX0 < 0 ? fs : -fs;
+                params.x = (int) (params.x + vX0 + (1 / 2) * fs);
+                vX0 = vX0 + fs;
+                vY0 = vY0 + g;
+
+                if(vY0 < 0 && params.y <= lheight || vY0 >= 0 && params.y >= lheight){
+                    params.y = (int)lheight;
+                    MyService.wm.updateViewLayout(elfView, params);
+                    sendEmptyMessage(FALL_TO_THE_GROUND);
+
+                }else{
+                    sendEmptyMessageDelayed(L_SENSOR, (long)(0.18 * SpeedUtils.getCurrentSpeedTime()));
+                    MyService.wm.updateViewLayout(elfView, params);
+                }
                 break;
             case HIDDEN_CONTAINER:
                 removeMessages(HIDDEN_CONTAINER);
@@ -943,6 +1004,7 @@ public class Pet extends Handler implements Comparable<Pet>{
         removeMessages(LEFT_STAND);
         removeMessages(RIGHT_STAND);
         removeMessages(HUG_END);
+        removeMessages(L_SENSOR);
         speechView.setVisibility(View.GONE);
     }
 
@@ -962,6 +1024,8 @@ public class Pet extends Handler implements Comparable<Pet>{
         hugPet = null;
         aiXinContainer = null;
         aiXinContainerParams = null;
+        if(MyService.isLSensor && lSensorCdl != null)lSensorCdl.countDown();
+        lSensorCdl = null;
         int random = new Random().nextInt(hugEndSize);
         stateCount = this.hugEndStateCounts.get(random);
         stateIndex = 0;
@@ -1046,12 +1110,23 @@ public class Pet extends Handler implements Comparable<Pet>{
 //        getMaxWidth();
     }
 
-    private void climbToUp() {
+    public void climbToUp() {
         stateCount = 2;
         stateIndex = 0;
         elfBody.setImageDrawable(BEFORE_MODE == TIMER_LEFT_START ? climbLeftGifDrawable :
                 climbRightGifDrawable);
         elfBody.setImageLevel(0);
+//        if(direction.equals("left")){
+//            if(params.x != -MyService.size.x / 2 + params.width / 2 - whDif / 2){
+//                params.x = -MyService.size.x / 2 + params.width / 2 - whDif / 2;
+//                MyService.wm.updateViewLayout(elfView, params);
+//            }
+//        }else {
+//            if(params.x != MyService.size.x / 2 - params.width / 2 + whDif / 2){
+//                params.x = MyService.size.x / 2 - params.width / 2 + whDif / 2;
+//                MyService.wm.updateViewLayout(elfView, params);
+//            }
+//        }
 
 //        int currentWidth = getCurrentWidth();
 //        if(BEFORE_MODE == TIMER_LEFT_START && params.x != -MyService.size.x / 2 + currentWidth / 2){
@@ -1073,6 +1148,18 @@ public class Pet extends Handler implements Comparable<Pet>{
         elfBody.setImageDrawable(BEFORE_MODE == TIMER_LEFT_START ? climbLeftGifDrawable :
                 climbRightGifDrawable);
         elfBody.setImageLevel(0);
+
+//        if(direction.equals("left")){
+//            if(params.x != -MyService.size.x / 2 + params.width / 2 - whDif / 2){
+//                params.x = -MyService.size.x / 2 + params.width / 2 - whDif / 2;
+//                MyService.wm.updateViewLayout(elfView, params);
+//            }
+//        }else {
+//            if(params.x != MyService.size.x / 2 - params.width / 2 + whDif / 2){
+//                params.x = MyService.size.x / 2 - params.width / 2 + whDif / 2;
+//                MyService.wm.updateViewLayout(elfView, params);
+//            }
+//        }
 
 //        int currentWidth = getCurrentWidth();
 //        if(BEFORE_MODE == TIMER_LEFT_START && params.x != -MyService.size.x / 2 + currentWidth / 2){
@@ -1583,9 +1670,22 @@ public class Pet extends Handler implements Comparable<Pet>{
         return maxWidth;
     }
 
+    public void twoWayRunnig(int lheight, int moveXDirection, int moveYDirection, CountDownLatch cdl){
+        lSensorCdl = cdl;
+        Message msg1 = new Message();
+        Map<String, Long> data = new HashMap<>();
+        data.put("moveXDirection", (long)moveXDirection);
+        data.put("moveYDirection", (long)moveYDirection);
+        data.put("lheight", (long)lheight);
+        msg1.what = Pet.L_SENSOR;
+        msg1.obj = data;
+        sendMessage(msg1);
+    }
+
     private void dispatchEvent(MotionEvent event){
         if(MyService.downPet != null)MyService.downPet.elfView.dispatchTouchEvent(event);
     }
+
 
 
     @Override

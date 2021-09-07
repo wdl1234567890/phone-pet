@@ -61,9 +61,7 @@ public class CollisionHandler extends Handler {
     public CollisionHandler(Context ctx, Map<String, List<Pet>> groupPets){
         this.ctx = ctx;
         initResIds();
-        if(groupPets != null && !groupPets.isEmpty())this.pets = new LinkedList<>();
-        Set<String> keys = groupPets.keySet();
-        for (String key : keys)this.pets.addAll(groupPets.get(key));
+        this.pets = Utils.getAllPets();
 
     }
 
@@ -130,7 +128,9 @@ public class CollisionHandler extends Handler {
                             || pet.CURRENT_ACTION == Pet.FLY
                             || pet.CURRENT_ACTION == Pet.MOVE
                             || pet.name.equals(MyService.WZ)
-                            || pet.CURRENT_ACTION == Pet.SPEECH_START)continue;
+                            || pet.CURRENT_ACTION == Pet.SPEECH_START
+                            || pet.CURRENT_ACTION == Pet.G_SENSOR_X
+                            || pet.CURRENT_ACTION == Pet.G_SENSOR_XY)continue;
                     for (Pet pet1 : pets){
                         if(pet == pet1 || pet1.name.equals(MyService.WZ)
                                 || pet.name.equals(pet1.name)
@@ -140,7 +140,10 @@ public class CollisionHandler extends Handler {
                                 || pet1.CURRENT_ACTION == Pet.FLY
                                 || pet1.CURRENT_ACTION == Pet.MOVE
                                 || pet1.CURRENT_ACTION == Pet.HUG_END
-                                || pet1.CURRENT_ACTION == Pet.SPEECH_START)continue;
+                                || pet1.CURRENT_ACTION == Pet.SPEECH_START
+                                || pet1.CURRENT_ACTION == Pet.G_SENSOR_X
+                                || pet1.CURRENT_ACTION == Pet.G_SENSOR_XY
+                                || (MyService.isLSensor && pet.hugPet != pet1))continue;
                         topY = pet.params.y - pet.params.height/2 - pet1.params.height/2;
                         bottomY = pet.params.y + pet.params.height/2 + pet1.params.height/2;
                         leftX = pet.params.x - pet.params.width/2 - pet1.params.width/2;
@@ -313,7 +316,7 @@ public class CollisionHandler extends Handler {
     private Map<String, Object> createAiXinContainer(int width, int height, int x, int y){
         WindowManager.LayoutParams aiXinContainerParams = new WindowManager.LayoutParams();
         RelativeLayout aiXinContainerView = (RelativeLayout)LayoutInflater.from(ctx).inflate(R.layout.container, null);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {//6.0
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {//8.0
             aiXinContainerParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
         } else {
             aiXinContainerParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
@@ -375,8 +378,10 @@ public class CollisionHandler extends Handler {
             if(petPointX < 0 || i < 0 || petPointX >= bitmap.getWidth() || i >= bitmap.getHeight() || pet1PointX < 0 || pet1PointX >= bitmap.getWidth())continue;
             if(bitmap.getPixel(petPointX, i) != 0 && bitmap1.getPixel(pet1PointX, i) != 0)count++;
         }
-        Log.i("-----------", String.valueOf(count));
-        if(count <= 10 || count >= MyService.currentSize * 5)return false;
+
+        //int maxCount = MyService.isLSensor ? MyService.currentSize * 8 : MyService.currentSize * 5;
+        if(!MyService.isLSensor && (count <= 10 || count >= MyService.currentSize * 5))return false;
+        else if(MyService.isLSensor && count <= 0)return false;
 //        if(count <= 89 || count >= 100)return false;
         return true;
     }

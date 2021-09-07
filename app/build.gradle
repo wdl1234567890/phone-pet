@@ -5,13 +5,21 @@ plugins {
 android {
     compileSdk 31
     buildToolsVersion "31.0.0"
-
+    signingConfigs {
+        config {
+            storeFile file('android.jks')
+            storePassword 'fl123456'
+            keyAlias 'phonepet'
+            keyPassword 'fl123456'
+            v2SigningEnabled true
+        }
+    }
     defaultConfig {
         applicationId "com.fl.phone_pet"
         minSdk 21
         targetSdk 31
-        versionCode 2
-        versionName "1.0.1"
+        versionCode 3
+        versionName "1.0.2"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -19,6 +27,7 @@ android {
     buildTypes {
         release {
             minifyEnabled false
+            signingConfig signingConfigs.config
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }

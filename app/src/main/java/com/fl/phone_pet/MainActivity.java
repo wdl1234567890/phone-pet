@@ -28,6 +28,7 @@ import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
 
+import com.fl.phone_pet.utils.SensorUtils;
 import com.fl.phone_pet.utils.Utils;
 import com.fl.phone_pet.utils.VersionUpdate;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -55,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
     public static final int SWITCH_ENABLE = 20009;
     public static final int TOUCH_CHANGE = 20010;
     public static final int KETBOARD_CHANGE = 20011;
-
+    public static final int CLOSE_GSENSOR = 20012;
 
     List<Handler> versionTh;
     Map<String, FloatingActionButton> buttons;
@@ -113,6 +114,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        Utils.checkFloatWindowPermission(this);
         TextView version = findViewById(R.id.version);
         versionTh = VersionUpdate.checkVersionUpdate(this, new VersionUpdate.MyConsumer() {
             @SuppressLint({"ResourceAsColor", "ResourceType"})
@@ -123,7 +125,7 @@ public class MainActivity extends AppCompatActivity {
                         version.setTextColor(Color.rgb(116,0,0));
                     }
                     else{
-                        version.setTextColor(Color.rgb(255,255,255));
+                        version.setTextColor(Color.rgb(102,102,102));
                     }
                 }catch (Exception e){
                     e.printStackTrace();
@@ -165,7 +167,6 @@ public class MainActivity extends AppCompatActivity {
 //        }
         setContentView(R.layout.activity_main);
         Context ctx = this;
-
         SeekBar sizeSetting = findViewById(R.id.selectSize);
         sizeSetting.setEnabled(false);
         TextView sizeShow = findViewById(R.id.sizeShow);
@@ -214,6 +215,12 @@ public class MainActivity extends AppCompatActivity {
                 Context.MODE_PRIVATE).getBoolean("is_vibrator", MyService.isVibrator);
         checkedVibrator.setChecked(isCheckVibrator);
 
+        CheckBox checkedGSensor = findViewById(R.id.checkGSensor);
+        checkedGSensor.setEnabled(false);
+        boolean isCheckGSensor = getSharedPreferences("pet_store",
+                Context.MODE_PRIVATE).getBoolean("is_gsensor", MyService.isGSensorEnabled);
+        checkedGSensor.setChecked(isCheckGSensor);
+
         Switch switch1 = findViewById(R.id.switch1);
         switch1.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
 
@@ -231,6 +238,7 @@ public class MainActivity extends AppCompatActivity {
                         checkedNotTouch.setEnabled(true);
                         checkedKeyboard.setEnabled(true);
                         checkedVibrator.setEnabled(true);
+                        checkedGSensor.setEnabled(true);
                         for(FloatingActionButton button : buttons.values()){
                             button.setEnabled(true);
                         }
@@ -261,6 +269,7 @@ public class MainActivity extends AppCompatActivity {
                         checkedNotTouch.setEnabled(false);
                         checkedKeyboard.setEnabled(false);
                         checkedVibrator.setEnabled(false);
+                        checkedGSensor.setEnabled(false);
                         for(FloatingActionButton button : buttons.values()){
                             button.setEnabled(false);
                         }
@@ -415,6 +424,27 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                 MyService.isVibrator = !b;
+            }
+        });
+        checkedGSensor.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                MyService.isGSensorEnabled = b;
+                if(b){
+                    SensorUtils.registerGSensor(ctx);
+                }else{
+                    SensorUtils.unregisterGSensor();
+                    if(serviceMessenger != null){
+                        Message msg = new Message();
+                        msg.what = CLOSE_GSENSOR;
+                        msg.replyTo = clientMessenger;
+                        try {
+                            serviceMessenger.send(msg);
+                        } catch (RemoteException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
             }
         });
         initButtons();

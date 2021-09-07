@@ -29,6 +29,8 @@ import androidx.annotation.NonNull;
 //import com.fl.phone_pet.handler.CollisionHandler;
 import com.fl.phone_pet.handler.CollisionHandler;
 import com.fl.phone_pet.pojo.Pet;
+import com.fl.phone_pet.utils.SensorUtils;
+import com.fl.phone_pet.utils.SpeedUtils;
 import com.fl.phone_pet.utils.Utils;
 
 import java.io.IOException;
@@ -73,6 +75,9 @@ public class MyService extends Service {
     public static boolean isEnableTouch = true;
     public static boolean isKeyboardShow = false;
     public static boolean isVibrator = true;
+    public static boolean isGSensorEnabled = false;
+    public static boolean isLSensorEnabled = true;
+    public static boolean isLSensor = false;
 
     public static volatile RelativeLayout downContainerView;
     public static volatile CopyOnWriteArrayList<CountDownLatch> downList = new CopyOnWriteArrayList<>();
@@ -106,6 +111,9 @@ public class MyService extends Service {
             }else if(msg.what == MainActivity.KETBOARD_CHANGE){
                 if(activityMessenger == null)activityMessenger = msg.replyTo;
                 changeIsEnableKeyboardShow();
+            }else if(msg.what == MainActivity.CLOSE_GSENSOR){
+                if(activityMessenger == null)activityMessenger = msg.replyTo;
+                closeGSensor();
             }
 
         }
@@ -134,11 +142,15 @@ public class MyService extends Service {
                 .putBoolean("is_enable_touch", isEnableTouch)
                 .putBoolean("is_show_keyboard", isKeyboardShow)
                 .putBoolean("is_vibrator", isVibrator)
+                .putBoolean("is_gsensor", isGSensorEnabled)
                 .commit();
 
         try {
 
             collisionHandler.destoryRes();
+            if(isGSensorEnabled)SensorUtils.unregisterGSensor();
+            if(isLSensorEnabled)SensorUtils.unregisterLSensor();
+
 
             Iterator<Map.Entry<String, List<Pet>>> it = groupPets.entrySet().iterator();
             while (it.hasNext()){
@@ -164,6 +176,7 @@ public class MyService extends Service {
             }
 
 
+
             wm = null;
             Message msg = new Message();
             msg.what = MainActivity.DISCONNECTION;
@@ -183,6 +196,11 @@ public class MyService extends Service {
         isKeyboardShow = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getBoolean("is_show_keyboard", isKeyboardShow);
         isEnableTouch = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getBoolean("is_enable_touch", isEnableTouch);
         isVibrator = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getBoolean("is_vibrator", isVibrator);
+        isGSensorEnabled = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getBoolean("is_gsensor", isGSensorEnabled);
+
+        if(isGSensorEnabled)SensorUtils.registerGSensor(this);
+        if(isLSensorEnabled)SensorUtils.registerLSensor(this);
+
         if(checkStatusBar){
             oldStatusBarHeight = 0;
             statusBarHeight = 0;
@@ -219,17 +237,25 @@ public class MyService extends Service {
         orientation = newConfig.orientation;
         if(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE || newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
             int temp;
-            temp = size.x;
-            size.x = size.y;
-            size.y = temp;
 
             if(newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE){
+                if(size.x < size.y){
+                    temp = size.x;
+                    size.x = size.y;
+                    size.y = temp;
+                }
                 statusBarHeight = 0;
             }else{
+                if(size.x > size.y){
+                    temp = size.x;
+                    size.x = size.y;
+                    size.y = temp;
+                }
                 statusBarHeight = oldStatusBarHeight;
             }
 
             collisionHandler.destoryRes();
+            if(isLSensor)SensorUtils.LSensorEventListener.destoryLSensor();
 
             initDownContainer();
 
@@ -265,7 +291,7 @@ public class MyService extends Service {
         RelativeLayout downContainerView = null;
         if(this.downContainerView == null)downContainerView = (RelativeLayout) LayoutInflater.from(this).inflate(R.layout.container, null);
         WindowManager.LayoutParams downContainerParams = new WindowManager.LayoutParams();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {//6.0
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){//6.0
             downContainerParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
         } else {
             downContainerParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
@@ -369,6 +395,7 @@ public class MyService extends Service {
         int petW = (int) (size.x * (currentSize / 100.0));
         Iterator<Map.Entry<String, List<Pet>>> it = groupPets.entrySet().iterator();
         collisionHandler.destoryRes();
+        if(isLSensorEnabled)SensorUtils.LSensorEventListener.destoryLSensor();
 
         if(downContainerView != null && downContainerView.getVisibility() == View.VISIBLE){
             for (CountDownLatch cdl : this.downList){
@@ -414,6 +441,8 @@ public class MyService extends Service {
     }
 
     private void updateSpeed(){
+        SensorUtils.unregisterGSensor();
+        SensorUtils.registerGSensor(this);
         Iterator<Map.Entry<String, List<Pet>>> it = groupPets.entrySet().iterator();
         while (it.hasNext()){
             Map.Entry<String, List<Pet>> entry = it.next();
@@ -477,6 +506,21 @@ public class MyService extends Service {
                     pet.params.flags = Utils.getNormalFlags() | WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM;
                 }
                 MyService.wm.updateViewLayout(pet.elfView, pet.params);
+
+            }
+        }
+    }
+
+    private void closeGSensor(){
+        Iterator<Map.Entry<String, List<Pet>>> it = groupPets.entrySet().iterator();
+        while (it.hasNext()){
+            Map.Entry<String, List<Pet>> entry = it.next();
+            for (Pet pet : entry.getValue()){
+                if(pet.CURRENT_ACTION == Pet.G_SENSOR_X){
+                    pet.removeAllMessages();
+                    pet.sendEmptyMessage(Pet.FALL_TO_GROUND_STAND);
+                    pet.sendEmptyMessageDelayed(Pet.TIMER_START, SpeedUtils.getCurrentFrequestTime());
+                }
 
             }
         }

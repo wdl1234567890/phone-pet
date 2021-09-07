@@ -1,17 +1,31 @@
 package com.fl.phone_pet.utils;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.res.AssetFileDescriptor;
 import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
+import android.net.Uri;
+import android.os.Build;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.WindowManager;
 
 import androidx.annotation.Size;
 
+import com.fl.phone_pet.MainActivity;
 import com.fl.phone_pet.MyService;
+import com.fl.phone_pet.R;
+import com.fl.phone_pet.pojo.Pet;
 
 import java.io.InputStream;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class Utils {
     public static Drawable assets2Drawable(Context ctx, String fileName){
@@ -99,5 +113,44 @@ public class Utils {
 //        return int currentFlags = (Integer) params.getClass().getField("privateFlags").get(params);
 //        params.getClass().getField("privateFlags").set(params, currentFlags|0x00000040);
         return flags;
+    }
+
+    public static void checkFloatWindowPermission(Context ctx){
+        if(Build.VERSION.SDK_INT >= 23 && !Settings.canDrawOverlays(ctx)){
+            AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+            builder.setTitle("开启悬浮窗").setIcon(R.mipmap.ic_launcher).setMessage("桌宠运行必须开启悬浮窗权限（允许在其他应用上层显示），点击去设置")
+                    .setPositiveButton("去设置", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+//                              dialog.dismiss();
+                            Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
+                            if(Build.VERSION.SDK_INT < Build.VERSION_CODES.O)intent.setData(Uri.parse("package:" + ctx.getPackageName()));
+                            ctx.startActivity(intent);
+                        }
+                    });
+            AlertDialog alertDialog = builder.create();
+            alertDialog.show();
+
+
+        }
+    }
+
+    public static boolean isGroupPetsEmpty(){
+        if(MyService.groupPets == null || MyService.groupPets.isEmpty())return true;
+        Iterator<Map.Entry<String, List<Pet>>> it = MyService.groupPets.entrySet().iterator();
+        while (it.hasNext()){
+            List<Pet> petList = it.next().getValue();
+            if(petList != null && !petList.isEmpty())return false;
+        }
+        return true;
+    }
+
+    public static List<Pet> getAllPets(){
+        List<Pet> pets;
+        if(MyService.groupPets != null && !MyService.groupPets.isEmpty())pets = new LinkedList<>();
+        else return null;
+        Set<String> keys = MyService.groupPets.keySet();
+        for (String key : keys)pets.addAll(MyService.groupPets.get(key));
+        return pets;
     }
 }
