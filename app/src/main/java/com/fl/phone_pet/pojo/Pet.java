@@ -33,6 +33,7 @@ import android.widget.TextView;
 import com.fl.phone_pet.MainActivity;
 import com.fl.phone_pet.MyService;
 import com.fl.phone_pet.R;
+import com.fl.phone_pet.utils.SensorUtils;
 import com.fl.phone_pet.utils.SpeedUtils;
 import com.fl.phone_pet.utils.Utils;
 
@@ -276,6 +277,7 @@ public class Pet extends Handler implements Comparable<Pet>{
     }
 
     private void initBindEvent() {
+        Pet me = this;
         elfBody.setOnTouchListener(new View.OnTouchListener() {
             int lastX, lastY, dx, dy, x0, y0, tempX, tempY;
             long downTime, upTime, moveTime;
@@ -309,11 +311,13 @@ public class Pet extends Handler implements Comparable<Pet>{
                         //}
                         if(CURRENT_ACTION != HUG){
                             CURRENT_ACTION = MOVE;
-                            if(MyService.isLSensor && hugPet != null){
+                            if(MyService.isLSensor && hugPet != null && SensorUtils.isInCouple(me)){
                                 hugPet.hugPet = null;
                                 hugPet = null;
-                                lSensorCdl.countDown();
-                                lSensorCdl.countDown();
+                                if(lSensorCdl != null){
+                                    lSensorCdl.countDown();
+                                    lSensorCdl.countDown();
+                                }
                             }
                         }
 
@@ -409,7 +413,7 @@ public class Pet extends Handler implements Comparable<Pet>{
                                            MyService.wm.updateViewLayout(pet.elfView, pet.params);
                                         }
                                     }
-                                }, 300);
+                                }, 200);
                                 MyService.choosedPets = null;
                             }
                             return false;
@@ -1020,6 +1024,7 @@ public class Pet extends Handler implements Comparable<Pet>{
 
     public void hugEnd(){
         if(BEFORE_MODE != TIMER_START)BEFORE_MODE = TIMER_START;
+        if(CURRENT_ACTION != HUG_END)CURRENT_ACTION = HUG_END;
         direction = direction.equals("left") ? "right" : "left";
         hugPet = null;
         aiXinContainer = null;
@@ -1278,7 +1283,7 @@ public class Pet extends Handler implements Comparable<Pet>{
             @Override
             public void onClick(View v) {
                 hideFuncPanel();
-                sendEmptyMessage(BEFORE_MODE);
+
             }
         });
         functionPanelCallButton.setOnClickListener(new View.OnClickListener() {
@@ -1286,7 +1291,6 @@ public class Pet extends Handler implements Comparable<Pet>{
             public void onClick(View v) {
                 sendEmptyMessage(CALL);
                 hideFuncPanel();
-                sendEmptyMessage(BEFORE_MODE);
             }
         });
         functionPanelPropButton.setOnClickListener(new View.OnClickListener() {
@@ -1294,7 +1298,7 @@ public class Pet extends Handler implements Comparable<Pet>{
             public void onClick(View v) {
                 sendEmptyMessage(PROP);
                 hideFuncPanel();
-                sendEmptyMessage(BEFORE_MODE);
+
             }
         });
         functionPanelVoiceButton.setOnClickListener(new View.OnClickListener() {
@@ -1302,7 +1306,7 @@ public class Pet extends Handler implements Comparable<Pet>{
             public void onClick(View v) {
                 sendEmptyMessage(VOICE);
                 hideFuncPanel();
-                sendEmptyMessage(BEFORE_MODE);
+
             }
         });
 
@@ -1589,6 +1593,7 @@ public class Pet extends Handler implements Comparable<Pet>{
             MyService.wm.removeView(this.functionPanelView);
             this.functionPanelView = null;
         }
+        if(!(MyService.isLSensor && hugPet != null && SensorUtils.isInCouple(this)))sendEmptyMessage(BEFORE_MODE);
     }
 
     private void chooseDownPet(MotionEvent event){

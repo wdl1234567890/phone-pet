@@ -30,14 +30,20 @@ public class SensorUtils {
     private static GSensorEventListener gSensorEventListener = new GSensorEventListener();
     private static LSensorEventListener lSensorEventListener = new LSensorEventListener();
     public static Context ctx1;
-    private static List<List<Pet>> couplePets;
+    public static List<List<Pet>> couplePets;
     public static volatile CountDownLatch cdl;
     public static boolean isDark = false;
+
+    public static boolean isSensorAble(Context ctx, int type){
+        if(mSensorManager == null)mSensorManager = (SensorManager) ctx.getSystemService(Context.SENSOR_SERVICE);
+        return mSensorManager.getDefaultSensor(type) != null;
+    }
 
     public static void registerGSensor(Context ctx){
         ctx1 = ctx;
         if(mSensorManager == null)mSensorManager = (SensorManager) ctx.getSystemService(Context.SENSOR_SERVICE);
         if(gSensor == null)gSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        if(gSensor == null)return;
         mSensorManager.registerListener(gSensorEventListener, gSensor, (int)(SpeedUtils.getCurrentSpeedTime() * 800));
     }
 
@@ -45,11 +51,15 @@ public class SensorUtils {
         ctx1 = ctx;
         if(mSensorManager == null)mSensorManager = (SensorManager) ctx.getSystemService(Context.SENSOR_SERVICE);
         if(lSensor == null)lSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
+        if(lSensor == null)return;
+        isDark = false;
         mSensorManager.registerListener(lSensorEventListener, lSensor, (int)(SpeedUtils.getCurrentSpeedTime() * 800));
     }
 
     public static void unregisterGSensor(){
-        if(mSensorManager != null)mSensorManager.unregisterListener(gSensorEventListener);
+        if(mSensorManager != null){
+            mSensorManager.unregisterListener(gSensorEventListener);
+        }
     }
 
     public static void unregisterLSensor(){
@@ -67,15 +77,17 @@ public class SensorUtils {
         public void onSensorChanged(SensorEvent sensorEvent) {
             float x = sensorEvent.values[0];
 
-            //Log.i("----light------", String.valueOf(x));
+            Log.i("----light------", String.valueOf(x));
             if(!isDark && x <= 0 && !MyService.isLSensor){
+                Log.i("----yes------", "yes");
                 //isDark = true;
                 MyService.isLSensor = true;
                 couple();
                 twoWayRunning();
-            }else if(isDark && x > 0){
-                isDark = false;
+            }else if(x > 0){
+                Log.i("----hh------", "hh");
                 backState();
+                isDark = false;
             }
         }
 
@@ -134,6 +146,8 @@ public class SensorUtils {
             }
 
             MyService.isLSensor = false;
+            isDark = false;
+            if(couplePets != null)couplePets.clear();
         }
 
         private void couple(){
@@ -145,7 +159,7 @@ public class SensorUtils {
                 if(pet.CURRENT_ACTION == Pet.HUG || pet.CURRENT_ACTION == Pet.MOVE || pet.hugPet != null || pet.isOnceFly)continue;
                 for (Pet pet1 : pets){
                     if(pet == pet1 || pet1.CURRENT_ACTION == Pet.HUG || pet1.CURRENT_ACTION == Pet.MOVE || pet1.hugPet != null || pet1.isOnceFly)continue;
-                    if(Math.abs(pet.params.x - pet1.params.x) < pet.params.width/1.2 + pet1.params.width/1.2)continue;
+                    if(Math.abs(pet.params.x - pet1.params.x) < pet.params.width/3.5 + pet1.params.width/3.5)continue;
                     if(!(pet.name.equals(MyService.LW) && pet1.name.equals(MyService.AX) || pet.name.equals(MyService.AX) && pet1.name.equals(MyService.LW)))continue;
                     pet.removeAllMessages();
                     pet1.removeAllMessages();
@@ -158,6 +172,7 @@ public class SensorUtils {
                     break;
                 }
             }
+            if(MyService.isLSensor && couplePets.isEmpty())MyService.isLSensor = false;
         }
 
         private void twoWayRunning(){
@@ -179,6 +194,7 @@ public class SensorUtils {
                     public void run() {
                         try {
                             cdl.await();
+                            Log.i("----end------", "end");
                             MyService.isLSensor = false;
                             cdl = null;
                             isDark = true;
@@ -290,5 +306,15 @@ public class SensorUtils {
         public void onAccuracyChanged(Sensor sensor, int i) {
 
         }
+    }
+
+    public static boolean isInCouple(Pet pet){
+        if(couplePets == null || couplePets.isEmpty())return false;
+        Iterator<List<Pet>> lists = couplePets.iterator();
+        while (lists.hasNext()){
+            List<Pet> list = lists.next();
+            if(list.get(0) == pet || list.get(1) == pet)return true;
+        }
+        return false;
     }
 }

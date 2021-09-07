@@ -215,7 +215,16 @@
             android:layout_height="wrap_content"
             android:checked="false"
             android:minHeight="0dp"
-            android:text="开启方向传感模式"
+            android:text="开启方向传感器"
+            android:textColor="#999"
+            android:textSize="10dp" />
+        <CheckBox
+            android:id="@+id/checkLSensor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="false"
+            android:minHeight="0dp"
+            android:text="开启光线传感器"
             android:textColor="#999"
             android:textSize="10dp" />
     </LinearLayout>

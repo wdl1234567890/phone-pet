@@ -76,7 +76,7 @@ public class MyService extends Service {
     public static boolean isKeyboardShow = false;
     public static boolean isVibrator = true;
     public static boolean isGSensorEnabled = false;
-    public static boolean isLSensorEnabled = true;
+    public static boolean isLSensorEnabled = false;
     public static boolean isLSensor = false;
 
     public static volatile RelativeLayout downContainerView;
@@ -143,6 +143,7 @@ public class MyService extends Service {
                 .putBoolean("is_show_keyboard", isKeyboardShow)
                 .putBoolean("is_vibrator", isVibrator)
                 .putBoolean("is_gsensor", isGSensorEnabled)
+                .putBoolean("is_lsensor", isLSensorEnabled)
                 .commit();
 
         try {
@@ -175,8 +176,6 @@ public class MyService extends Service {
                 wm.removeView(downContainerView);
             }
 
-
-
             wm = null;
             Message msg = new Message();
             msg.what = MainActivity.DISCONNECTION;
@@ -197,7 +196,7 @@ public class MyService extends Service {
         isEnableTouch = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getBoolean("is_enable_touch", isEnableTouch);
         isVibrator = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getBoolean("is_vibrator", isVibrator);
         isGSensorEnabled = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getBoolean("is_gsensor", isGSensorEnabled);
-
+        isLSensorEnabled = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getBoolean("is_lsensor", isLSensorEnabled);
         if(isGSensorEnabled)SensorUtils.registerGSensor(this);
         if(isLSensorEnabled)SensorUtils.registerLSensor(this);
 
@@ -255,7 +254,7 @@ public class MyService extends Service {
             }
 
             collisionHandler.destoryRes();
-            if(isLSensor)SensorUtils.LSensorEventListener.destoryLSensor();
+            if(isLSensorEnabled)SensorUtils.unregisterLSensor();
 
             initDownContainer();
 
@@ -265,6 +264,7 @@ public class MyService extends Service {
                 for (Pet pet : entry.getValue()){
                     pet.removeAllMessages();
                     pet.isOnceFly = true;
+                    pet.hugPet = null;
                     pet.elfView.setVisibility(View.GONE);
                     pet.speechView.setVisibility(View.GONE);
                     if(pet.functionPanelView != null)pet.hideFuncPanel();
@@ -282,6 +282,7 @@ public class MyService extends Service {
 
             collisionHandler.start();
             goPets();
+            if(isLSensorEnabled)SensorUtils.registerLSensor(this);
 
         }
 
@@ -395,7 +396,7 @@ public class MyService extends Service {
         int petW = (int) (size.x * (currentSize / 100.0));
         Iterator<Map.Entry<String, List<Pet>>> it = groupPets.entrySet().iterator();
         collisionHandler.destoryRes();
-        if(isLSensorEnabled)SensorUtils.LSensorEventListener.destoryLSensor();
+        if(isLSensorEnabled)SensorUtils.unregisterLSensor();
 
         if(downContainerView != null && downContainerView.getVisibility() == View.VISIBLE){
             for (CountDownLatch cdl : this.downList){
@@ -415,6 +416,7 @@ public class MyService extends Service {
                 pet.params.height = petW;
                 pet.whDif = pet.params.width - pet.params.height;
                 pet.isOnceFly = true;
+                pet.hugPet = null;
                 pet.speechParams.height = (int) (currentSize * 7.5);
                 pet.speechBody.setTextSize(TypedValue.COMPLEX_UNIT_DIP, currentSize / 2);
                 pet.params.x = 0;
@@ -425,6 +427,8 @@ public class MyService extends Service {
         }
         collisionHandler.start();
         goPets();
+
+        if(isLSensorEnabled)SensorUtils.registerLSensor(this);
     }
 
     private void updateFrequest(){

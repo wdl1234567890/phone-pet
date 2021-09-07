@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.hardware.Sensor;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -221,6 +222,12 @@ public class MainActivity extends AppCompatActivity {
                 Context.MODE_PRIVATE).getBoolean("is_gsensor", MyService.isGSensorEnabled);
         checkedGSensor.setChecked(isCheckGSensor);
 
+        CheckBox checkedLSensor = findViewById(R.id.checkLSensor);
+        checkedLSensor.setEnabled(false);
+        boolean isCheckLSensor = getSharedPreferences("pet_store",
+                Context.MODE_PRIVATE).getBoolean("is_lsensor", MyService.isLSensorEnabled);
+        checkedLSensor.setChecked(isCheckLSensor);
+
         Switch switch1 = findViewById(R.id.switch1);
         switch1.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
 
@@ -235,10 +242,11 @@ public class MainActivity extends AppCompatActivity {
                         speedSetting.setEnabled(true);
                         frequestSetting.setEnabled(true);
                         checkedStatusBar.setEnabled(true);
-                        checkedNotTouch.setEnabled(true);
-                        checkedKeyboard.setEnabled(true);
+                        if(!checkedKeyboard.isChecked())checkedNotTouch.setEnabled(true);
+                        if(!checkedNotTouch.isChecked())checkedKeyboard.setEnabled(true);
                         checkedVibrator.setEnabled(true);
-                        checkedGSensor.setEnabled(true);
+                        if(SensorUtils.isSensorAble(ctx, Sensor.TYPE_ACCELEROMETER) && !checkedLSensor.isChecked())checkedGSensor.setEnabled(true);
+                        if(SensorUtils.isSensorAble(ctx, Sensor.TYPE_LIGHT) && !checkedGSensor.isChecked())checkedLSensor.setEnabled(true);
                         for(FloatingActionButton button : buttons.values()){
                             button.setEnabled(true);
                         }
@@ -270,6 +278,7 @@ public class MainActivity extends AppCompatActivity {
                         checkedKeyboard.setEnabled(false);
                         checkedVibrator.setEnabled(false);
                         checkedGSensor.setEnabled(false);
+                        checkedLSensor.setEnabled(false);
                         for(FloatingActionButton button : buttons.values()){
                             button.setEnabled(false);
                         }
@@ -430,6 +439,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                 MyService.isGSensorEnabled = b;
+                checkedLSensor.setEnabled(!b);
                 if(b){
                     SensorUtils.registerGSensor(ctx);
                 }else{
@@ -447,6 +457,16 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+        checkedLSensor.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                MyService.isLSensorEnabled = b;
+                checkedGSensor.setEnabled(!b);
+                if(b)SensorUtils.registerLSensor(ctx);
+                else SensorUtils.unregisterLSensor();
+            }
+        });
+
         initButtons();
         bindButtonsEvent();
     }
