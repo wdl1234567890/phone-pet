@@ -73,6 +73,7 @@ public class Utils {
             @Override
             public void onPrepared(MediaPlayer mp) {
                 mp.start();
+                mp1.setVolume(0.1f,0.1f);
             }
         });
         try {
@@ -127,7 +128,7 @@ public class Utils {
                             if(Build.VERSION.SDK_INT < Build.VERSION_CODES.O)intent.setData(Uri.parse("package:" + ctx.getPackageName()));
                             ctx.startActivity(intent);
                         }
-                    });
+                    }).setCancelable(false);
             AlertDialog alertDialog = builder.create();
             alertDialog.show();
 
@@ -152,5 +153,21 @@ public class Utils {
         Set<String> keys = MyService.groupPets.keySet();
         for (String key : keys)pets.addAll(MyService.groupPets.get(key));
         return pets;
+    }
+
+    public static boolean hasCouple(){
+        if(MyService.groupPets == null || MyService.groupPets.isEmpty())return false;
+        boolean lw = false;
+        boolean ax = false;
+        Iterator<Map.Entry<String, List<Pet>>> it = MyService.groupPets.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<String, List<Pet>> entry = it.next();
+            for (Pet pet : entry.getValue()){
+                if(pet.name.equals(MyService.LW))lw = true;
+                if (pet.name.equals(MyService.AX))ax = true;
+                if(lw && ax)return true;
+            }
+        }
+        return false;
     }
 }

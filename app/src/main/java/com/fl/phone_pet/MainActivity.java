@@ -44,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
 
     private Messenger clientMessenger = new Messenger(new ServiceMsgHandler());
     private Intent myService;
-    public Messenger serviceMessenger;
+    public static Messenger serviceMessenger;
 
     public static final int ADD_PET = 20001;
     public static final int REDUCE_PET = 20002;
@@ -60,7 +60,9 @@ public class MainActivity extends AppCompatActivity {
     public static final int CLOSE_GSENSOR = 20012;
 
     List<Handler> versionTh;
-    Map<String, FloatingActionButton> buttons;
+    public static Map<String, FloatingActionButton> buttons;
+
+    public static SeekBar speedSetting;
 
     public ServiceConnection sc = new ServiceConnection(){
 
@@ -176,7 +178,7 @@ public class MainActivity extends AppCompatActivity {
         sizeShow.setText(String.valueOf(size1));
         sizeSetting.setProgress(size1);
 
-        SeekBar speedSetting = findViewById(R.id.selectSpeed);
+        speedSetting = findViewById(R.id.selectSpeed);
         speedSetting.setEnabled(false);
         TextView vShow = findViewById(R.id.vShow);
         int speed1 = getSharedPreferences("pet_store",
@@ -228,6 +230,24 @@ public class MainActivity extends AppCompatActivity {
                 Context.MODE_PRIVATE).getBoolean("is_lsensor", MyService.isLSensorEnabled);
         checkedLSensor.setChecked(isCheckLSensor);
 
+        CheckBox checkedSDSensor = findViewById(R.id.checkSDSensor);
+        checkedSDSensor.setEnabled(false);
+        boolean isCheckSDSensor = getSharedPreferences("pet_store",
+                Context.MODE_PRIVATE).getBoolean("is_sdsensor", MyService.isSDSensorEnabled);
+        checkedSDSensor.setChecked(isCheckSDSensor);
+
+//        CheckBox checkedDSensor = findViewById(R.id.checkDSensor);
+//        checkedDSensor.setEnabled(false);
+//        boolean isCheckDSensor = getSharedPreferences("pet_store",
+//                Context.MODE_PRIVATE).getBoolean("is_dsensor", MyService.isDSensorEnabled);
+//        checkedDSensor.setChecked(isCheckDSensor);
+
+        CheckBox checkedPSensor = findViewById(R.id.checkPSensor);
+        checkedPSensor.setEnabled(false);
+        boolean isCheckPSensor = getSharedPreferences("pet_store",
+                Context.MODE_PRIVATE).getBoolean("is_psensor", MyService.isPSensorEnabled);
+        checkedPSensor.setChecked(isCheckPSensor);
+
         Switch switch1 = findViewById(R.id.switch1);
         switch1.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
 
@@ -239,14 +259,19 @@ public class MainActivity extends AppCompatActivity {
                         myService.putExtra("clientMessenger", clientMessenger);
                         bindService(myService, sc, Context.BIND_AUTO_CREATE);
                         sizeSetting.setEnabled(true);
-                        speedSetting.setEnabled(true);
+                        if(!checkedPSensor.isChecked())speedSetting.setEnabled(true);
                         frequestSetting.setEnabled(true);
                         checkedStatusBar.setEnabled(true);
                         if(!checkedKeyboard.isChecked())checkedNotTouch.setEnabled(true);
                         if(!checkedNotTouch.isChecked())checkedKeyboard.setEnabled(true);
                         checkedVibrator.setEnabled(true);
-                        if(SensorUtils.isSensorAble(ctx, Sensor.TYPE_ACCELEROMETER) && !checkedLSensor.isChecked())checkedGSensor.setEnabled(true);
+                        boolean isEnableG = SensorUtils.isSensorAble(ctx, Sensor.TYPE_ACCELEROMETER);
+                        if(isEnableG && !checkedLSensor.isChecked())checkedGSensor.setEnabled(true);
                         if(SensorUtils.isSensorAble(ctx, Sensor.TYPE_LIGHT) && !checkedGSensor.isChecked())checkedLSensor.setEnabled(true);
+                        if(isEnableG && !checkedGSensor.isChecked())checkedSDSensor.setEnabled(true);
+//                        if(SensorUtils.isSensorAble(ctx, Sensor.TYPE_PROXIMITY) && !checkedLSensor.isChecked())checkedDSensor.setEnabled(true);
+                        if(isEnableG)checkedPSensor.setEnabled(true);
+
                         for(FloatingActionButton button : buttons.values()){
                             button.setEnabled(true);
                         }
@@ -279,6 +304,9 @@ public class MainActivity extends AppCompatActivity {
                         checkedVibrator.setEnabled(false);
                         checkedGSensor.setEnabled(false);
                         checkedLSensor.setEnabled(false);
+                        checkedSDSensor.setEnabled(false);
+//                        checkedDSensor.setEnabled(false);
+                        checkedPSensor.setEnabled(false);
                         for(FloatingActionButton button : buttons.values()){
                             button.setEnabled(false);
                         }
@@ -287,7 +315,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-
 
         sizeSetting.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
 
@@ -440,6 +467,7 @@ public class MainActivity extends AppCompatActivity {
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                 MyService.isGSensorEnabled = b;
                 checkedLSensor.setEnabled(!b);
+                checkedSDSensor.setEnabled(!b);
                 if(b){
                     SensorUtils.registerGSensor(ctx);
                 }else{
@@ -462,8 +490,35 @@ public class MainActivity extends AppCompatActivity {
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                 MyService.isLSensorEnabled = b;
                 checkedGSensor.setEnabled(!b);
+//                checkedDSensor.setEnabled(!b);
                 if(b)SensorUtils.registerLSensor(ctx);
                 else SensorUtils.unregisterLSensor();
+            }
+        });
+        checkedSDSensor.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                MyService.isSDSensorEnabled = b;
+                checkedGSensor.setEnabled(!b);
+                if(b)SensorUtils.registerSDSensor(ctx);
+                else SensorUtils.unregisterSDSensor();
+            }
+        });
+//        checkedDSensor.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+//            @Override
+//            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+//                MyService.isDSensorEnabled = b;
+//                checkedLSensor.setEnabled(!b);
+//                if(b)SensorUtils.registerDSensor(ctx);
+//                else SensorUtils.unregisterDSensor();
+//            }
+//        });
+        checkedPSensor.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                MyService.isPSensorEnabled = b;
+                if(b)SensorUtils.registerPSensor(ctx);
+                else SensorUtils.unregisterPSensor();
             }
         });
 

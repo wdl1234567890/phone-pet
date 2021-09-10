@@ -163,7 +163,7 @@
                 android:gravity="left"
                 android:minHeight="0dp"
                 android:text="可爬升到状态栏(非刘海屏无效),这将会导致显示在状态栏的部分不能触摸或点击"
-                android:textColor="#999"
+                android:textColor="#777"
                 android:textSize="10dp" />
         </LinearLayout>
 
@@ -180,7 +180,7 @@
                 android:checked="false"
                 android:minHeight="0dp"
                 android:text="不可互动模式"
-                android:textColor="#999"
+                android:textColor="#777"
                 android:textSize="10dp" />
 
             <CheckBox
@@ -190,7 +190,7 @@
                 android:checked="false"
                 android:minHeight="0dp"
                 android:text="不遮挡键盘"
-                android:textColor="#999"
+                android:textColor="#777"
                 android:textSize="10dp" />
 
             <CheckBox
@@ -199,8 +199,8 @@
                 android:layout_height="wrap_content"
                 android:checked="false"
                 android:minHeight="0dp"
-                android:text="关闭点击时震动效果"
-                android:textColor="#999"
+                android:text="关闭点击时震动 "
+                android:textColor="#777"
                 android:textSize="10dp" />
 
         </LinearLayout>
@@ -215,8 +215,8 @@
             android:layout_height="wrap_content"
             android:checked="false"
             android:minHeight="0dp"
-            android:text="开启方向传感器"
-            android:textColor="#999"
+            android:text="一起摇摆"
+            android:textColor="#777"
             android:textSize="10dp" />
         <CheckBox
             android:id="@+id/checkLSensor"
@@ -224,11 +224,36 @@
             android:layout_height="wrap_content"
             android:checked="false"
             android:minHeight="0dp"
-            android:text="开启光线传感器"
-            android:textColor="#999"
+            android:text="双向奔赴"
+            android:textColor="#777"
+            android:textSize="10dp" />
+        <CheckBox
+            android:id="@+id/checkSDSensor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="false"
+            android:minHeight="0dp"
+            android:text="摇摇乐"
+            android:textColor="#777"
             android:textSize="10dp" />
     </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:orientation="horizontal">
+            <CheckBox
+                android:id="@+id/checkPSensor"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="false"
+                android:minHeight="0dp"
+                android:text="手摇发动机"
+                android:textColor="#777"
+                android:textSize="10dp" />
 
+
+        </LinearLayout>
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

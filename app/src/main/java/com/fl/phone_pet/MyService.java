@@ -52,7 +52,6 @@ public class MyService extends Service {
     public static final String AX = "ax";
     public static final String LW = "lw";
     public static final String WZ = "wz";
-    public static final String OSS_BASE = "https://music-fl-wdl.oss-cn-shenzhen.aliyuncs.com/";
     public static Map<String, List<Pet>> groupPets;
     public static Queue<Pet> pets;
     public static Pet downPet;
@@ -78,6 +77,9 @@ public class MyService extends Service {
     public static boolean isGSensorEnabled = false;
     public static boolean isLSensorEnabled = false;
     public static boolean isLSensor = false;
+    public static boolean isSDSensorEnabled = false;
+//    public static boolean isDSensorEnabled = false;
+    public static boolean isPSensorEnabled = false;
 
     public static volatile RelativeLayout downContainerView;
     public static volatile CopyOnWriteArrayList<CountDownLatch> downList = new CopyOnWriteArrayList<>();
@@ -86,12 +88,13 @@ public class MyService extends Service {
     private class ActivityMsgHandler extends Handler{
         @Override
         public void handleMessage(@NonNull Message msg) {
+            if(MyService.wm == null)return;
             if(msg.what == MainActivity.SIZE_CHANGE){
                 currentSize = msg.arg1;
                 if(activityMessenger == null)activityMessenger = msg.replyTo;
                 updateSize();
             }else if(msg.what == MainActivity.ADD_PET){
-                addPetOneCount((String)msg.obj);
+                addPetOneCount((String)msg.obj, msg.arg1 == 10 ? true : false);
             }else if(msg.what == MainActivity.REDUCE_PET){
                 reducePetOneCount((String)msg.obj);
             }else if(msg.what == MainActivity.SPEED_CHANGE){
@@ -144,6 +147,8 @@ public class MyService extends Service {
                 .putBoolean("is_vibrator", isVibrator)
                 .putBoolean("is_gsensor", isGSensorEnabled)
                 .putBoolean("is_lsensor", isLSensorEnabled)
+                .putBoolean("is_sdsensor", isSDSensorEnabled)
+                .putBoolean("is_psensor", isPSensorEnabled)
                 .commit();
 
         try {
@@ -151,7 +156,11 @@ public class MyService extends Service {
             collisionHandler.destoryRes();
             if(isGSensorEnabled)SensorUtils.unregisterGSensor();
             if(isLSensorEnabled)SensorUtils.unregisterLSensor();
+            if(isSDSensorEnabled)SensorUtils.unregisterSDSensor();
+//            if(isDSensorEnabled)SensorUtils.unregisterDSensor();
+            if(isPSensorEnabled)SensorUtils.unregisterPSensor();
 
+            MainActivity.speedSetting.setEnabled(false);
 
             Iterator<Map.Entry<String, List<Pet>>> it = groupPets.entrySet().iterator();
             while (it.hasNext()){
@@ -197,8 +206,15 @@ public class MyService extends Service {
         isVibrator = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getBoolean("is_vibrator", isVibrator);
         isGSensorEnabled = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getBoolean("is_gsensor", isGSensorEnabled);
         isLSensorEnabled = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getBoolean("is_lsensor", isLSensorEnabled);
+        isSDSensorEnabled =  getSharedPreferences("pet_store", Context.MODE_PRIVATE).getBoolean("is_sdsensor", isSDSensorEnabled);
+//        isDSensorEnabled = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getBoolean("is_dsensor", isDSensorEnabled);
+        isPSensorEnabled = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getBoolean("is_psensor", isPSensorEnabled);
+
         if(isGSensorEnabled)SensorUtils.registerGSensor(this);
         if(isLSensorEnabled)SensorUtils.registerLSensor(this);
+        if(isSDSensorEnabled)SensorUtils.registerSDSensor(this);
+//        if(isDSensorEnabled)SensorUtils.registerDSensor(this);
+        if(isPSensorEnabled)SensorUtils.registerPSensor(this);
 
         if(checkStatusBar){
             oldStatusBarHeight = 0;
@@ -327,9 +343,20 @@ public class MyService extends Service {
 
     }
 
-    private void addPetOneCount(String name){
+
+    private void addPetOneCount(String name, boolean isBoom){
         if(wm == null || groupPets == null || collisionHandler == null)return;
         Pet pet = new Pet(this, ++currentMaxPetId, name);
+        if(isBoom){
+            pet.params.x = 0;
+            pet.params.y = 0;
+            if(MyService.orientation == Configuration.ORIENTATION_LANDSCAPE){
+                int petW = (int) (MyService.size.y * (MyService.currentSize / 100.0));
+                pet.params.height = petW;
+                pet.params.width = pet.whRate != 0 && pet.whRate != 1 ? (int)(petW * pet.whRate) : petW;
+            }
+            MyService.wm.updateViewLayout(pet.elfView, pet.params);
+        }
         List<Pet> pets = groupPets.get(name);
         if(pets == null){
             pets = new LinkedList<>();
@@ -445,8 +472,8 @@ public class MyService extends Service {
     }
 
     private void updateSpeed(){
-        SensorUtils.unregisterGSensor();
-        SensorUtils.registerGSensor(this);
+//        SensorUtils.unregisterGSensor();
+//        SensorUtils.registerGSensor(this);
         Iterator<Map.Entry<String, List<Pet>>> it = groupPets.entrySet().iterator();
         while (it.hasNext()){
             Map.Entry<String, List<Pet>> entry = it.next();
