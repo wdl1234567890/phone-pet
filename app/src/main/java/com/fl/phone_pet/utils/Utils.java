@@ -4,6 +4,8 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.content.res.AssetFileDescriptor;
 import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
@@ -11,6 +13,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.View;
 import android.view.WindowManager;
 
 import androidx.annotation.Size;
@@ -21,11 +24,13 @@ import com.fl.phone_pet.R;
 import com.fl.phone_pet.pojo.Pet;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 
 public class Utils {
     public static Drawable assets2Drawable(Context ctx, String fileName){
@@ -73,7 +78,7 @@ public class Utils {
             @Override
             public void onPrepared(MediaPlayer mp) {
                 mp.start();
-                mp1.setVolume(0.1f,0.1f);
+                mp1.setVolume(0.3f,0.3f);
             }
         });
         try {
@@ -169,5 +174,36 @@ public class Utils {
             }
         }
         return false;
+    }
+
+    public static void clearDownContainer(){
+        if(MyService.downContainerView != null && MyService.downContainerView.getVisibility() == View.VISIBLE){
+            for (CountDownLatch cdl : MyService.downList){
+                int countSize = (int)cdl.getCount();
+                for (int count = 0; count < countSize; count++)cdl.countDown();
+            }
+        }
+    }
+
+    public static List getHomePackageNames(Context ctx){
+        List names = new ArrayList();
+        PackageManager packageManager = ctx.getPackageManager();
+        Intent intent = new Intent(Intent.ACTION_MAIN);
+        intent.addCategory(Intent.CATEGORY_HOME);
+        List<ResolveInfo> resolveInfo = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+        for (ResolveInfo ri : resolveInfo)names.add(ri.activityInfo.packageName);
+        return names;
+    }
+
+    public static int getFoldCount(){
+        Iterator<Map.Entry<String, List<Pet>>> it = MyService.groupPets.entrySet().iterator();
+        int count = 0;
+        while (it.hasNext()){
+            Map.Entry<String, List<Pet>> entry = it.next();
+            for (Pet pet : entry.getValue()){
+                if(pet.CURRENT_ACTION == Pet.FOLD)count++;
+            }
+        }
+        return count;
     }
 }

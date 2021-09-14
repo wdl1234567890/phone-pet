@@ -58,7 +58,7 @@ public class MyService extends Service {
     public static List<Pet> choosedPets;
     public static int orientation;
     public static long currentMaxPetId;
-    Messenger serviceMessenger = new Messenger(new ActivityMsgHandler());
+    public Messenger serviceMessenger = new Messenger(new ActivityMsgHandler());
     Messenger activityMessenger;
     Handler handler = new Handler();
     public static WindowManager wm;
@@ -71,6 +71,7 @@ public class MyService extends Service {
     public static int divisionArg = -1;
     public static int oldStatusBarHeight = 0;
     public static int statusBarHeight = 0;
+    public static String dontCloseWindowName = "";
     public static boolean isEnableTouch = true;
     public static boolean isKeyboardShow = false;
     public static boolean isVibrator = true;
@@ -78,8 +79,13 @@ public class MyService extends Service {
     public static boolean isLSensorEnabled = false;
     public static boolean isLSensor = false;
     public static boolean isSDSensorEnabled = false;
+    public static boolean isCloseWindowEnabled = false;
 //    public static boolean isDSensorEnabled = false;
     public static boolean isPSensorEnabled = false;
+
+    public static final int HIDDEN_CONTAINER = 70001;
+
+    public static MyService myService;
 
     public static volatile RelativeLayout downContainerView;
     public static volatile CopyOnWriteArrayList<CountDownLatch> downList = new CopyOnWriteArrayList<>();
@@ -117,6 +123,13 @@ public class MyService extends Service {
             }else if(msg.what == MainActivity.CLOSE_GSENSOR){
                 if(activityMessenger == null)activityMessenger = msg.replyTo;
                 closeGSensor();
+            }else if(msg.what == HIDDEN_CONTAINER){
+                removeMessages(HIDDEN_CONTAINER);
+                if(downContainerView != null && downContainerView.getVisibility() == View.VISIBLE){
+                    downContainerView.setVisibility(View.GONE);
+                    downContainerView.removeAllViews();
+                    downList.clear();
+                }
             }
 
         }
@@ -149,6 +162,8 @@ public class MyService extends Service {
                 .putBoolean("is_lsensor", isLSensorEnabled)
                 .putBoolean("is_sdsensor", isSDSensorEnabled)
                 .putBoolean("is_psensor", isPSensorEnabled)
+                .putBoolean("is_close_window", isCloseWindowEnabled)
+                .putString("dont_close_window_names", dontCloseWindowName)
                 .commit();
 
         try {
@@ -177,13 +192,9 @@ public class MyService extends Service {
                     if(pet.functionPanelView != null)pet.hideFuncPanel();
                 }
             }
-            if(downContainerView != null && downContainerView.getVisibility() == View.VISIBLE){
-                for (CountDownLatch cdl : this.downList){
-                    int countSize = (int)cdl.getCount();
-                    for (int count = 0; count < countSize; count++)cdl.countDown();
-                }
-                wm.removeView(downContainerView);
-            }
+
+            Utils.clearDownContainer();
+
 
             wm = null;
             Message msg = new Message();
@@ -197,6 +208,9 @@ public class MyService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        myService = this;
+
         currentSize = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getInt("current_size", currentSize);
         speed = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getInt("speed", speed);
         frequest = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getInt("frequest", frequest);
@@ -209,6 +223,9 @@ public class MyService extends Service {
         isSDSensorEnabled =  getSharedPreferences("pet_store", Context.MODE_PRIVATE).getBoolean("is_sdsensor", isSDSensorEnabled);
 //        isDSensorEnabled = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getBoolean("is_dsensor", isDSensorEnabled);
         isPSensorEnabled = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getBoolean("is_psensor", isPSensorEnabled);
+        isCloseWindowEnabled = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getBoolean("is_close_window", isCloseWindowEnabled);
+        dontCloseWindowName = getSharedPreferences("pet_store", Context.MODE_PRIVATE).getString("dont_close_window_names", dontCloseWindowName);
+
 
         if(isGSensorEnabled)SensorUtils.registerGSensor(this);
         if(isLSensorEnabled)SensorUtils.registerLSensor(this);
@@ -289,12 +306,8 @@ public class MyService extends Service {
                     wm.updateViewLayout(pet.elfView, pet.params);
                 }
             }
-            if(downContainerView != null && downContainerView.getVisibility() == View.VISIBLE){
-                for (CountDownLatch cdl : this.downList) {
-                    int countSize = (int)cdl.getCount();
-                    for (int count = 0; count < countSize; count++)cdl.countDown();
-                }
-            }
+
+            Utils.clearDownContainer();
 
             collisionHandler.start();
             goPets();
@@ -308,7 +321,7 @@ public class MyService extends Service {
         RelativeLayout downContainerView = null;
         if(this.downContainerView == null)downContainerView = (RelativeLayout) LayoutInflater.from(this).inflate(R.layout.container, null);
         WindowManager.LayoutParams downContainerParams = new WindowManager.LayoutParams();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){//6.0
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
             downContainerParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
         } else {
             downContainerParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
@@ -425,12 +438,7 @@ public class MyService extends Service {
         collisionHandler.destoryRes();
         if(isLSensorEnabled)SensorUtils.unregisterLSensor();
 
-        if(downContainerView != null && downContainerView.getVisibility() == View.VISIBLE){
-            for (CountDownLatch cdl : this.downList){
-                int countSize = (int)cdl.getCount();
-                for (int count = 0; count < countSize; count++)cdl.countDown();
-            }
-        }
+        Utils.clearDownContainer();
 
         while (it.hasNext()){
             Map.Entry<String, List<Pet>> entry = it.next();

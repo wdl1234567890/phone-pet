@@ -130,7 +130,8 @@ public class CollisionHandler extends Handler {
                             || pet.name.equals(MyService.WZ)
                             || pet.CURRENT_ACTION == Pet.SPEECH_START
                             || pet.CURRENT_ACTION == Pet.G_SENSOR_X
-                            || pet.CURRENT_ACTION == Pet.G_SENSOR_XY)continue;
+                            || pet.CURRENT_ACTION == Pet.G_SENSOR_XY
+                            || pet.CURRENT_ACTION == Pet.FOLD)continue;
                     for (Pet pet1 : pets){
                         if(pet == pet1 || pet1.name.equals(MyService.WZ)
                                 || pet.name.equals(pet1.name)
@@ -143,6 +144,7 @@ public class CollisionHandler extends Handler {
                                 || pet1.CURRENT_ACTION == Pet.SPEECH_START
                                 || pet1.CURRENT_ACTION == Pet.G_SENSOR_X
                                 || pet1.CURRENT_ACTION == Pet.G_SENSOR_XY
+                                || pet1.CURRENT_ACTION == Pet.FOLD
                                 || (MyService.isLSensor && pet.hugPet != pet1))continue;
                         topY = pet.params.y - pet.params.height/2 - pet1.params.height/2;
                         bottomY = pet.params.y + pet.params.height/2 + pet1.params.height/2;

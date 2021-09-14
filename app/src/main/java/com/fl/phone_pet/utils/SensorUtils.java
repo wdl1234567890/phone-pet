@@ -102,7 +102,6 @@ public class SensorUtils{
                     break;
                 case STEP_COUNT_RATE:
                     removeMessages(STEP_COUNT_RATE);
-                    Log.i("----count----", String.valueOf(currentStepCount));
                     currentStepCount = (int)(Math.pow(currentStepCount, 2) / 4);
                     if(currentStepCount > 25)currentStepCount = 25;
                     if(currentStepCount < 2)currentStepCount = 2;
@@ -123,9 +122,6 @@ public class SensorUtils{
                     break;
                 case STEP_COUNT_ZERO:
                     currentStepCount = 0;
-                    break;
-                case STEP_COUNT_START:
-                    registerPSensor();
                     break;
 
             }
@@ -163,7 +159,7 @@ public class SensorUtils{
 
     public static void registerPSensor(Context ctx){
         ctx1 = ctx;
-        handler.sendEmptyMessageDelayed(STEP_COUNT_START, 1500);
+        registerPSensor();
     }
 
     private static void registerPSensor(){
@@ -189,7 +185,7 @@ public class SensorUtils{
         ctx1 = ctx;
         if(mSensorManager == null)mSensorManager = (SensorManager) ctx.getSystemService(Context.SENSOR_SERVICE);
         if(dSensor == null)dSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
-        Log.i("----d-----", String.valueOf(dSensor == null));
+
         if(dSensor == null)return;
         mSensorManager.registerListener(dSensorEventListener, dSensor, SensorManager.SENSOR_DELAY_UI);
     }
@@ -246,15 +242,12 @@ public class SensorUtils{
         public void onSensorChanged(SensorEvent sensorEvent) {
             float x = sensorEvent.values[0];
 
-            Log.i("----light------", String.valueOf(x));
             if(!isDark && x <= 5 && !MyService.isLSensor){
-                Log.i("----yes------", "yes");
                 //isDark = true;
                 MyService.isLSensor = true;
                 couple();
                 twoWayRunning();
             }else if(x > 5){
-                Log.i("----hh------", "hh");
                 backState();
                 isDark = false;
             }
@@ -363,7 +356,7 @@ public class SensorUtils{
                     public void run() {
                         try {
                             cdl.await();
-                            Log.i("----end------", "end");
+
                             MyService.isLSensor = false;
                             cdl = null;
                             isDark = true;
@@ -490,7 +483,7 @@ public class SensorUtils{
                 if(current >= last)last = current;
                 else {
                     if (Math.abs(current - last) > 15){
-                        Log.i("----up-----", "up");
+
                         handler.removeMessages(SHAKE_COUNT_ZERO);
                         currentShakeCount++;
                         handler.sendEmptyMessageDelayed(SHAKE_COUNT_ZERO, 800);
@@ -501,7 +494,7 @@ public class SensorUtils{
                 if(current <= last)last = current;
                 else {
                     if (Math.abs(current - last) > 15){
-                        Log.i("----down-----", String.valueOf(currentShakeCount));
+
                         motiveState = true;
                     }
                 }
@@ -609,7 +602,7 @@ public class SensorUtils{
         @Override
         public void onSensorChanged(SensorEvent sensorEvent) {
             float distance = sensorEvent.values[0];
-            Log.i("-----v----", String.valueOf(distance));
+
             if(distance <= 0 && Utils.hasCouple()){
                 Utils.voice(ctx1, "lw/voice/axu.mp3");
             }

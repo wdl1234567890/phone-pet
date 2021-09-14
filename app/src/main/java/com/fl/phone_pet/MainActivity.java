@@ -5,8 +5,10 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.res.ColorStateList;
@@ -20,11 +22,14 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
+import android.view.TextureView;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -248,6 +253,15 @@ public class MainActivity extends AppCompatActivity {
                 Context.MODE_PRIVATE).getBoolean("is_psensor", MyService.isPSensorEnabled);
         checkedPSensor.setChecked(isCheckPSensor);
 
+        CheckBox checkedCloseWindow = findViewById(R.id.checkCloseWindow);
+        checkedCloseWindow.setEnabled(false);
+        boolean isCloseWindow = getSharedPreferences("pet_store",
+                Context.MODE_PRIVATE).getBoolean("is_close_window", MyService.isCloseWindowEnabled);
+        checkedCloseWindow.setChecked(isCloseWindow);
+
+        Button dontCloseWindowButton = findViewById(R.id.dontCloseWindowButton);
+        dontCloseWindowButton.setEnabled(false);
+
         Switch switch1 = findViewById(R.id.switch1);
         switch1.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
 
@@ -271,6 +285,8 @@ public class MainActivity extends AppCompatActivity {
                         if(isEnableG && !checkedGSensor.isChecked())checkedSDSensor.setEnabled(true);
 //                        if(SensorUtils.isSensorAble(ctx, Sensor.TYPE_PROXIMITY) && !checkedLSensor.isChecked())checkedDSensor.setEnabled(true);
                         if(isEnableG)checkedPSensor.setEnabled(true);
+                        checkedCloseWindow.setEnabled(true);
+                        dontCloseWindowButton.setEnabled(true);
 
                         for(FloatingActionButton button : buttons.values()){
                             button.setEnabled(true);
@@ -307,6 +323,8 @@ public class MainActivity extends AppCompatActivity {
                         checkedSDSensor.setEnabled(false);
 //                        checkedDSensor.setEnabled(false);
                         checkedPSensor.setEnabled(false);
+                        checkedCloseWindow.setEnabled(false);
+                        dontCloseWindowButton.setEnabled(false);
                         for(FloatingActionButton button : buttons.values()){
                             button.setEnabled(false);
                         }
@@ -519,6 +537,36 @@ public class MainActivity extends AppCompatActivity {
                 MyService.isPSensorEnabled = b;
                 if(b)SensorUtils.registerPSensor(ctx);
                 else SensorUtils.unregisterPSensor();
+            }
+        });
+
+        checkedCloseWindow.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                MyService.isCloseWindowEnabled = b;
+            }
+        });
+
+        dontCloseWindowButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                EditText editText = new EditText(ctx);
+                //editText.setMaxLines(5);
+                editText.setSingleLine(false);
+                editText.setWidth(100);
+                editText.setText(MyService.dontCloseWindowName);
+                editText.setHeight(500);
+                AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+                builder.setTitle("输入不可关闭的窗口包名").setIcon(R.mipmap.ic_launcher).setView(editText).setCancelable(false).setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+
+                        String content = editText.getText().toString();
+                        if(content == null)content = "";
+                        MyService.dontCloseWindowName = content.trim();
+
+                    }
+                }).show();
             }
         });
 

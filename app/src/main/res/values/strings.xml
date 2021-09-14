@@ -84,18 +84,18 @@
 
     <!--sleeps-->
     <string-array name="ax_sleeps">
+        <item>zhadan:4</item>
         <item>chiguazi:4</item>
         <item>suanming:4</item>
         <item>wujian:5</item>
-        <item>zhadan:4</item>
         <item>zhaojingzi:3</item>
     </string-array>
     <string-array name="lw_sleeps">
+        <item>zhadan:4</item>
         <item>chuixiao:1</item>
         <item>fengyin:4</item>
         <item>kancaipu:7</item>
         <item>wushan:6</item>
-        <item>zhadan:4</item>
     </string-array>
     <string-array name="wz_sleeps">
         <item>ganbei:4</item>

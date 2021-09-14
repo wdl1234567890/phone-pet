@@ -251,9 +251,31 @@
                 android:text="手摇发动机"
                 android:textColor="#777"
                 android:textSize="10dp" />
-
+            <CheckBox
+                android:id="@+id/checkCloseWindow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="false"
+                android:minHeight="0dp"
+                android:text="开启关窗口功能"
+                android:textColor="#777"
+                android:textSize="10dp" />
 
         </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:orientation="horizontal">
+            <Button
+                android:id="@+id/dontCloseWindowButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="点击输入不允许关闭的窗口的包名"
+                android:textSize="10dp"
+                />
+        </LinearLayout>
+
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
