@@ -312,8 +312,9 @@ public class Pet extends Handler implements Comparable<Pet>{
                         x0 = lastX;
                         y0 = lastY;
                         Matrix matrix = new Matrix();
-                        float scale = (float)((elfBody.getHeight() * 1.0)/bitmap.getHeight());
-                        matrix.postScale(scale, scale);
+                        float scaleY = (float)((elfBody.getHeight() * 1.0)/bitmap.getHeight());
+                        float scaleX = (float)((elfBody.getWidth() * 1.0)/bitmap.getWidth());
+                        matrix.postScale(scaleX, scaleY);
                         bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
                         eventX = eventX - (elfView.getWidth() - bitmap.getWidth()) / 2;
                         if(eventX < 0 || eventY < 0 || eventX >= bitmap.getWidth() || eventY >= bitmap.getHeight() || bitmap.getPixel(eventX, eventY) == 0){
@@ -330,9 +331,9 @@ public class Pet extends Handler implements Comparable<Pet>{
                         if(CURRENT_ACTION == FOLD){
                             CloseWindowUtils.foldPets.remove(me);
                             if(CloseWindowUtils.foldPets.isEmpty()){
-                                ObjectAnimator objectAnimator = ObjectAnimator.ofFloat(CloseWindowUtils.foldLayout, "factor", 0);
-                                objectAnimator.setDuration(SpeedUtils.getCurrentSpeedTime() * 5);
-                                objectAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
+                                ObjectAnimator objectAnimator = ObjectAnimator.ofFloat(CloseWindowUtils.foldLayout, "factor", 0.13f);
+                                objectAnimator.setDuration(SpeedUtils.getCurrentSpeedTime() * 3);
+                                //objectAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
                                 objectAnimator.addListener(new AnimatorListenerAdapter() {
                                     @Override
                                     public void onAnimationEnd(Animator animation) {
@@ -490,6 +491,7 @@ public class Pet extends Handler implements Comparable<Pet>{
                         y0 = 0;
                         break;
                 }
+
                 return true;
             }
         });
@@ -540,11 +542,11 @@ public class Pet extends Handler implements Comparable<Pet>{
                         data0.put("moveYDirection", -(long) (Math.random() * 90 + 30));
                         data0.put("jump", 1L);
                         msg3.obj = data0;
-                        msg3.what
-                        = FLY;
+                        msg3.what = FLY;
                         sendMessage(msg3);
                         break;
                     case 6:
+                        //boomCloseWindow();
                         if(MyService.isCloseWindowEnabled && MyService2.as != null && !CloseWindowUtils.isClosing && new Random().nextInt(20) < 4) boomCloseWindow();
                         break;
 
@@ -656,20 +658,15 @@ public class Pet extends Handler implements Comparable<Pet>{
                         climbToDown();
                         sendEmptyMessageDelayed(TIMER_LEFT_START, SpeedUtils.getCurrentFrequestTime());
                     }else {
-                        foldWindow();
-//                        if(MyService.isCloseWindowEnabled && MyService2.as != null && !CloseWindowUtils.isClosing && new Random().nextInt(20) < 4){
-//                            removeAllMessages();
-//                            foldWindow();
-//                        }else{
-//                            if (BEFORE_MODE != TIMER_LEFT_START) BEFORE_MODE = TIMER_LEFT_START;
-//                            climbToUp();
-//                            sendEmptyMessageDelayed(TIMER_LEFT_START, SpeedUtils.getCurrentFrequestTime());
-//                        }
+                        if(MyService.isCloseWindowEnabled && !name.equals(MyService.WZ) && MyService2.as != null && !CloseWindowUtils.isClosing && new Random().nextInt(20) < 4){
+                            foldWindow();
+                        }else{
+                            if (BEFORE_MODE != TIMER_LEFT_START) BEFORE_MODE = TIMER_LEFT_START;
+                            climbToUp();
+                            sendEmptyMessageDelayed(TIMER_LEFT_START, SpeedUtils.getCurrentFrequestTime());
+                        }
 
                     }
-                }else if(CloseWindowUtils.isClosing && !CloseWindowUtils.foldPets.isEmpty() && Math.abs( -MyService.size.x/2 + CloseWindowUtils.foldLayout.getWidth() - params.x) <= 10){
-                    removeAllMessages();
-                    foldWindow();
                 }else {
                     params.x = params.x - distance;
                     MyService.wm.updateViewLayout(elfView, params);
@@ -1067,18 +1064,17 @@ public class Pet extends Handler implements Comparable<Pet>{
                 removeMessages(FOLD);
                 changeStateLevel();
                 Map<String, Float> datas = new HashMap();
-                datas.put("factor", CloseWindowUtils.foldLayout.getFactor() + 0.1f * CloseWindowUtils.foldPets.size() * CloseWindowUtils.foldFlag);
+                datas.put("factor", CloseWindowUtils.foldLayout.getFactor() + 0.05f * CloseWindowUtils.foldPets.size() * CloseWindowUtils.foldFlag);
                 CloseWindowUtils.update(CloseWindowUtils.FOLD, datas);
                 params.x = -MyService.size.x/2 + (int)(CloseWindowUtils.foldLayout.getCurrentWidth());
                 MyService.wm.updateViewLayout(elfView, params);
                 if(CloseWindowUtils.foldLayout.getFactor() >= 1){
                     CloseWindowUtils.foldFlag = -1;
                     MyService2.as.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME);
-                    sendEmptyMessageDelayed(FOLD, (long)(0.2 * SpeedUtils.getCurrentSpeedTime()));
-                }else if(CloseWindowUtils.foldLayout.getFactor() <= 0){
-
+                    sendEmptyMessageDelayed(FOLD, (long)(2.5 * SpeedUtils.getCurrentSpeedTime()));
+                }else if(CloseWindowUtils.foldLayout.getFactor() <= 0.1 && CloseWindowUtils.foldFlag == -1){
                     CloseWindowUtils.endFold();
-                }else sendEmptyMessageDelayed(FOLD, (long)(0.2 * SpeedUtils.getCurrentSpeedTime()));
+                }else sendEmptyMessageDelayed(FOLD, (long)(0.5 * SpeedUtils.getCurrentSpeedTime()));
                 break;
 
         }
@@ -1883,7 +1879,6 @@ public class Pet extends Handler implements Comparable<Pet>{
         stateCount = 3;
         stateIndex = 0;
         if(!CloseWindowUtils.foldPets.contains(this))CloseWindowUtils.foldPets.add(this);
-        if(CloseWindowUtils.isClosing)return;
         CloseWindowUtils.foldFlag = 1;
         CloseWindowUtils.start(ctx, CloseWindowUtils.FOLD, null);
         sendEmptyMessage(FOLD);

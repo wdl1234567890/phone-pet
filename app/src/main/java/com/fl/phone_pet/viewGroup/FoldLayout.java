@@ -205,6 +205,15 @@ public class FoldLayout extends ViewGroup
 
     public void setFactor(float factor)
     {
+        if (factor < 0)
+        {
+            factor = 0;
+        }
+        if (factor > 1)
+        {
+            factor = 1;
+        }
+
         this.mFactor = factor;
         updateFold();
         invalidate();
@@ -227,7 +236,7 @@ public class FoldLayout extends ViewGroup
         public boolean onScroll(MotionEvent e1, MotionEvent e2,
                                 float distanceX, float distanceY)
         {
-            if(CloseWindowUtils.isClosing && distanceX <= 0)return true;
+            if(CloseWindowUtils.isClosing && distanceX <= 0 && !CloseWindowUtils.foldPets.isEmpty())return true;
 
             mTranslation -= distanceX;
 
@@ -259,7 +268,7 @@ public class FoldLayout extends ViewGroup
                 CloseWindowUtils.foldPets.clear();
             }
 
-            if(factor == 0)CloseWindowUtils.endFold();
+            if(factor <= 0.1)CloseWindowUtils.endFold();
 
             return true;
         }

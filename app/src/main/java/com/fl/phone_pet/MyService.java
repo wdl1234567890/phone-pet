@@ -1,5 +1,8 @@
 package com.fl.phone_pet;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.app.Service;
 import android.content.Context;
@@ -29,9 +32,11 @@ import androidx.annotation.NonNull;
 //import com.fl.phone_pet.handler.CollisionHandler;
 import com.fl.phone_pet.handler.CollisionHandler;
 import com.fl.phone_pet.pojo.Pet;
+import com.fl.phone_pet.utils.CloseWindowUtils;
 import com.fl.phone_pet.utils.SensorUtils;
 import com.fl.phone_pet.utils.SpeedUtils;
 import com.fl.phone_pet.utils.Utils;
+import com.fl.phone_pet.view.BubbleView;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -195,6 +200,19 @@ public class MyService extends Service {
 
             Utils.clearDownContainer();
 
+            if(CloseWindowUtils.isClosing){
+                ObjectAnimator objectAnimator = ObjectAnimator.ofFloat(CloseWindowUtils.foldLayout, "factor", 0.13f);
+                objectAnimator.setDuration(SpeedUtils.getCurrentSpeedTime() * 3);
+                //objectAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
+                objectAnimator.addListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        super.onAnimationEnd(animation);
+                        CloseWindowUtils.endFold();
+                    }
+                });
+                objectAnimator.start();
+            }
 
             wm = null;
             Message msg = new Message();
@@ -259,6 +277,30 @@ public class MyService extends Service {
         initPets();
         initCollisionHandler();
         goPets();
+        //initBubbles();
+
+    }
+
+    public void initBubbles(){
+        WindowManager.LayoutParams params = new WindowManager.LayoutParams();
+        View bubble = new BubbleView(this);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {//6.0
+            params.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
+
+        } else {
+            params.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
+        }
+
+        params.format = PixelFormat.RGBA_8888;
+        params.flags = Utils.getNormalFlags();
+
+        params.x = 0;
+        params.y = 0;
+        params.width = 500;
+        params.height = 500;
+
+        wm.addView(bubble, params);
 
     }
 
@@ -308,6 +350,20 @@ public class MyService extends Service {
             }
 
             Utils.clearDownContainer();
+
+            if(CloseWindowUtils.isClosing){
+                ObjectAnimator objectAnimator = ObjectAnimator.ofFloat(CloseWindowUtils.foldLayout, "factor", 0.13f);
+                objectAnimator.setDuration(SpeedUtils.getCurrentSpeedTime() * 3);
+                //objectAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
+                objectAnimator.addListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        super.onAnimationEnd(animation);
+                        CloseWindowUtils.endFold();
+                    }
+                });
+                objectAnimator.start();
+            }
 
             collisionHandler.start();
             goPets();
@@ -460,6 +516,21 @@ public class MyService extends Service {
                 wm.updateViewLayout(pet.speechView, pet.speechParams);
             }
         }
+
+        if(CloseWindowUtils.isClosing){
+            ObjectAnimator objectAnimator = ObjectAnimator.ofFloat(CloseWindowUtils.foldLayout, "factor", 0.13f);
+            objectAnimator.setDuration(SpeedUtils.getCurrentSpeedTime() * 3);
+            //objectAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
+            objectAnimator.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    super.onAnimationEnd(animation);
+                    CloseWindowUtils.endFold();
+                }
+            });
+            objectAnimator.start();
+        }
+
         collisionHandler.start();
         goPets();
 

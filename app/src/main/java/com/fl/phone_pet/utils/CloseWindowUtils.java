@@ -108,10 +108,11 @@ public class CloseWindowUtils {
         MyService.wm.updateViewLayout(MyService.downContainerView, downContainerParams);
 
         foldLayout = new FoldLayout(ctx);
-        RelativeLayout.LayoutParams foldLayoutParams = new RelativeLayout.LayoutParams(MyService.size.x - (int) ((MyService.size.x - 10) * (MyService.currentSize / 100.0)), ViewGroup.LayoutParams.MATCH_PARENT);
+        RelativeLayout.LayoutParams foldLayoutParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
 
         ImageView imageView = new ImageView(ctx);
-        imageView.setImageResource(R.drawable.lw);
+        imageView.setImageResource(R.drawable.uu);
+        imageView.setBackgroundResource(R.color.white);
         FoldLayout.LayoutParams imgParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
 
         foldLayout.addView(imageView, imgParams);
